@@ -13,3 +13,11 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Per-machine Android Studio files
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
+/.idea/other.xml
+/.idea/misc.xml
+/.idea/studiobot.xml
+/.idea/markdown.xml
