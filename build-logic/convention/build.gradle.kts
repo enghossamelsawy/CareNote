@@ -46,5 +46,9 @@ gradlePlugin {
             id = "carenote.android.hilt"
             implementationClass = "AndroidHiltConventionPlugin"
         }
+        register("androidFeature") {
+            id = "carenote.android.feature"
+            implementationClass = "AndroidFeatureConventionPlugin"
+        }
     }
 }
