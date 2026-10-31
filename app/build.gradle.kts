@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.carenote.android.application)
     alias(libs.plugins.carenote.android.compose)
+    alias(libs.plugins.carenote.android.hilt)
 }
 
 android {
@@ -10,6 +11,10 @@ android {
         applicationId = "com.hossam.carenote"
         versionCode = 1
         versionName = "1.0"
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -23,6 +28,9 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.common)
+
+    implementation(libs.timber)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
