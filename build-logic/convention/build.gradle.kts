@@ -50,5 +50,9 @@ gradlePlugin {
             id = "carenote.android.feature"
             implementationClass = "AndroidFeatureConventionPlugin"
         }
+        register("androidRoom") {
+            id = "carenote.android.room"
+            implementationClass = "AndroidRoomConventionPlugin"
+        }
     }
 }
