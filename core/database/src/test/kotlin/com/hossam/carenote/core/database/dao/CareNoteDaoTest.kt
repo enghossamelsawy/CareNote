@@ -118,4 +118,22 @@ class CareNoteDaoTest {
             assertEquals(SyncStatus.SYNCED, awaitItem().single().syncStatus)
         }
     }
+
+    @Test
+    fun `given a failed note, when requeuing it, then it is pending with a fresh outbox entry`() = runTest {
+        // Given
+        dao.insertAndQueue(careNote("1", "r1"), outboxEntry("1"))
+        dao.updateSyncStatus("1", SyncStatus.FAILED)
+        database.outboxDao().recordAttempt("1", at = Instant.ofEpochSecond(10), error = "HTTP 500")
+
+        // When
+        dao.requeue(outboxEntry("1", enqueuedAt = Instant.ofEpochSecond(20)))
+
+        // Then
+        assertEquals(SyncStatus.PENDING, dao.observeForResident("r1").first().single().syncStatus)
+        assertEquals(
+            listOf(outboxEntry("1", enqueuedAt = Instant.ofEpochSecond(20))),
+            database.outboxDao().oldest(limit = 10),
+        )
+    }
 }

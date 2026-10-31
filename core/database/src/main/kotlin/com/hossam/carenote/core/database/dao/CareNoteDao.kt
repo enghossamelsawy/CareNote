@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
 import com.hossam.carenote.core.database.model.CareNoteEntity
 import com.hossam.carenote.core.database.model.OutboxEntity
 import com.hossam.carenote.core.database.model.PendingCount
@@ -39,4 +40,15 @@ interface CareNoteDao {
 
     @Query("UPDATE care_notes SET syncStatus = :status WHERE id = :id")
     suspend fun updateSyncStatus(id: String, status: SyncStatus)
+
+    /** Adds the entry, or replaces the note's existing one, e.g. to reset its attempts. */
+    @Upsert
+    suspend fun upsertOutboxEntry(entry: OutboxEntity)
+
+    /** Marks the note as waiting again and gives it a fresh queue entry, in one transaction. */
+    @Transaction
+    suspend fun requeue(entry: OutboxEntity) {
+        updateSyncStatus(entry.noteId, SyncStatus.PENDING)
+        upsertOutboxEntry(entry)
+    }
 }
