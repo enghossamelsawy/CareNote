@@ -8,4 +8,7 @@ dependencies {
     api(libs.kotlinx.coroutines.core)
     // @Inject constructors without depending on Hilt.
     implementation(libs.javax.inject)
+
+    testImplementation(projects.core.testing)
+    testImplementation(libs.turbine)
 }
