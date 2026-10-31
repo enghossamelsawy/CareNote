@@ -1,5 +1,6 @@
 import com.android.build.api.dsl.LibraryExtension
 import com.hossam.carenote.buildlogic.CareNoteConfig
+import com.hossam.carenote.buildlogic.configureKtlint
 import com.hossam.carenote.buildlogic.libs
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -10,6 +11,7 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             pluginManager.apply("com.android.library")
+            configureKtlint()
 
             extensions.configure<LibraryExtension> {
                 compileSdk = CareNoteConfig.COMPILE_SDK
