@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="residents_title">Residents</string>
+    <string name="residents_room">Room %1$s</string>
+    <string name="residents_empty">No residents yet</string>
+    <plurals name="residents_pending">
+        <item quantity="one">%d pending</item>
+        <item quantity="other">%d pending</item>
+    </plurals>
+</resources>
