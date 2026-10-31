@@ -2,12 +2,12 @@ package com.hossam.carenote.core.database.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
-import androidx.room.MapColumn
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.hossam.carenote.core.database.model.CareNoteEntity
 import com.hossam.carenote.core.database.model.OutboxEntity
+import com.hossam.carenote.core.database.model.PendingCount
 import com.hossam.carenote.core.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 
@@ -17,8 +17,11 @@ interface CareNoteDao {
     fun observeForResident(residentId: String): Flow<List<CareNoteEntity>>
 
     /** Notes not yet on the server, per resident. Residents without any are left out. */
-    @Query("SELECT residentId, COUNT(*) AS count FROM care_notes WHERE syncStatus != 'SYNCED' GROUP BY residentId")
-    fun observePendingCounts(): Flow<Map<@MapColumn("residentId") String, @MapColumn("count") Int>>
+    @Query(
+        "SELECT residentId, COUNT(*) AS count FROM care_notes WHERE syncStatus != 'SYNCED' " +
+            "GROUP BY residentId ORDER BY residentId",
+    )
+    fun observePendingCounts(): Flow<List<PendingCount>>
 
     /** Notes are append-only, so saving an existing id throws instead of replacing it. */
     @Insert(onConflict = OnConflictStrategy.ABORT)

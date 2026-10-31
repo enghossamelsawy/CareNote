@@ -5,6 +5,7 @@ import app.cash.turbine.test
 import com.hossam.carenote.core.database.CareNoteDatabase
 import com.hossam.carenote.core.database.careNote
 import com.hossam.carenote.core.database.inMemoryDatabase
+import com.hossam.carenote.core.database.model.PendingCount
 import com.hossam.carenote.core.database.outboxEntry
 import com.hossam.carenote.core.database.resident
 import com.hossam.carenote.core.model.SyncStatus
@@ -63,11 +64,11 @@ class CareNoteDaoTest {
         val counts = dao.observePendingCounts().first()
 
         // Then
-        assertEquals(mapOf("r1" to 3, "r2" to 1), counts)
+        assertEquals(listOf(PendingCount("r1", 3), PendingCount("r2", 1)), counts)
     }
 
     @Test
-    fun `given only synced notes, when counting pending, then the map is empty`() = runTest {
+    fun `given only synced notes, when counting pending, then nothing is counted`() = runTest {
         // Given
         dao.insert(careNote("1", "r1", syncStatus = SyncStatus.SYNCED))
 
