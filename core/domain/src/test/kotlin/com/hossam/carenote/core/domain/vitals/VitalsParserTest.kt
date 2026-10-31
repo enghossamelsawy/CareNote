@@ -2,11 +2,9 @@ package com.hossam.carenote.core.domain.vitals
 
 import com.hossam.carenote.core.model.Vitals
 import org.junit.Assert.assertEquals
-import org.junit.Ignore
 import org.junit.Test
 
 /** Language-independent behavior, checked with made-up vocabularies. */
-@Ignore("VitalsParser not implemented yet")
 class VitalsParserTest {
     @Test
     fun `given two vocabularies, when parsing, then keywords of both are recognized`() {

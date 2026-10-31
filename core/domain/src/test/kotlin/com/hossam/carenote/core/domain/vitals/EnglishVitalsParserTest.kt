@@ -2,12 +2,10 @@ package com.hossam.carenote.core.domain.vitals
 
 import com.hossam.carenote.core.model.Vitals
 import org.junit.Assert.assertEquals
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@Ignore("VitalsParser not implemented yet")
 @RunWith(Parameterized::class)
 class EnglishVitalsParserTest(
     private val transcript: String,
