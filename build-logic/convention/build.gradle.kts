@@ -42,5 +42,9 @@ gradlePlugin {
             id = "carenote.jvm.library"
             implementationClass = "JvmLibraryConventionPlugin"
         }
+        register("androidHilt") {
+            id = "carenote.android.hilt"
+            implementationClass = "AndroidHiltConventionPlugin"
+        }
     }
 }

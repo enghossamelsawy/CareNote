@@ -129,3 +129,4 @@ carenote-android-application = { id = "carenote.android.application" }
 carenote-android-compose = { id = "carenote.android.compose" }
 carenote-android-library = { id = "carenote.android.library" }
 carenote-jvm-library = { id = "carenote.jvm.library" }
+carenote-android-hilt = { id = "carenote.android.hilt" }
