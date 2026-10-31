@@ -1,0 +1,14 @@
+# Normalize line endings: LF in the repository and working tree on every OS.
+* text=auto eol=lf
+
+# Windows scripts need CRLF to run correctly.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files: never touch line endings or diff as text.
+*.jar binary
+*.png binary
+*.webp binary
+*.jpg binary
+*.keystore binary
+*.jks binary
