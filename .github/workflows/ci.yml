@@ -34,8 +34,9 @@ jobs:
       - name: Lint
         run: ./gradlew lintDebug
 
+      # Runs JVM module tests (test) and Android unit tests (testDebugUnitTest, testReleaseUnitTest).
       - name: Unit tests
-        run: ./gradlew testDebugUnitTest
+        run: ./gradlew test
 
       - name: Build
         run: ./gradlew assembleDebug
