@@ -29,6 +29,7 @@ android {
 
 dependencies {
     implementation(projects.core.common)
+    implementation(projects.core.designsystem)
 
     implementation(libs.timber)
     implementation(libs.androidx.activity.compose)

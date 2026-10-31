@@ -13,6 +13,7 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
             pluginManager.apply("org.jetbrains.kotlin.plugin.serialization")
 
             dependencies {
+                add("implementation", project(":core:designsystem"))
                 add("implementation", libs.findLibrary("androidx-lifecycle-runtime-compose").get())
                 add("implementation", libs.findLibrary("androidx-lifecycle-viewmodel-compose").get())
                 add("implementation", libs.findLibrary("androidx-hilt-lifecycle-viewmodel-compose").get())
