@@ -34,5 +34,13 @@ gradlePlugin {
             id = "carenote.android.compose"
             implementationClass = "AndroidComposeConventionPlugin"
         }
+        register("androidLibrary") {
+            id = "carenote.android.library"
+            implementationClass = "AndroidLibraryConventionPlugin"
+        }
+        register("jvmLibrary") {
+            id = "carenote.jvm.library"
+            implementationClass = "JvmLibraryConventionPlugin"
+        }
     }
 }
