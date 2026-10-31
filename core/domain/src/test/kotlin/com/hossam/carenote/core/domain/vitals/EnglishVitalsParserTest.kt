@@ -7,10 +7,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
-class EnglishVitalsParserTest(
-    private val transcript: String,
-    private val expected: Vitals,
-) {
+class EnglishVitalsParserTest(private val transcript: String, private val expected: Vitals) {
     private val parser = VitalsParser(listOf(EnglishVitalsVocabulary))
 
     @Test
