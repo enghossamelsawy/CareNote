@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.carenote.android.library)
     alias(libs.plugins.carenote.android.room)
+    alias(libs.plugins.carenote.android.hilt)
 }
 
 android {
