@@ -33,4 +33,5 @@ include(":core:common")
 include(":core:database")
 include(":core:designsystem")
 include(":core:ui")
+include(":core:testing")
  
