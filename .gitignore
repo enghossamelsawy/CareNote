@@ -21,3 +21,6 @@ local.properties
 /.idea/misc.xml
 /.idea/studiobot.xml
 /.idea/markdown.xml
+
+# Included build output
+/build-logic/convention/build
