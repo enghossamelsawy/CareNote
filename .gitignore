@@ -24,3 +24,7 @@ local.properties
 
 # Included build output
 /build-logic/convention/build
+
+# Module build output
+/core/*/build
+/feature/*/build
