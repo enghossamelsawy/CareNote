@@ -123,3 +123,7 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+
+# Convention plugins (defined in build-logic)
+carenote-android-application = { id = "carenote.android.application" }
+carenote-android-compose = { id = "carenote.android.compose" }

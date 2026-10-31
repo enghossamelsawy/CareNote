@@ -23,3 +23,16 @@ dependencies {
     compileOnly(libs.hilt.gradlePlugin)
     compileOnly(libs.room.gradlePlugin)
 }
+
+gradlePlugin {
+    plugins {
+        register("androidApplication") {
+            id = "carenote.android.application"
+            implementationClass = "AndroidApplicationConventionPlugin"
+        }
+        register("androidCompose") {
+            id = "carenote.android.compose"
+            implementationClass = "AndroidComposeConventionPlugin"
+        }
+    }
+}
