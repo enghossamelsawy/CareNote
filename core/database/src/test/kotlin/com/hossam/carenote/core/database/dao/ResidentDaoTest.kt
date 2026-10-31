@@ -1,11 +1,9 @@
 package com.hossam.carenote.core.database.dao
 
-import android.content.Context
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
 import com.hossam.carenote.core.database.CareNoteDatabase
-import com.hossam.carenote.core.database.model.ResidentEntity
+import com.hossam.carenote.core.database.inMemoryDatabase
+import com.hossam.carenote.core.database.resident
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -23,10 +21,7 @@ class ResidentDaoTest {
 
     @Before
     fun setUp() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        database = Room.inMemoryDatabaseBuilder(context, CareNoteDatabase::class.java)
-            .allowMainThreadQueries()
-            .build()
+        database = inMemoryDatabase()
         dao = database.residentDao()
     }
 
@@ -101,7 +96,4 @@ class ResidentDaoTest {
             assertEquals(listOf("2", "1"), awaitItem().map { it.id })
         }
     }
-
-    private fun resident(id: String, firstName: String, lastName: String, room: String = "101") =
-        ResidentEntity(id = id, firstName = firstName, lastName = lastName, room = room)
 }
