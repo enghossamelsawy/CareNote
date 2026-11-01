@@ -133,7 +133,8 @@ changed or deleted.
 3. **A demo engine** that "hears" a sample note. Mock build only, so the app can be demoed on an emulator.
 
 Care data stays on the phone and leaves it only through sync: the app is excluded from cloud backup and
-device-to-device transfer.
+device-to-device transfer, and the prod build blocks screenshots, screen recordings and the recent-apps preview
+(`FLAG_SECURE`). The mock build allows them, since demos get screen-shared.
 
 The vitals parser is built from a per-language vocabulary, so adding German means adding a vocabulary, not
 changing the parser. minSdk is 26; newer speech features are checked at runtime.

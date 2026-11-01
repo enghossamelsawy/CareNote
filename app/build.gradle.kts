@@ -25,9 +25,13 @@ android {
             dimension = "environment"
             applicationIdSuffix = ".mock"
             versionNameSuffix = "-mock"
+            // Demos get screen-shared and recorded, so screenshots stay possible here.
+            buildConfigField("boolean", "SECURE_SCREEN", "false")
         }
         create("prod") {
             dimension = "environment"
+            // Care data must not end up in screenshots, recordings or the recent-apps preview.
+            buildConfigField("boolean", "SECURE_SCREEN", "true")
         }
     }
 
