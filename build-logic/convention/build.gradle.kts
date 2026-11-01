@@ -54,5 +54,13 @@ gradlePlugin {
             id = "carenote.android.room"
             implementationClass = "AndroidRoomConventionPlugin"
         }
+        register("androidRobolectric") {
+            id = "carenote.android.robolectric"
+            implementationClass = "AndroidRobolectricConventionPlugin"
+        }
+        register("androidRoborazzi") {
+            id = "carenote.android.roborazzi"
+            implementationClass = "AndroidRoborazziConventionPlugin"
+        }
     }
 }

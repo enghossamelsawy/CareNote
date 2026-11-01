@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.carenote.android.feature)
+    alias(libs.plugins.carenote.android.roborazzi)
 }
 
 android {
