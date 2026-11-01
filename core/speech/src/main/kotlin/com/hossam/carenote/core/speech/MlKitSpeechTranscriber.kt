@@ -1,6 +1,7 @@
 package com.hossam.carenote.core.speech
 
 import android.os.Build
+import androidx.annotation.RequiresApi
 import com.google.mlkit.genai.common.DownloadStatus
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.common.audio.AudioSource
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.withContext
 import java.util.Locale
@@ -53,7 +55,15 @@ internal class MlKitSpeechTranscriber @Inject constructor(private val logger: Lo
         }
     }
 
-    override fun transcribe(): Flow<TranscriptionEvent> = flow {
+    /** Below Android 12 there is no model to listen with, so it reports "unavailable" instead of crashing. */
+    override fun transcribe(): Flow<TranscriptionEvent> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        recognize()
+    } else {
+        flowOf(TranscriptionEvent.Error(TranscriptionError.Unavailable))
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun recognize(): Flow<TranscriptionEvent> = flow {
         SpeechRecognition.getClient(options()).use { client ->
             try {
                 emitAll(client.startRecognition(micRequest()).asTranscriptionEvents())
@@ -128,6 +138,7 @@ internal class MlKitSpeechTranscriber @Inject constructor(private val logger: Lo
         preferredMode = SpeechRecognizerOptions.Mode.MODE_BASIC
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
     private fun micRequest() = speechRecognizerRequest { audioSource = AudioSource.fromMic() }
 
     private companion object {
