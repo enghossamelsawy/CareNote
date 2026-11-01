@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.speech.SpeechRecognizer
 import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
-import com.hossam.carenote.core.common.logging.Logger
 import com.hossam.carenote.core.domain.speech.TranscriptionError
 import com.hossam.carenote.core.domain.speech.TranscriptionEvent
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -110,15 +109,5 @@ class PlatformSpeechTranscriberTest {
 
     private fun results(text: String) = Bundle().apply {
         putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, arrayListOf(text))
-    }
-
-    private object NoOpLogger : Logger {
-        override fun d(tag: String, message: String) = Unit
-
-        override fun i(tag: String, message: String) = Unit
-
-        override fun w(tag: String, message: String, throwable: Throwable?) = Unit
-
-        override fun e(tag: String, message: String, throwable: Throwable?) = Unit
     }
 }
