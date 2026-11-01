@@ -10,6 +10,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -26,14 +28,19 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hossam.carenote.core.designsystem.component.StatusBadge
 import com.hossam.carenote.core.designsystem.component.StatusBanner
 import com.hossam.carenote.core.designsystem.component.StatusTone
+import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
 import com.hossam.carenote.core.ui.mvi.ObserveEffects
 
-/** Connects [ResidentsScreen] to its ViewModel; navigation is passed in, so this module doesn't know other screens. */
+/**
+ * Connects [ResidentsScreen] to its ViewModel; navigation is passed in, so this module doesn't know other screens.
+ * [onOpenDebugMenu] is set only in builds that have one; without it the screen shows no debug button.
+ */
 @Composable
 fun ResidentsRoute(
     onOpenResident: (residentId: String) -> Unit,
     modifier: Modifier = Modifier,
+    onOpenDebugMenu: (() -> Unit)? = null,
     viewModel: ResidentsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -42,16 +49,40 @@ fun ResidentsRoute(
             is ResidentsEffect.OpenResident -> onOpenResident(effect.residentId)
         }
     }
-    ResidentsScreen(state = state, onIntent = viewModel::onIntent, modifier = modifier)
+    ResidentsScreen(
+        state = state,
+        onIntent = viewModel::onIntent,
+        modifier = modifier,
+        onOpenDebugMenu = onOpenDebugMenu,
+    )
 }
 
 /** The residents list. Stateless: everything comes in through [state], everything goes out through [onIntent]. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResidentsScreen(state: ResidentsState, onIntent: (ResidentsIntent) -> Unit, modifier: Modifier = Modifier) {
+fun ResidentsScreen(
+    state: ResidentsState,
+    onIntent: (ResidentsIntent) -> Unit,
+    modifier: Modifier = Modifier,
+    onOpenDebugMenu: (() -> Unit)? = null,
+) {
     Scaffold(
         modifier = modifier,
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.residents_title)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.residents_title)) },
+                actions = {
+                    if (onOpenDebugMenu != null) {
+                        IconButton(onClick = onOpenDebugMenu) {
+                            Icon(
+                                imageVector = CareNoteIcons.Tune,
+                                contentDescription = stringResource(R.string.residents_debug_menu),
+                            )
+                        }
+                    }
+                },
+            )
+        },
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             if (state.isOffline) {

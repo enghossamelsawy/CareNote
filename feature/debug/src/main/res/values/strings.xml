@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="debug_title">Debug menu</string>
+    <string name="debug_back">Back</string>
+    <string name="debug_section_server">Mock server</string>
+    <string name="debug_server_offline">Server offline</string>
+    <string name="debug_server_offline_hint">Every request fails like airplane mode; the phone itself stays online.</string>
+    <string name="debug_failure_rate">Failure rate (503)</string>
+    <string name="debug_percent">%1$d%%</string>
+    <string name="debug_latency">Latency</string>
+    <string name="debug_latency_range">%1$d–%2$d ms</string>
+    <string name="debug_section_speech">Speech</string>
+    <string name="debug_speech_engine">Engine of the last recording</string>
+    <string name="debug_speech_engine_none">No recording yet</string>
+    <string name="debug_section_received">Received by the mock server</string>
+    <string name="debug_received_count">Notes received: %1$d</string>
+</resources>

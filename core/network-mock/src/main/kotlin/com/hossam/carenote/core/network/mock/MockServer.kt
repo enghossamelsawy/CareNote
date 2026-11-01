@@ -3,6 +3,9 @@ package com.hossam.carenote.core.network.mock
 import com.hossam.carenote.core.network.careNoteJson
 import com.hossam.carenote.core.network.model.NetworkCareNote
 import com.hossam.carenote.core.network.model.NetworkResident
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import java.util.concurrent.ConcurrentHashMap
@@ -17,10 +20,10 @@ import javax.inject.Singleton
 @Singleton
 class MockServer @Inject constructor() {
     private val notesByKey = ConcurrentHashMap<String, NetworkCareNote>()
+    private val _storedNotes = MutableStateFlow<List<NetworkCareNote>>(emptyList())
 
-    /** Every note stored so far, for the debug menu. */
-    val storedNotes: List<NetworkCareNote>
-        get() = notesByKey.values.sortedBy { it.createdAt }
+    /** Every note stored so far, oldest first, for the debug menu. */
+    val storedNotes: StateFlow<List<NetworkCareNote>> = _storedNotes.asStateFlow()
 
     internal data class Reply(val code: Int, val body: String = "")
 
@@ -39,7 +42,9 @@ class MockServer @Inject constructor() {
             return Reply(BAD_REQUEST)
         }
         if (note.id != idempotencyKey) return Reply(BAD_REQUEST)
-        return if (notesByKey.putIfAbsent(idempotencyKey, note) == null) Reply(CREATED) else Reply(CONFLICT)
+        if (notesByKey.putIfAbsent(idempotencyKey, note) != null) return Reply(CONFLICT)
+        _storedNotes.value = notesByKey.values.sortedBy { it.createdAt }
+        return Reply(CREATED)
     }
 
     private val residentsJson = careNoteJson.encodeToString(ListSerializer(NetworkResident.serializer()), residents)

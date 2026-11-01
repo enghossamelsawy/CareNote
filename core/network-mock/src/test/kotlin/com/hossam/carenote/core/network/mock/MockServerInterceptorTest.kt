@@ -44,7 +44,7 @@ class MockServerInterceptorTest {
 
         // Then
         assertEquals(MockServer.CREATED, code)
-        assertEquals(listOf("n-1"), server.storedNotes.map { it.id })
+        assertEquals(listOf("n-1"), server.storedNotes.value.map { it.id })
     }
 
     @Test

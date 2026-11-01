@@ -9,9 +9,15 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object ResidentsKey : NavKey
 
-/** Adds the residents list to the app's nav graph; where a resident opens is decided by the caller. */
-fun EntryProviderScope<NavKey>.residentsEntry(onOpenResident: (residentId: String) -> Unit) {
+/**
+ * Adds the residents list to the app's nav graph; where a resident opens is decided by the caller.
+ * [onOpenDebugMenu] is null in builds without a debug menu.
+ */
+fun EntryProviderScope<NavKey>.residentsEntry(
+    onOpenResident: (residentId: String) -> Unit,
+    onOpenDebugMenu: (() -> Unit)? = null,
+) {
     entry<ResidentsKey> {
-        ResidentsRoute(onOpenResident = onOpenResident)
+        ResidentsRoute(onOpenResident = onOpenResident, onOpenDebugMenu = onOpenDebugMenu)
     }
 }

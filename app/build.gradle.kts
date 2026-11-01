@@ -50,6 +50,7 @@ dependencies {
     implementation(projects.core.speech)
     // The mock server exists only in mock builds; prod contains none of its code.
     "mockImplementation"(projects.core.networkMock)
+    "mockImplementation"(projects.feature.debug)
     implementation(projects.feature.residents)
     implementation(projects.feature.resident)
     implementation(projects.feature.record)

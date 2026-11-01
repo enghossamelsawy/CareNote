@@ -41,4 +41,5 @@ include(":core:network-mock")
 include(":feature:residents")
 include(":feature:resident")
 include(":feature:record")
+include(":feature:debug")
  

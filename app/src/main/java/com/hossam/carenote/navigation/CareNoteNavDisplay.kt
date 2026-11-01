@@ -21,6 +21,8 @@ import com.hossam.carenote.feature.residents.navigation.residentsEntry
 @Composable
 fun CareNoteNavDisplay(modifier: Modifier = Modifier) {
     val backStack = rememberNavBackStack(ResidentsKey)
+    // Per flavor: the debug menu's key in mock, null in prod.
+    val debugKey = debugMenuKey
 
     NavDisplay(
         backStack = backStack,
@@ -32,7 +34,10 @@ fun CareNoteNavDisplay(modifier: Modifier = Modifier) {
             rememberViewModelStoreNavEntryDecorator(),
         ),
         entryProvider = entryProvider {
-            residentsEntry(onOpenResident = { residentId -> backStack.add(ResidentKey(residentId)) })
+            residentsEntry(
+                onOpenResident = { residentId -> backStack.add(ResidentKey(residentId)) },
+                onOpenDebugMenu = if (debugKey == null) null else ({ backStack.add(debugKey) }),
+            )
             residentEntry(
                 onBack = { backStack.removeLastOrNull() },
                 onRecord = { residentId -> backStack.add(RecordKey(residentId)) },
@@ -42,6 +47,8 @@ fun CareNoteNavDisplay(modifier: Modifier = Modifier) {
                 // Back to the resident; the residents list already counts the new note as pending.
                 onNoteSave = { backStack.removeLastOrNull() },
             )
+            // The debug menu in the mock flavor; nothing in prod.
+            environmentEntries(onBack = { backStack.removeLastOrNull() })
         },
     )
 }

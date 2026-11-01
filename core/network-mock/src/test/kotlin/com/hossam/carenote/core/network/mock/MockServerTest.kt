@@ -27,7 +27,7 @@ class MockServerTest {
 
         // Then
         assertEquals(MockServer.CREATED, reply.code)
-        assertEquals(listOf(note), server.storedNotes)
+        assertEquals(listOf(note), server.storedNotes.value)
     }
 
     @Test
@@ -40,7 +40,7 @@ class MockServerTest {
 
         // Then
         assertEquals(MockServer.CONFLICT, reply.code)
-        assertEquals(1, server.storedNotes.size)
+        assertEquals(1, server.storedNotes.value.size)
     }
 
     @Test
