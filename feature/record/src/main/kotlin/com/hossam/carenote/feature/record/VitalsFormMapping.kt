@@ -14,6 +14,17 @@ internal fun Vitals.asForm(): VitalsForm = VitalsForm(
     ).mapNotNull { (field, value) -> value?.let { field to it } }.toMap(),
 )
 
+/**
+ * The form with newly dictated [vitals] put in: each value mentioned replaces its field (the later reading wins)
+ * and clears that field's error; fields not mentioned keep what they had.
+ */
+internal fun VitalsForm.withDictated(vitals: Vitals): VitalsForm {
+    val dictated = vitals.asForm().values
+    val bloodPressure = setOf(VitalField.Systolic, VitalField.Diastolic)
+    val cleared = dictated.keys.flatMap { field -> if (field in bloodPressure) bloodPressure else setOf(field) }
+    return copy(values = values + dictated, errors = errors - cleared.toSet())
+}
+
 /** Fields whose text is not empty and not a number. */
 internal fun VitalsForm.unreadableFields(): Set<VitalField> =
     VitalField.entries.filter { field -> this[field].isNotBlank() && readNumber(field) == null }.toSet()

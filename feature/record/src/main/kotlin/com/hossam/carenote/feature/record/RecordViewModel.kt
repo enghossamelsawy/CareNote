@@ -33,6 +33,12 @@ class RecordViewModel @AssistedInject constructor(
 ) : MviViewModel<RecordState, RecordIntent, RecordEffect>(RecordState()) {
     private var recording: Job? = null
 
+    // One recording's bookkeeping: what the note held before it started, and the words heard since.
+    private var appendNext = false
+    private var keptTranscript = ""
+    private var keptVitals = VitalsForm()
+    private var heard = ""
+
     init {
         observeResident(residentId)
             .onEach { resident ->
@@ -42,10 +48,9 @@ class RecordViewModel @AssistedInject constructor(
 
     override fun onIntent(intent: RecordIntent) {
         when (intent) {
-            RecordIntent.RecordClicked -> if (currentState.phase != RecordPhase.Recording && !currentState.isSaving) {
-                sendEffect(RecordEffect.RequestMicPermission)
-            }
-
+            RecordIntent.RecordClicked -> requestRecording(append = false)
+            RecordIntent.RecordMoreClicked -> requestRecording(append = true)
+            RecordIntent.AllowMicrophoneClicked -> sendEffect(RecordEffect.RequestMicPermission)
             RecordIntent.StopClicked -> stopRecording()
             is RecordIntent.PermissionResult -> onPermissionResult(intent)
             RecordIntent.OpenSettingsClicked -> sendEffect(RecordEffect.OpenAppSettings)
@@ -59,6 +64,13 @@ class RecordViewModel @AssistedInject constructor(
         }
     }
 
+    /** [append] keeps the note in review and adds the new words to it; otherwise the next recording starts over. */
+    private fun requestRecording(append: Boolean) {
+        if (currentState.phase == RecordPhase.Recording || currentState.isSaving) return
+        appendNext = append
+        sendEffect(RecordEffect.RequestMicPermission)
+    }
+
     private fun onPermissionResult(result: RecordIntent.PermissionResult) {
         when {
             result.granted -> startRecording()
@@ -67,15 +79,18 @@ class RecordViewModel @AssistedInject constructor(
         }
     }
 
-    /** Starts from scratch: a new recording replaces the transcript and the vitals. */
     private fun startRecording() {
+        val append = appendNext && currentState.phase == RecordPhase.Done
+        keptTranscript = if (append) currentState.transcript else ""
+        keptVitals = if (append) currentState.vitals else VitalsForm()
+        heard = ""
         setState {
             copy(
                 phase = RecordPhase.Recording,
-                transcript = "",
+                transcript = keptTranscript,
                 error = null,
                 permission = MicPermission.Granted,
-                vitals = VitalsForm(),
+                vitals = keptVitals,
             )
         }
         sendEffect(RecordEffect.Haptic(HapticKind.Start))
@@ -89,10 +104,10 @@ class RecordViewModel @AssistedInject constructor(
         if (currentState.phase != RecordPhase.Recording) return
         recording?.cancel()
         setState {
-            if (transcript.isBlank()) {
-                copy(phase = RecordPhase.Idle, error = RecordError.NoSpeech)
-            } else {
-                review(transcript)
+            when {
+                heard.isNotBlank() -> review()
+                hasKeptNote -> review().copy(error = RecordError.NoSpeech)
+                else -> copy(phase = RecordPhase.Idle, error = RecordError.NoSpeech)
             }
         }
         sendEffect(RecordEffect.Haptic(HapticKind.Stop))
@@ -100,10 +115,14 @@ class RecordViewModel @AssistedInject constructor(
 
     private fun onTranscriptionEvent(event: TranscriptionEvent) {
         when (event) {
-            is TranscriptionEvent.Partial -> setState { copy(transcript = event.text) }
+            is TranscriptionEvent.Partial -> {
+                heard = event.text
+                setState { copy(transcript = joined(keptTranscript, heard)) }
+            }
 
             is TranscriptionEvent.Final -> {
-                setState { review(event.text) }
+                heard = event.text
+                setState { review() }
                 sendEffect(RecordEffect.Haptic(HapticKind.Stop))
             }
 
@@ -114,12 +133,24 @@ class RecordViewModel @AssistedInject constructor(
         }
     }
 
-    /** Parses once, when recording ends; later transcript edits never overwrite vitals corrected by hand. */
-    private fun RecordState.review(text: String): RecordState =
-        copy(phase = RecordPhase.Done, transcript = text, vitals = parseVitals(text).asForm())
+    /**
+     * The note after a recording: the kept words plus the new ones. Only the new words are parsed, and they
+     * replace just the vitals they mention; every other field, hand corrections included, stays as it was.
+     * Later transcript edits never change the vitals.
+     */
+    private fun RecordState.review(): RecordState = copy(
+        phase = RecordPhase.Done,
+        transcript = joined(keptTranscript, heard),
+        vitals = keptVitals.withDictated(parseVitals(heard)),
+    )
+
+    private val hasKeptNote: Boolean
+        get() = keptTranscript.isNotBlank() || keptVitals.values.values.any { it.isNotBlank() }
+
+    private fun joined(kept: String, new: String) = listOf(kept, new).filter { it.isNotBlank() }.joinToString(" ")
 
     private fun RecordState.failedWith(reason: TranscriptionError): RecordState {
-        val stopped = if (transcript.isBlank()) copy(phase = RecordPhase.Idle) else review(transcript)
+        val stopped = if (heard.isBlank() && !hasKeptNote) copy(phase = RecordPhase.Idle) else review()
         return when (reason) {
             // Revoked while the screen was open, e.g. from the quick settings tile.
             TranscriptionError.NoPermission -> stopped.copy(permission = MicPermission.Denied)

@@ -194,7 +194,7 @@ private fun PermissionCard(permission: MicPermission, onIntent: (RecordIntent) -
         MicPermission.Denied -> Triple(
             R.string.record_permission_rationale,
             R.string.record_permission_allow,
-            RecordIntent.RecordClicked,
+            RecordIntent.AllowMicrophoneClicked,
         )
 
         MicPermission.PermanentlyDenied -> Triple(

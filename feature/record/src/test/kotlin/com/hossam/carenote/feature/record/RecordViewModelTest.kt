@@ -294,7 +294,107 @@ class RecordViewModelTest {
         assertEquals("37.2", viewModel.state.value.vitals[VitalField.Temperature])
     }
 
+    @Test
+    fun `given three recordings added one by one, when they finish, then they make one note with every vital`() =
+        runTest {
+            // Given
+            val viewModel = reviewing("Temperature 36.8")
+
+            // When
+            recordMore(viewModel, "blood pressure 120 over 80")
+            recordMore(viewModel, "pulse 72")
+
+            // Then
+            val state = viewModel.state.value
+            assertEquals("Temperature 36.8 blood pressure 120 over 80 pulse 72", state.transcript)
+            assertEquals(
+                listOf("120", "80", "72", "36.8", ""),
+                VitalField.entries.map { state.vitals[it] },
+            )
+        }
+
+    @Test
+    fun `given a note in review, when recording more, then the earlier words show while speaking`() = runTest {
+        // Given
+        val viewModel = reviewing("Temperature 36.8")
+        viewModel.onIntent(RecordIntent.RecordMoreClicked)
+        viewModel.onIntent(granted)
+
+        // When
+        speechTranscriber.emit(TranscriptionEvent.Partial("pulse"))
+
+        // Then
+        assertEquals("Temperature 36.8 pulse", viewModel.state.value.transcript)
+    }
+
+    @Test
+    fun `given a temperature, when a later recording says another, then the later one wins`() = runTest {
+        // Given
+        val viewModel = reviewing("Temperature 36.8")
+
+        // When
+        recordMore(viewModel, "temperature 37.4")
+
+        // Then
+        assertEquals("37.4", viewModel.state.value.vitals[VitalField.Temperature])
+    }
+
+    @Test
+    fun `given a corrected pulse, when recording more without a pulse, then the correction stays`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+        viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Pulse, "76"))
+
+        // When
+        recordMore(viewModel, "temperature 36.8")
+
+        // Then
+        assertEquals("76", viewModel.state.value.vitals[VitalField.Pulse])
+        assertEquals("36.8", viewModel.state.value.vitals[VitalField.Temperature])
+    }
+
+    @Test
+    fun `given a note in review, when recording more and nothing is heard, then the note stays as it was`() =
+        runTest {
+            // Given
+            val viewModel = reviewing("Pulse 72")
+            viewModel.onIntent(RecordIntent.RecordMoreClicked)
+            viewModel.onIntent(granted)
+
+            // When
+            viewModel.onIntent(RecordIntent.StopClicked)
+
+            // Then
+            val state = viewModel.state.value
+            assertEquals(RecordPhase.Done, state.phase)
+            assertEquals("Pulse 72", state.transcript)
+            assertEquals("72", state.vitals[VitalField.Pulse])
+            assertEquals(RecordError.NoSpeech, state.error)
+        }
+
+    @Test
+    fun `given a note in review, when starting over, then the old words and vitals are gone`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+
+        // When
+        viewModel.onIntent(RecordIntent.RecordClicked)
+        viewModel.onIntent(granted)
+        speechTranscriber.emit(TranscriptionEvent.Final("Temperature 37.2"))
+
+        // Then
+        assertEquals("Temperature 37.2", viewModel.state.value.transcript)
+        assertEquals("", viewModel.state.value.vitals[VitalField.Pulse])
+    }
+
     private val granted = RecordIntent.PermissionResult(granted = true, canAskAgain = true)
+
+    /** "Record more", the permission granted, then the engine hears [words]. */
+    private suspend fun recordMore(viewModel: RecordViewModel, words: String) {
+        viewModel.onIntent(RecordIntent.RecordMoreClicked)
+        viewModel.onIntent(granted)
+        speechTranscriber.emit(TranscriptionEvent.Final(words))
+    }
 
     /** A view model whose recording finished with [transcript], ready for review. */
     private suspend fun reviewing(transcript: String): RecordViewModel {

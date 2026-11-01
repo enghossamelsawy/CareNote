@@ -32,5 +32,6 @@
     <string name="record_field_error_missing">Enter both values</string>
     <string name="record_field_error_not_below_systolic">Must be lower than the upper value</string>
     <string name="record_save">Save note</string>
-    <string name="record_again">Record again</string>
+    <string name="record_more">Record more</string>
+    <string name="record_start_over">Start over</string>
 </resources>

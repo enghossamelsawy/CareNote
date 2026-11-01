@@ -5,21 +5,25 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
 import com.hossam.carenote.core.domain.vitals.VitalsValidator
 
@@ -89,25 +93,43 @@ internal fun ReviewForm(state: RecordState, onIntent: (RecordIntent) -> Unit, mo
     }
 }
 
-/** Save, or throw the note away and dictate it again. */
+/**
+ * Save; dictate more and add it to this note, e.g. one vital at a time; or throw the note away and start over.
+ * "Record more" is the bigger choice, because adding is what carers do most while taking vitals.
+ */
 @Composable
 internal fun ReviewActions(isSaving: Boolean, onIntent: (RecordIntent) -> Unit, modifier: Modifier = Modifier) {
-    Row(
+    Column(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.sm),
     ) {
-        OutlinedButton(
-            onClick = { onIntent(RecordIntent.RecordClicked) },
-            enabled = !isSaving,
-            modifier = Modifier.weight(1f),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(R.string.record_again))
+            TextButton(onClick = { onIntent(RecordIntent.RecordClicked) }, enabled = !isSaving) {
+                Text(stringResource(R.string.record_start_over))
+            }
+            OutlinedButton(
+                onClick = { onIntent(RecordIntent.RecordMoreClicked) },
+                enabled = !isSaving,
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(
+                    imageVector = CareNoteIcons.Mic,
+                    contentDescription = null,
+                    modifier = Modifier.size(CareNoteTheme.dimens.iconSm),
+                )
+                Text(
+                    text = stringResource(R.string.record_more),
+                    modifier = Modifier.padding(start = CareNoteTheme.spacing.sm),
+                )
+            }
         }
         Button(
             onClick = { onIntent(RecordIntent.SaveClicked) },
             enabled = !isSaving,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             if (isSaving) {
                 CircularProgressIndicator(modifier = Modifier.size(CareNoteTheme.dimens.iconSm))

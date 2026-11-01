@@ -57,8 +57,14 @@ data class VitalsForm(
 }
 
 sealed interface RecordIntent : UiIntent {
-    /** Starts a recording; from [RecordPhase.Done] it records the note again. */
+    /** Starts a recording; from [RecordPhase.Done] it starts the note over. */
     data object RecordClicked : RecordIntent
+
+    /** From [RecordPhase.Done]: dictates more and adds it to the note, e.g. one vital at a time. */
+    data object RecordMoreClicked : RecordIntent
+
+    /** Asks for the microphone again after a refusal, for whichever recording was asked for. */
+    data object AllowMicrophoneClicked : RecordIntent
 
     data object StopClicked : RecordIntent
 
