@@ -108,8 +108,8 @@ fun RecordRoute(
         viewModel.onIntent(RecordIntent.StopClicked)
     }
 
-    // The system back gesture asks first too, but only while there is something to lose.
-    BackHandler(enabled = state.hasUnsavedNote) {
+    // The system back gesture asks first too, but only while there is something to lose, and waits while saving.
+    BackHandler(enabled = state.hasUnsavedNote || state.isSaving) {
         viewModel.onIntent(RecordIntent.BackClicked)
     }
 

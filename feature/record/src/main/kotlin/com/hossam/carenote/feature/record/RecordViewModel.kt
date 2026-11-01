@@ -83,10 +83,11 @@ class RecordViewModel @AssistedInject constructor(
             RecordIntent.StopClicked -> stopRecording()
             is RecordIntent.PermissionResult -> onPermissionResult(intent)
             RecordIntent.OpenSettingsClicked -> sendEffect(RecordEffect.OpenAppSettings)
-            RecordIntent.BackClicked -> if (currentState.hasUnsavedNote && !currentState.isSaving) {
-                setState { copy(showDiscardDialog = true) }
-            } else {
-                sendEffect(RecordEffect.NavigateBack)
+            RecordIntent.BackClicked -> when {
+                // The local save takes a moment and then closes the screen itself; leaving now could cut it short.
+                currentState.isSaving -> Unit
+                currentState.hasUnsavedNote -> setState { copy(showDiscardDialog = true) }
+                else -> sendEffect(RecordEffect.NavigateBack)
             }
 
             RecordIntent.DiscardConfirmed -> {
@@ -96,11 +97,14 @@ class RecordViewModel @AssistedInject constructor(
             }
 
             RecordIntent.DiscardDismissed -> setState { copy(showDiscardDialog = false) }
-            is RecordIntent.TranscriptChanged -> if (currentState.phase == RecordPhase.Done) {
+            // While saving, the note is locked: it's saved exactly as it was when Save was tapped.
+            is RecordIntent.TranscriptChanged -> if (currentState.phase == RecordPhase.Done && !currentState.isSaving) {
                 setState { copy(transcript = intent.text, error = null) }
             }
 
-            is RecordIntent.VitalChanged -> if (currentState.phase == RecordPhase.Done) changeVital(intent)
+            is RecordIntent.VitalChanged -> if (currentState.phase == RecordPhase.Done && !currentState.isSaving) {
+                changeVital(intent)
+            }
             RecordIntent.SaveClicked -> save()
         }
     }

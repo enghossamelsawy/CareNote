@@ -464,6 +464,37 @@ class RecordViewModelTest {
     }
 
     @Test
+    fun `given a note being saved, when the words or a vital change, then the note stays as saved`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+        viewModel.onIntent(RecordIntent.SaveClicked)
+
+        // When
+        viewModel.onIntent(RecordIntent.TranscriptChanged("Pulse 72, slept well"))
+        viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Pulse, "80"))
+
+        // Then
+        assertEquals("Pulse 72", viewModel.state.value.transcript)
+        assertEquals("72", viewModel.state.value.vitals[VitalField.Pulse])
+    }
+
+    @Test
+    fun `given a note being saved, when back is clicked, then the screen waits for the save`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+        viewModel.onIntent(RecordIntent.SaveClicked)
+
+        // When
+        viewModel.onIntent(RecordIntent.BackClicked)
+
+        // Then
+        assertFalse(viewModel.state.value.showDiscardDialog)
+        viewModel.effects.test {
+            assertEquals(RecordEffect.NoteSaved, expectMostRecentItem())
+        }
+    }
+
+    @Test
     fun `given a saved note, when editing it, then it opens in review with the note filled in`() = runTest {
         // Given
         careNoteRepository.save(savedNote)

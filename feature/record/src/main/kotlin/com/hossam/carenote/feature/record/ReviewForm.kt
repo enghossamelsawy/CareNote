@@ -38,6 +38,7 @@ internal fun ReviewForm(state: RecordState, onIntent: (RecordIntent) -> Unit, mo
             value = state.transcript,
             onValueChange = { onIntent(RecordIntent.TranscriptChanged(it)) },
             modifier = Modifier.fillMaxWidth(),
+            enabled = !state.isSaving,
             label = { Text(stringResource(R.string.record_transcript_label)) },
             minLines = 3,
         )
@@ -51,6 +52,7 @@ internal fun ReviewForm(state: RecordState, onIntent: (RecordIntent) -> Unit, mo
             VitalTextField(
                 field = VitalField.Systolic,
                 form = state.vitals,
+                enabled = !state.isSaving,
                 label = R.string.record_vital_systolic,
                 unit = R.string.record_unit_mmhg,
                 onIntent = onIntent,
@@ -59,6 +61,7 @@ internal fun ReviewForm(state: RecordState, onIntent: (RecordIntent) -> Unit, mo
             VitalTextField(
                 field = VitalField.Diastolic,
                 form = state.vitals,
+                enabled = !state.isSaving,
                 label = R.string.record_vital_diastolic,
                 unit = R.string.record_unit_mmhg,
                 onIntent = onIntent,
@@ -68,6 +71,7 @@ internal fun ReviewForm(state: RecordState, onIntent: (RecordIntent) -> Unit, mo
         VitalTextField(
             field = VitalField.Pulse,
             form = state.vitals,
+            enabled = !state.isSaving,
             label = R.string.record_vital_pulse,
             unit = R.string.record_unit_bpm,
             onIntent = onIntent,
@@ -76,6 +80,7 @@ internal fun ReviewForm(state: RecordState, onIntent: (RecordIntent) -> Unit, mo
         VitalTextField(
             field = VitalField.Temperature,
             form = state.vitals,
+            enabled = !state.isSaving,
             label = R.string.record_vital_temperature,
             unit = R.string.record_unit_celsius,
             onIntent = onIntent,
@@ -84,6 +89,7 @@ internal fun ReviewForm(state: RecordState, onIntent: (RecordIntent) -> Unit, mo
         VitalTextField(
             field = VitalField.OxygenSaturation,
             form = state.vitals,
+            enabled = !state.isSaving,
             label = R.string.record_vital_oxygen_saturation,
             unit = R.string.record_unit_percent,
             onIntent = onIntent,
@@ -145,6 +151,7 @@ internal fun ReviewActions(isSaving: Boolean, onIntent: (RecordIntent) -> Unit, 
 private fun VitalTextField(
     field: VitalField,
     form: VitalsForm,
+    enabled: Boolean,
     @StringRes label: Int,
     @StringRes unit: Int,
     onIntent: (RecordIntent) -> Unit,
@@ -156,6 +163,7 @@ private fun VitalTextField(
         value = form[field],
         onValueChange = { onIntent(RecordIntent.VitalChanged(field, it)) },
         modifier = modifier,
+        enabled = enabled,
         label = { Text(stringResource(label)) },
         suffix = { Text(stringResource(unit)) },
         supportingText = error?.let { { Text(errorMessage(field, it)) } },
