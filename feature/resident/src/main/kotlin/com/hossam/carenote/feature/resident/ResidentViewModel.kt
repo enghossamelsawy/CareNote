@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.onEach
 /** [residentId] comes straight from the nav key through assisted injection, so no SavedStateHandle or string args. */
 @HiltViewModel(assistedFactory = ResidentViewModel.Factory::class)
 class ResidentViewModel @AssistedInject constructor(
-    @Assisted residentId: String,
+    @Assisted private val residentId: String,
     observeResident: ObserveResidentUseCase,
 ) : MviViewModel<ResidentState, ResidentIntent, ResidentEffect>(ResidentState()) {
     init {
@@ -36,6 +36,7 @@ class ResidentViewModel @AssistedInject constructor(
     override fun onIntent(intent: ResidentIntent) {
         when (intent) {
             ResidentIntent.BackClicked -> sendEffect(ResidentEffect.NavigateBack)
+            ResidentIntent.RecordClicked -> sendEffect(ResidentEffect.OpenRecord(residentId))
         }
     }
 

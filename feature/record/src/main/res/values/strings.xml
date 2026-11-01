@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="record_title">Note for %1$s</string>
+    <string name="record_title_fallback">New note</string>
+    <string name="record_back">Back</string>
+    <string name="record_start">Start recording</string>
+    <string name="record_stop">Stop recording</string>
+    <string name="record_hint">Tap the microphone and speak</string>
+    <string name="record_listening">Listening…</string>
+    <string name="record_permission_rationale">CareNote needs the microphone to turn your dictation into a note. Speech is processed on this phone where possible.</string>
+    <string name="record_permission_allow">Allow microphone</string>
+    <string name="record_permission_settings_text">Microphone access is turned off for CareNote. You can turn it on in the app settings.</string>
+    <string name="record_permission_open_settings">Open settings</string>
+    <string name="record_error_no_speech">Didn\'t catch that. Try again, a little closer to the phone.</string>
+    <string name="record_error_busy">Speech recognition is busy. Try again in a moment.</string>
+    <string name="record_error_unavailable">Speech recognition isn\'t available on this phone.</string>
+    <string name="record_error_unknown">Something went wrong. Try again.</string>
+</resources>

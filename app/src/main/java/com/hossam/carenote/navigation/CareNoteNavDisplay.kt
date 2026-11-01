@@ -7,6 +7,8 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.hossam.carenote.feature.record.navigation.RecordKey
+import com.hossam.carenote.feature.record.navigation.recordEntry
 import com.hossam.carenote.feature.resident.navigation.ResidentKey
 import com.hossam.carenote.feature.resident.navigation.residentEntry
 import com.hossam.carenote.feature.residents.navigation.ResidentsKey
@@ -31,7 +33,11 @@ fun CareNoteNavDisplay(modifier: Modifier = Modifier) {
         ),
         entryProvider = entryProvider {
             residentsEntry(onOpenResident = { residentId -> backStack.add(ResidentKey(residentId)) })
-            residentEntry(onBack = { backStack.removeLastOrNull() })
+            residentEntry(
+                onBack = { backStack.removeLastOrNull() },
+                onRecord = { residentId -> backStack.add(RecordKey(residentId)) },
+            )
+            recordEntry(onBack = { backStack.removeLastOrNull() })
         },
     )
 }

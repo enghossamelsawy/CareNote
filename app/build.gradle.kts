@@ -35,6 +35,7 @@ dependencies {
     implementation(projects.core.speech)
     implementation(projects.feature.residents)
     implementation(projects.feature.resident)
+    implementation(projects.feature.record)
 
     implementation(libs.timber)
     implementation(libs.androidx.activity.compose)

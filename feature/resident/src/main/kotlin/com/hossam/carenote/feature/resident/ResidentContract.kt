@@ -14,8 +14,12 @@ data class ResidentState(
 
 sealed interface ResidentIntent : UiIntent {
     data object BackClicked : ResidentIntent
+
+    data object RecordClicked : ResidentIntent
 }
 
 sealed interface ResidentEffect : UiEffect {
     data object NavigateBack : ResidentEffect
+
+    data class OpenRecord(val residentId: String) : ResidentEffect
 }

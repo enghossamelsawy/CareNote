@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +30,7 @@ import com.hossam.carenote.core.ui.mvi.ObserveEffects
 fun ResidentRoute(
     residentId: String,
     onBack: () -> Unit,
+    onRecord: (residentId: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ResidentViewModel = hiltViewModel<ResidentViewModel, ResidentViewModel.Factory>(
         creationCallback = { factory -> factory.create(residentId) },
@@ -38,6 +40,7 @@ fun ResidentRoute(
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
             ResidentEffect.NavigateBack -> onBack()
+            is ResidentEffect.OpenRecord -> onRecord(effect.residentId)
         }
     }
     ResidentScreen(state = state, onIntent = viewModel::onIntent, modifier = modifier)
@@ -73,6 +76,15 @@ fun ResidentScreen(state: ResidentState, onIntent: (ResidentIntent) -> Unit, mod
                 },
             )
         },
+        floatingActionButton = {
+            if (!state.isLoading && !state.notFound) {
+                ExtendedFloatingActionButton(
+                    text = { Text(stringResource(R.string.resident_record_note)) },
+                    icon = { Icon(imageVector = CareNoteIcons.Mic, contentDescription = null) },
+                    onClick = { onIntent(ResidentIntent.RecordClicked) },
+                )
+            }
+        },
     ) { innerPadding ->
         Box(
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(CareNoteTheme.spacing.lg),
@@ -81,7 +93,7 @@ fun ResidentScreen(state: ResidentState, onIntent: (ResidentIntent) -> Unit, mod
             when {
                 state.isLoading -> CircularProgressIndicator()
 
-                // TODO(3.5, 4.7): replace with the record button and the notes list.
+                // TODO(4.7): replace with the notes list.
                 else -> Text(
                     text = stringResource(
                         if (state.notFound) R.string.resident_not_found else R.string.resident_no_notes,

@@ -57,6 +57,21 @@ class ResidentViewModelTest {
         }
     }
 
+    @Test
+    fun `given the detail screen, when record is clicked, then recording opens for that resident`() = runTest {
+        // Given
+        residentRepository.setResidents(listOf(anna))
+        val viewModel = createViewModel(anna.id)
+
+        // When
+        viewModel.onIntent(ResidentIntent.RecordClicked)
+
+        // Then
+        viewModel.effects.test {
+            assertEquals(ResidentEffect.OpenRecord(anna.id), awaitItem())
+        }
+    }
+
     private fun createViewModel(residentId: String) =
         ResidentViewModel(residentId, ObserveResidentUseCase(residentRepository))
 }
