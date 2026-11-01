@@ -23,6 +23,7 @@ dependencies {
     // Implements the domain's SpeechTranscriber; Android's recognizer stays an implementation detail.
     implementation(projects.core.domain)
     implementation(projects.core.common)
+    implementation(libs.mlkit.genai.speech.recognition)
 
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
