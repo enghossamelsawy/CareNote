@@ -4,9 +4,15 @@ import app.cash.turbine.test
 import com.hossam.carenote.core.domain.speech.TranscriptionError
 import com.hossam.carenote.core.domain.speech.TranscriptionEvent
 import com.hossam.carenote.core.domain.usecase.ObserveResidentUseCase
+import com.hossam.carenote.core.domain.usecase.ParseVitalsUseCase
+import com.hossam.carenote.core.domain.usecase.SaveCareNoteUseCase
 import com.hossam.carenote.core.domain.usecase.TranscribeSpeechUseCase
+import com.hossam.carenote.core.domain.vitals.VitalsParser
+import com.hossam.carenote.core.domain.vitals.VitalsValidator
 import com.hossam.carenote.core.model.Resident
+import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.testing.MainDispatcherRule
+import com.hossam.carenote.core.testing.repository.FakeCareNoteRepository
 import com.hossam.carenote.core.testing.repository.FakeResidentRepository
 import com.hossam.carenote.core.testing.speech.FakeSpeechTranscriber
 import kotlinx.coroutines.test.runTest
@@ -15,6 +21,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 
 class RecordViewModelTest {
     @get:Rule
@@ -22,6 +31,7 @@ class RecordViewModelTest {
 
     private val residentRepository = FakeResidentRepository()
     private val speechTranscriber = FakeSpeechTranscriber()
+    private val careNoteRepository = FakeCareNoteRepository()
 
     private val anna = Resident(id = "res-1", firstName = "Anna", lastName = "Becker", room = "101")
 
@@ -165,11 +175,142 @@ class RecordViewModelTest {
         assertEquals(RecordError.Unavailable, viewModel.state.value.error)
     }
 
+    @Test
+    fun `given recording, when it finishes, then the dictated vitals fill the form`() = runTest {
+        // Given
+        val viewModel = createViewModel()
+        viewModel.onIntent(granted)
+
+        // When
+        speechTranscriber.emit(TranscriptionEvent.Final("Blood pressure 120 over 80, pulse 72, temperature 36.8"))
+
+        // Then
+        val vitals = viewModel.state.value.vitals
+        assertEquals(
+            listOf("120", "80", "72", "36.8", ""),
+            VitalField.entries.map { vitals[it] },
+        )
+    }
+
+    @Test
+    fun `given a note in review, when a vital is edited, then the form shows the new value`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+
+        // When
+        viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Pulse, "76"))
+
+        // Then
+        assertEquals("76", viewModel.state.value.vitals[VitalField.Pulse])
+    }
+
+    @Test
+    fun `given a corrected vital, when the transcript is edited, then the correction stays`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+        viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Pulse, "76"))
+
+        // When
+        viewModel.onIntent(RecordIntent.TranscriptChanged("Pulse 72, slept well"))
+
+        // Then
+        assertEquals("Pulse 72, slept well", viewModel.state.value.transcript)
+        assertEquals("76", viewModel.state.value.vitals[VitalField.Pulse])
+    }
+
+    @Test
+    fun `given a vital that is not a number, when saving, then it is flagged and nothing is saved`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+        viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Pulse, "7x"))
+
+        // When
+        viewModel.onIntent(RecordIntent.SaveClicked)
+
+        // Then
+        assertEquals(mapOf(VitalField.Pulse to FieldError.NotANumber), viewModel.state.value.vitals.errors)
+        assertTrue(careNoteRepository.savedNotes.isEmpty())
+    }
+
+    @Test
+    fun `given an implausible pulse, when saving, then it is flagged and nothing is saved`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 720")
+
+        // When
+        viewModel.onIntent(RecordIntent.SaveClicked)
+
+        // Then
+        assertEquals(mapOf(VitalField.Pulse to FieldError.OutOfRange), viewModel.state.value.vitals.errors)
+        assertFalse(viewModel.state.value.isSaving)
+        assertTrue(careNoteRepository.savedNotes.isEmpty())
+    }
+
+    @Test
+    fun `given a flagged vital, when it is changed, then its error clears`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 720")
+        viewModel.onIntent(RecordIntent.SaveClicked)
+
+        // When
+        viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Pulse, "72"))
+
+        // Then
+        assertTrue(viewModel.state.value.vitals.errors.isEmpty())
+    }
+
+    @Test
+    fun `given a valid note in review, when saving, then it is stored for this resident and the screen closes`() =
+        runTest {
+            // Given
+            val viewModel = reviewing("Pulse 72, temperature 36,8")
+
+            // When
+            viewModel.onIntent(RecordIntent.SaveClicked)
+
+            // Then
+            val saved = careNoteRepository.savedNotes.single()
+            assertEquals(anna.id, saved.residentId)
+            assertEquals(Vitals(pulse = 72, temperatureCelsius = 36.8), saved.vitals)
+            viewModel.effects.test {
+                assertEquals(RecordEffect.NoteSaved, awaitItem())
+            }
+        }
+
+    @Test
+    fun `given a note in review, when recording again, then the old words and vitals are replaced`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+
+        // When
+        viewModel.onIntent(granted)
+        speechTranscriber.emit(TranscriptionEvent.Final("Temperature 37.2"))
+
+        // Then
+        assertEquals("Temperature 37.2", viewModel.state.value.transcript)
+        assertEquals("", viewModel.state.value.vitals[VitalField.Pulse])
+        assertEquals("37.2", viewModel.state.value.vitals[VitalField.Temperature])
+    }
+
     private val granted = RecordIntent.PermissionResult(granted = true, canAskAgain = true)
+
+    /** A view model whose recording finished with [transcript], ready for review. */
+    private suspend fun reviewing(transcript: String): RecordViewModel {
+        val viewModel = createViewModel()
+        viewModel.onIntent(granted)
+        speechTranscriber.emit(TranscriptionEvent.Final(transcript))
+        return viewModel
+    }
 
     private fun createViewModel() = RecordViewModel(
         residentId = anna.id,
         observeResident = ObserveResidentUseCase(residentRepository),
         transcribeSpeech = TranscribeSpeechUseCase(speechTranscriber),
+        parseVitals = ParseVitalsUseCase(VitalsParser()),
+        saveCareNote = SaveCareNoteUseCase(
+            careNoteRepository = careNoteRepository,
+            vitalsValidator = VitalsValidator(),
+            clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC),
+        ),
     )
 }

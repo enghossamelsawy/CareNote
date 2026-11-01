@@ -37,7 +37,11 @@ fun CareNoteNavDisplay(modifier: Modifier = Modifier) {
                 onBack = { backStack.removeLastOrNull() },
                 onRecord = { residentId -> backStack.add(RecordKey(residentId)) },
             )
-            recordEntry(onBack = { backStack.removeLastOrNull() })
+            recordEntry(
+                onBack = { backStack.removeLastOrNull() },
+                // Back to the resident; the residents list already counts the new note as pending.
+                onNoteSaved = { backStack.removeLastOrNull() },
+            )
         },
     )
 }

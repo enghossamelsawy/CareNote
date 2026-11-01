@@ -52,6 +52,7 @@ import com.hossam.carenote.core.ui.mvi.ObserveEffects
 fun RecordRoute(
     residentId: String,
     onBack: () -> Unit,
+    onNoteSaved: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecordViewModel = hiltViewModel<RecordViewModel, RecordViewModel.Factory>(
         creationCallback = { factory -> factory.create(residentId) },
@@ -94,6 +95,7 @@ fun RecordRoute(
             )
 
             RecordEffect.NavigateBack -> onBack()
+            RecordEffect.NoteSaved -> onNoteSaved()
         }
     }
 
@@ -139,7 +141,11 @@ fun RecordScreen(state: RecordState, onIntent: (RecordIntent) -> Unit, modifier:
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.md),
         ) {
-            Transcript(state = state, modifier = Modifier.weight(1f).fillMaxWidth())
+            if (state.phase == RecordPhase.Done) {
+                ReviewForm(state = state, onIntent = onIntent, modifier = Modifier.weight(1f).fillMaxWidth())
+            } else {
+                Transcript(state = state, modifier = Modifier.weight(1f).fillMaxWidth())
+            }
 
             PermissionCard(permission = state.permission, onIntent = onIntent)
 
@@ -151,11 +157,16 @@ fun RecordScreen(state: RecordState, onIntent: (RecordIntent) -> Unit, modifier:
                 )
             }
 
-            RecordButton(
-                isRecording = isRecording,
-                onClick = { onIntent(if (isRecording) RecordIntent.StopClicked else RecordIntent.RecordClicked) },
-                contentDescription = stringResource(if (isRecording) R.string.record_stop else R.string.record_start),
-            )
+            if (state.phase == RecordPhase.Done) {
+                ReviewActions(isSaving = state.isSaving, onIntent = onIntent)
+            } else {
+                val description = if (isRecording) R.string.record_stop else R.string.record_start
+                RecordButton(
+                    isRecording = isRecording,
+                    onClick = { onIntent(if (isRecording) RecordIntent.StopClicked else RecordIntent.RecordClicked) },
+                    contentDescription = stringResource(description),
+                )
+            }
         }
     }
 }
@@ -216,6 +227,7 @@ private fun RecordError.message(): Int = when (this) {
     RecordError.Busy -> R.string.record_error_busy
     RecordError.Unavailable -> R.string.record_error_unavailable
     RecordError.Unknown -> R.string.record_error_unknown
+    RecordError.EmptyNote -> R.string.record_error_empty_note
 }
 
 @PreviewLightDark
@@ -244,19 +256,50 @@ private fun RecordScreenRecordingPreview() {
 
 @PreviewLightDark
 @Composable
-private fun RecordScreenDonePreview() {
+private fun RecordScreenReviewPreview() {
+    CareNoteTheme {
+        RecordScreen(state = reviewPreviewState, onIntent = {})
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun RecordScreenReviewErrorPreview() {
     CareNoteTheme {
         RecordScreen(
-            state = RecordState(
-                residentName = "Anna Becker",
-                phase = RecordPhase.Done,
-                transcript = "Blood pressure 120 over 80, pulse 72, temperature 36.8",
-                permission = MicPermission.Granted,
+            state = reviewPreviewState.copy(
+                vitals = reviewPreviewState.vitals.copy(
+                    values = reviewPreviewState.vitals.values + (VitalField.Pulse to "720"),
+                    errors = mapOf(VitalField.Pulse to FieldError.OutOfRange),
+                ),
             ),
             onIntent = {},
         )
     }
 }
+
+@PreviewLightDark
+@Composable
+private fun RecordScreenSavingPreview() {
+    CareNoteTheme {
+        RecordScreen(state = reviewPreviewState.copy(isSaving = true), onIntent = {})
+    }
+}
+
+private val reviewPreviewState = RecordState(
+    residentName = "Anna Becker",
+    phase = RecordPhase.Done,
+    transcript = "Blood pressure 120 over 80, pulse 72, temperature 36.8. Slept well.",
+    permission = MicPermission.Granted,
+    vitals = VitalsForm(
+        values = mapOf(
+            VitalField.Systolic to "120",
+            VitalField.Diastolic to "80",
+            VitalField.Pulse to "72",
+            VitalField.Temperature to "36.8",
+        ),
+    ),
+)
 
 @PreviewLightDark
 @Composable

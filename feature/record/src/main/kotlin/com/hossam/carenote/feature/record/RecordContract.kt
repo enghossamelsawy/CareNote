@@ -7,13 +7,21 @@ import com.hossam.carenote.core.ui.mvi.UiState
 data class RecordState(
     val residentName: String = "",
     val phase: RecordPhase = RecordPhase.Idle,
-    /** The latest words heard; kept when recording stops. */
+    /** The latest words heard; kept when recording stops, and editable once [RecordPhase.Done]. */
     val transcript: String = "",
     val error: RecordError? = null,
     val permission: MicPermission = MicPermission.Unknown,
+    val vitals: VitalsForm = VitalsForm(),
+    val isSaving: Boolean = false,
 ) : UiState
 
-enum class RecordPhase { Idle, Recording, Done }
+enum class RecordPhase {
+    Idle,
+    Recording,
+
+    /** Recording finished: the note can be reviewed, corrected and saved. */
+    Done,
+}
 
 enum class MicPermission {
     /** Not asked yet in this screen. */
@@ -27,9 +35,29 @@ enum class MicPermission {
     PermanentlyDenied,
 }
 
-enum class RecordError { NoSpeech, Busy, Unavailable, Unknown }
+enum class RecordError { NoSpeech, Busy, Unavailable, Unknown, EmptyNote }
+
+enum class VitalField { Systolic, Diastolic, Pulse, Temperature, OxygenSaturation }
+
+enum class FieldError {
+    NotANumber,
+    OutOfRange,
+
+    /** The other blood pressure value is given, this one is missing. */
+    Missing,
+    NotBelowSystolic,
+}
+
+/** The vitals as typed: plain text, so half-typed or wrong input can be shown and corrected. */
+data class VitalsForm(
+    val values: Map<VitalField, String> = emptyMap(),
+    val errors: Map<VitalField, FieldError> = emptyMap(),
+) {
+    operator fun get(field: VitalField): String = values[field].orEmpty()
+}
 
 sealed interface RecordIntent : UiIntent {
+    /** Starts a recording; from [RecordPhase.Done] it records the note again. */
     data object RecordClicked : RecordIntent
 
     data object StopClicked : RecordIntent
@@ -40,6 +68,12 @@ sealed interface RecordIntent : UiIntent {
     data object OpenSettingsClicked : RecordIntent
 
     data object BackClicked : RecordIntent
+
+    data class TranscriptChanged(val text: String) : RecordIntent
+
+    data class VitalChanged(val field: VitalField, val text: String) : RecordIntent
+
+    data object SaveClicked : RecordIntent
 }
 
 sealed interface RecordEffect : UiEffect {
@@ -51,6 +85,9 @@ sealed interface RecordEffect : UiEffect {
     data class Haptic(val kind: HapticKind) : RecordEffect
 
     data object NavigateBack : RecordEffect
+
+    /** Stored locally and queued for sync; the screen's job is done. */
+    data object NoteSaved : RecordEffect
 }
 
 enum class HapticKind { Start, Stop }

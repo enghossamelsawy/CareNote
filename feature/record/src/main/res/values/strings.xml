@@ -15,4 +15,22 @@
     <string name="record_error_busy">Speech recognition is busy. Try again in a moment.</string>
     <string name="record_error_unavailable">Speech recognition isn\'t available on this phone.</string>
     <string name="record_error_unknown">Something went wrong. Try again.</string>
+    <string name="record_error_empty_note">The note is empty. Add some words or vitals first.</string>
+    <string name="record_transcript_label">Note</string>
+    <string name="record_vitals_title">Vitals</string>
+    <string name="record_vital_systolic">Blood pressure, upper</string>
+    <string name="record_vital_diastolic">Lower</string>
+    <string name="record_vital_pulse">Pulse</string>
+    <string name="record_vital_temperature">Temperature</string>
+    <string name="record_vital_oxygen_saturation">SpO2</string>
+    <string name="record_unit_mmhg">mmHg</string>
+    <string name="record_unit_bpm">bpm</string>
+    <string name="record_unit_celsius">°C</string>
+    <string name="record_unit_percent">%</string>
+    <string name="record_field_error_not_a_number">Enter a number</string>
+    <string name="record_field_error_range">Expected %1$s to %2$s</string>
+    <string name="record_field_error_missing">Enter both values</string>
+    <string name="record_field_error_not_below_systolic">Must be lower than the upper value</string>
+    <string name="record_save">Save note</string>
+    <string name="record_again">Record again</string>
 </resources>
