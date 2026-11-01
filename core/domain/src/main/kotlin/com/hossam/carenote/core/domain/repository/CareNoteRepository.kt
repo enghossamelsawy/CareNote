@@ -4,7 +4,10 @@ import com.hossam.carenote.core.model.CareNote
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 
-/** Care notes, stored locally first and synced to the server later. */
+/**
+ * Care notes, stored locally first and synced to the server later.
+ * [getNote], [hasRevision] and [save] throw [StorageException] when the phone's storage fails.
+ */
 interface CareNoteRepository {
     /** Notes for one resident, newest first. */
     fun observeNotes(residentId: String): Flow<List<CareNote>>

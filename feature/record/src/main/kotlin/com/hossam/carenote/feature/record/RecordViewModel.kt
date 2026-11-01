@@ -257,6 +257,9 @@ class RecordViewModel @AssistedInject constructor(
                 SaveResult.Empty -> setState { copy(isSaving = false, error = RecordError.EmptyNote) }
 
                 SaveResult.CannotRevise -> setState { copy(isSaving = false, error = RecordError.CannotEdit) }
+
+                // The note stays on screen and unlocked, so Save can simply be tapped again.
+                SaveResult.Failed -> setState { copy(isSaving = false, error = RecordError.SaveFailed) }
             }
         }
     }

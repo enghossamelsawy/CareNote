@@ -66,6 +66,9 @@ enum class RecordError {
 
     /** The note being edited was already edited, or no longer exists. */
     CannotEdit,
+
+    /** The phone couldn't store the note; it's still on screen and can be saved again. */
+    SaveFailed,
 }
 
 enum class VitalField { Systolic, Diastolic, Pulse, Temperature, OxygenSaturation }

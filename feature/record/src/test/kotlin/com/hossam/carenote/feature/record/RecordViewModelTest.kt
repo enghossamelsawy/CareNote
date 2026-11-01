@@ -497,6 +497,38 @@ class RecordViewModelTest {
     }
 
     @Test
+    fun `given the phone's storage fails, when saving, then an error shows and the note stays to save again`() =
+        runTest {
+            // Given
+            val viewModel = reviewing("Pulse 72")
+            careNoteRepository.failNextSave = true
+
+            // When
+            viewModel.onIntent(RecordIntent.SaveClicked)
+
+            // Then
+            val state = viewModel.state.value
+            assertEquals(RecordError.SaveFailed, state.error)
+            assertFalse(state.isSaving)
+            assertEquals("Pulse 72", state.transcript)
+            assertEquals("72", state.vitals[VitalField.Pulse])
+        }
+
+    @Test
+    fun `given a failed save, when save is tapped again, then the note is stored`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+        careNoteRepository.failNextSave = true
+        viewModel.onIntent(RecordIntent.SaveClicked)
+
+        // When
+        viewModel.onIntent(RecordIntent.SaveClicked)
+
+        // Then
+        assertEquals("Pulse 72", careNoteRepository.savedNotes.single().transcript)
+    }
+
+    @Test
     fun `given a note being saved, when the words or a vital change, then the note stays as saved`() = runTest {
         // Given
         val viewModel = reviewing("Pulse 72")

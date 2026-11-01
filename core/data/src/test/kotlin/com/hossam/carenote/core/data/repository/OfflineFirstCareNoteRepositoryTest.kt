@@ -4,6 +4,7 @@ import com.hossam.carenote.core.data.inMemoryDatabase
 import com.hossam.carenote.core.database.CareNoteDatabase
 import com.hossam.carenote.core.database.model.OutboxEntity
 import com.hossam.carenote.core.database.model.ResidentEntity
+import com.hossam.carenote.core.domain.repository.StorageException
 import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.model.Vitals
@@ -122,6 +123,19 @@ class OfflineFirstCareNoteRepositoryTest {
         assertEquals(edit, readBack)
         assertTrue(repository.hasRevision(original.id))
         assertFalse(repository.hasRevision(edit.id))
+    }
+
+    @Test
+    fun `given a database error, when saving, then it comes back as a storage error`() = runTest {
+        // Given: notes are append-only, so the database refuses the same id twice
+        val note = careNote(id = 1)
+        repository.save(note)
+
+        // When
+        val error = runCatching { repository.save(note) }.exceptionOrNull()
+
+        // Then
+        assertTrue(error is StorageException)
     }
 
     private fun uuid(id: Int): UUID = UUID(0, id.toLong())

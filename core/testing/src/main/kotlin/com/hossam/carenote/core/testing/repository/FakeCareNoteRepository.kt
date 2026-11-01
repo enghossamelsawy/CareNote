@@ -1,6 +1,7 @@
 package com.hossam.carenote.core.testing.repository
 
 import com.hossam.carenote.core.domain.repository.CareNoteRepository
+import com.hossam.carenote.core.domain.repository.StorageException
 import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
@@ -12,6 +13,9 @@ import java.util.UUID
 /** In-memory [CareNoteRepository] that keeps the real one's contract: append-only, newest first. */
 class FakeCareNoteRepository : CareNoteRepository {
     private val notes = MutableStateFlow<List<CareNote>>(emptyList())
+
+    /** When true, the next [save] fails like a full disk would, and stores nothing. */
+    var failNextSave = false
 
     /** Every note saved so far, in the order they were saved. */
     val savedNotes: List<CareNote>
@@ -33,6 +37,10 @@ class FakeCareNoteRepository : CareNoteRepository {
     override suspend fun hasRevision(noteId: UUID): Boolean = notes.value.any { it.revisionOf == noteId }
 
     override suspend fun save(note: CareNote) {
+        if (failNextSave) {
+            failNextSave = false
+            throw StorageException(IllegalStateException("Disk full"))
+        }
         check(notes.value.none { it.id == note.id }) { "Notes are append-only; ${note.id} already exists" }
         notes.update { it + note }
     }

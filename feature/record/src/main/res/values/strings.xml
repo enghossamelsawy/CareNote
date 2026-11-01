@@ -18,6 +18,7 @@
     <string name="record_error_unavailable">Speech recognition isn\'t available on this phone.</string>
     <string name="record_error_unknown">Something went wrong. Try again.</string>
     <string name="record_error_empty_note">The note is empty. Add some words or vitals first.</string>
+    <string name="record_error_save_failed">Couldn\'t save the note on this phone. It\'s still here; try again.</string>
     <string name="record_error_cannot_edit">This note was already edited. Go back and edit the latest version.</string>
     <string name="record_transcript_label">Note</string>
     <string name="record_vitals_title">Vitals</string>

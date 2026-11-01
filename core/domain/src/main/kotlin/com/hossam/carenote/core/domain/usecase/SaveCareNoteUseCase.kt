@@ -1,6 +1,7 @@
 package com.hossam.carenote.core.domain.usecase
 
 import com.hossam.carenote.core.domain.repository.CareNoteRepository
+import com.hossam.carenote.core.domain.repository.StorageException
 import com.hossam.carenote.core.domain.repository.SyncScheduler
 import com.hossam.carenote.core.domain.vitals.VitalsProblem
 import com.hossam.carenote.core.domain.vitals.VitalsValidator
@@ -21,6 +22,9 @@ sealed interface SaveResult {
 
     /** The note being edited is gone, belongs to another resident, or was already edited; nothing was saved. */
     data object CannotRevise : SaveResult
+
+    /** The phone's storage failed; nothing was saved, and trying again may work. */
+    data object Failed : SaveResult
 }
 
 /**
@@ -42,7 +46,13 @@ class SaveCareNoteUseCase @Inject constructor(
         transcript: String,
         vitals: Vitals,
         revisionOf: UUID? = null,
-    ): SaveResult {
+    ): SaveResult = try {
+        save(residentId, transcript, vitals, revisionOf)
+    } catch (error: StorageException) {
+        SaveResult.Failed
+    }
+
+    private suspend fun save(residentId: String, transcript: String, vitals: Vitals, revisionOf: UUID?): SaveResult {
         val text = transcript.trim()
         if (text.isEmpty() && vitals.isEmpty) return SaveResult.Empty
         if (revisionOf != null && !canRevise(revisionOf, residentId)) return SaveResult.CannotRevise
@@ -60,9 +70,21 @@ class SaveCareNoteUseCase @Inject constructor(
             revisionOf = revisionOf,
         )
         careNoteRepository.save(note)
-        // Sent as soon as the device is online; saving itself never waits for the network.
-        syncScheduler.requestSync()
+        requestSync()
         return SaveResult.Saved(note.id)
+    }
+
+    /**
+     * Sent as soon as the device is online; saving itself never waits for the network. The note is already
+     * stored, so a scheduling error must not report the save as failed, which would invite a duplicate:
+     * the next app start or network change asks for a sync again and sends it then.
+     */
+    private fun requestSync() {
+        try {
+            syncScheduler.requestSync()
+        } catch (error: Exception) {
+            // Picked up by the next sync request; see the KDoc.
+        }
     }
 
     private suspend fun canRevise(noteId: UUID, residentId: String): Boolean {

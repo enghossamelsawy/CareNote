@@ -1,11 +1,13 @@
 package com.hossam.carenote.core.data.repository
 
+import android.database.sqlite.SQLiteException
 import com.hossam.carenote.core.data.mapper.asEntity
 import com.hossam.carenote.core.data.mapper.asExternalModel
 import com.hossam.carenote.core.data.mapper.asPendingCountMap
 import com.hossam.carenote.core.database.dao.CareNoteDao
 import com.hossam.carenote.core.database.model.OutboxEntity
 import com.hossam.carenote.core.domain.repository.CareNoteRepository
+import com.hossam.carenote.core.domain.repository.StorageException
 import com.hossam.carenote.core.model.CareNote
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -27,16 +29,25 @@ internal class OfflineFirstCareNoteRepository @Inject constructor(
     override fun observePendingCounts(): Flow<Map<String, Int>> =
         careNoteDao.observePendingCounts().map { it.asPendingCountMap() }
 
-    override suspend fun getNote(noteId: UUID): CareNote? = careNoteDao.getById(noteId.toString())?.asExternalModel()
+    override suspend fun getNote(noteId: UUID): CareNote? = storage {
+        careNoteDao.getById(noteId.toString())?.asExternalModel()
+    }
 
-    override suspend fun hasRevision(noteId: UUID): Boolean = careNoteDao.hasRevision(noteId.toString())
+    override suspend fun hasRevision(noteId: UUID): Boolean = storage { careNoteDao.hasRevision(noteId.toString()) }
 
     override suspend fun save(note: CareNote) {
-        careNoteDao.insertAndQueue(note.asEntity(), outboxEntry(note.id))
+        storage { careNoteDao.insertAndQueue(note.asEntity(), outboxEntry(note.id)) }
     }
 
     override suspend fun retry(noteId: UUID) {
         careNoteDao.requeue(outboxEntry(noteId))
+    }
+
+    /** Only database errors become [StorageException]; anything else is a bug and stays as it is. */
+    private suspend fun <T> storage(block: suspend () -> T): T = try {
+        block()
+    } catch (error: SQLiteException) {
+        throw StorageException(error)
     }
 
     private fun outboxEntry(noteId: UUID) = OutboxEntity(noteId = noteId.toString(), enqueuedAt = clock.instant())
