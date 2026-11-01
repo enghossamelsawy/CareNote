@@ -6,6 +6,7 @@ import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.testing.repository.FakeCareNoteRepository
+import com.hossam.carenote.core.testing.repository.FakeSyncScheduler
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -17,11 +18,22 @@ import java.time.ZoneOffset
 class SaveCareNoteUseCaseTest {
     private val now = Instant.parse("2026-11-01T08:30:00Z")
     private val careNoteRepository = FakeCareNoteRepository()
+    private val syncScheduler = FakeSyncScheduler()
     private val saveCareNote = SaveCareNoteUseCase(
         careNoteRepository = careNoteRepository,
         vitalsValidator = VitalsValidator(),
         clock = Clock.fixed(now, ZoneOffset.UTC),
+        syncScheduler = syncScheduler,
     )
+
+    @Test
+    fun `given a valid note, when saving, then a sync is requested`() = runTest {
+        // When
+        saveCareNote(residentId = "res-1", transcript = "Pulse 72", vitals = Vitals(pulse = 72))
+
+        // Then
+        assertEquals(1, syncScheduler.requestCount)
+    }
 
     @Test
     fun `given a valid note, when saving, then it is stored as pending at the current time`() = runTest {
@@ -49,6 +61,7 @@ class SaveCareNoteUseCaseTest {
         // Then
         assertEquals(SaveResult.Invalid(setOf(VitalsProblem.PulseOutOfRange)), result)
         assertTrue(careNoteRepository.savedNotes.isEmpty())
+        assertEquals(0, syncScheduler.requestCount)
     }
 
     @Test

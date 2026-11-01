@@ -1,6 +1,7 @@
 package com.hossam.carenote.core.domain.usecase
 
 import com.hossam.carenote.core.domain.repository.CareNoteRepository
+import com.hossam.carenote.core.domain.repository.SyncScheduler
 import com.hossam.carenote.core.domain.vitals.VitalsProblem
 import com.hossam.carenote.core.domain.vitals.VitalsValidator
 import com.hossam.carenote.core.model.CareNote
@@ -27,6 +28,7 @@ class SaveCareNoteUseCase @Inject constructor(
     private val careNoteRepository: CareNoteRepository,
     private val vitalsValidator: VitalsValidator,
     private val clock: Clock,
+    private val syncScheduler: SyncScheduler,
 ) {
     suspend operator fun invoke(residentId: String, transcript: String, vitals: Vitals): SaveResult {
         val text = transcript.trim()
@@ -44,7 +46,8 @@ class SaveCareNoteUseCase @Inject constructor(
             createdAt = clock.instant(),
         )
         careNoteRepository.save(note)
-        // TODO(4.5): ask the SyncScheduler to send it as soon as the device is online.
+        // Sent as soon as the device is online; saving itself never waits for the network.
+        syncScheduler.requestSync()
         return SaveResult.Saved(note.id)
     }
 }

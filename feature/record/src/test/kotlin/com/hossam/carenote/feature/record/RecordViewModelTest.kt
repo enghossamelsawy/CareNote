@@ -14,6 +14,7 @@ import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.testing.MainDispatcherRule
 import com.hossam.carenote.core.testing.repository.FakeCareNoteRepository
 import com.hossam.carenote.core.testing.repository.FakeResidentRepository
+import com.hossam.carenote.core.testing.repository.FakeSyncScheduler
 import com.hossam.carenote.core.testing.speech.FakeSpeechTranscriber
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -312,6 +313,7 @@ class RecordViewModelTest {
             careNoteRepository = careNoteRepository,
             vitalsValidator = VitalsValidator(),
             clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC),
+            syncScheduler = FakeSyncScheduler(),
         ),
     )
 }
