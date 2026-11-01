@@ -1,7 +1,10 @@
 package com.hossam.carenote.core.designsystem.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
@@ -27,8 +30,27 @@ fun CareNoteTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composab
     }
 }
 
-/** The tokens Material 3 doesn't have. Colors, type and shapes come from [MaterialTheme]. */
+/**
+ * The one place screens read the theme from: colors, type and shapes, plus the tokens Material 3 doesn't have.
+ * Features never use [MaterialTheme] directly, so the design system can change how a token is made
+ * without touching any screen.
+ */
 object CareNoteTheme {
+    val colors: ColorScheme
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme
+
+    val typography: Typography
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.typography
+
+    val shapes: Shapes
+        @Composable
+        @ReadOnlyComposable
+        get() = MaterialTheme.shapes
+
     val spacing: Spacing
         @Composable
         @ReadOnlyComposable

@@ -11,7 +11,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -41,7 +40,7 @@ internal fun ReviewForm(state: RecordState, onIntent: (RecordIntent) -> Unit, mo
 
         Text(
             text = stringResource(R.string.record_vitals_title),
-            style = MaterialTheme.typography.titleMedium,
+            style = CareNoteTheme.typography.titleMedium,
         )
 
         Row(horizontalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.sm)) {

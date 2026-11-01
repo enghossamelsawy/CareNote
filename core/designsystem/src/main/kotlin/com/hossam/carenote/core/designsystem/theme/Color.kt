@@ -4,7 +4,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-// A calm teal palette. Internal on purpose: features use MaterialTheme.colorScheme, never raw colors.
+// A calm teal palette. Internal on purpose: everything reads CareNoteTheme.colors, never raw colors.
 
 internal val LightColorScheme = lightColorScheme(
     primary = Color(0xFF006A6A),

@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,7 +22,7 @@ import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
  */
 @Composable
 fun RecordButton(isRecording: Boolean, onClick: () -> Unit, contentDescription: String, modifier: Modifier = Modifier) {
-    val colors = MaterialTheme.colorScheme
+    val colors = CareNoteTheme.colors
     FilledIconButton(
         onClick = onClick,
         modifier = modifier.size(CareNoteTheme.dimens.recordButton),

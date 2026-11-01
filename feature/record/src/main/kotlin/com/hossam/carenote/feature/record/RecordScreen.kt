@@ -22,7 +22,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -152,8 +151,8 @@ fun RecordScreen(state: RecordState, onIntent: (RecordIntent) -> Unit, modifier:
             state.error?.let { error ->
                 Text(
                     text = stringResource(error.message()),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
+                    style = CareNoteTheme.typography.bodyMedium,
+                    color = CareNoteTheme.colors.error,
                 )
             }
 
@@ -179,11 +178,11 @@ private fun Transcript(state: RecordState, modifier: Modifier = Modifier) {
                 text = stringResource(
                     if (state.phase == RecordPhase.Recording) R.string.record_listening else R.string.record_hint,
                 ),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = CareNoteTheme.typography.bodyLarge,
+                color = CareNoteTheme.colors.onSurfaceVariant,
             )
         } else {
-            Text(text = state.transcript, style = MaterialTheme.typography.headlineSmall)
+            Text(text = state.transcript, style = CareNoteTheme.typography.headlineSmall)
         }
     }
 }
@@ -208,13 +207,13 @@ private fun PermissionCard(permission: MicPermission, onIntent: (RecordIntent) -
     }
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        colors = CardDefaults.cardColors(containerColor = CareNoteTheme.colors.surfaceContainerHigh),
     ) {
         Column(
             modifier = Modifier.padding(CareNoteTheme.spacing.md),
             verticalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.sm),
         ) {
-            Text(text = stringResource(text), style = MaterialTheme.typography.bodyMedium)
+            Text(text = stringResource(text), style = CareNoteTheme.typography.bodyMedium)
             Button(onClick = { onIntent(intent) }) {
                 Text(stringResource(action))
             }
