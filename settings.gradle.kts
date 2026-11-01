@@ -35,6 +35,7 @@ include(":core:data")
 include(":core:designsystem")
 include(":core:ui")
 include(":core:testing")
+include(":core:speech")
 include(":feature:residents")
 include(":feature:resident")
  
