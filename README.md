@@ -171,7 +171,7 @@ Only `app` has flavors; libraries get what differs through Hilt.
 ```
 
 CI (GitHub Actions) runs ktlint, Android Lint, all unit tests, the screenshot comparison, both flavor builds
-and compiles the device tests on every push and pull request. The images are recorded on Windows and Linux
+and compiles the device-test setup on every push and pull request. The images are recorded on Windows and Linux
 smooths text a little differently, so a comparison passes with up to 1% changed pixels; a failed one uploads
 the old, new and difference images.
 

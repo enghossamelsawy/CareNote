@@ -47,7 +47,7 @@ jobs:
       - name: Verify screenshots
         run: ./gradlew verifyRoborazziDebug
 
-      # Device tests need a phone, but they must at least compile.
+      # There are no device tests yet, but their setup must keep compiling so the first one can be added.
       - name: Compile device tests
         run: ./gradlew assembleMockDebugAndroidTest
 
