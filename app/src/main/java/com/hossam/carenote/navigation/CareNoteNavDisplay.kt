@@ -24,8 +24,10 @@ import com.hossam.carenote.feature.residents.navigation.residentsEntry
 @Composable
 fun CareNoteNavDisplay(modifier: Modifier = Modifier) {
     val backStack = rememberNavBackStack(ResidentsKey)
+
     // Every move goes through here, so a double tap can't open a screen twice.
     val navigator = remember(backStack) { Navigator(backStack) }
+
     // Per flavor: the debug menu's key in mock, null in prod.
     val debugKey = debugMenuKey
 

@@ -31,25 +31,28 @@ class NoteDetailViewModelTest {
     private val edit = note(id = 2, writtenAt = 20, transcript = "Temperature is 37.", revisionOf = original.id)
 
     @Test
-    fun `given an edited note, when it opens, then the edit shows with the original as an earlier version`() =
-        runTest {
-            // Given
-            careNoteRepository.save(original)
-            careNoteRepository.save(edit)
+    fun `given an edited note, when it opens, then the edit shows with the original as earlier`() = runTest {
+        // Given
+        careNoteRepository.save(original)
+        careNoteRepository.save(edit)
 
-            // When
-            val viewModel = createViewModel(noteId = original.id)
+        // When
+        val viewModel = createViewModel(noteId = original.id)
 
-            // Then
-            val state = viewModel.state.value
-            assertEquals(edit.id, state.note?.id)
-            assertEquals("Temperature is 37.", state.note?.transcript)
-            assertEquals(original.createdAt, state.note?.createdAt)
-            assertEquals(edit.createdAt, state.note?.editedAt)
-            assertEquals(VitalLevel.Normal, state.note?.assessment?.temperature)
-            val earlier = EarlierVersion(id = original.id, writtenAt = original.createdAt, transcript = "Temperature is 85.")
-            assertEquals(listOf(earlier), state.earlier)
-        }
+        // Then
+        val state = viewModel.state.value
+        assertEquals(edit.id, state.note?.id)
+        assertEquals("Temperature is 37.", state.note?.transcript)
+        assertEquals(original.createdAt, state.note?.createdAt)
+        assertEquals(edit.createdAt, state.note?.editedAt)
+        assertEquals(VitalLevel.Normal, state.note?.assessment?.temperature)
+        val earlier = EarlierVersion(
+            id = original.id,
+            writtenAt = original.createdAt,
+            transcript = "Temperature is 85.",
+        )
+        assertEquals(listOf(earlier), state.earlier)
+    }
 
     @Test
     fun `given an open note, when it is edited elsewhere, then the screen shows the edit`() = runTest {

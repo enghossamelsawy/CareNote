@@ -20,6 +20,7 @@ class DebugViewModelTest {
     private val speechEngine = object : ActiveSpeechEngine {
         override val activeEngine = MutableStateFlow<String?>(null)
     }
+
     // Lazy, so it's created inside each test, after the rule has replaced the main dispatcher.
     private val viewModel by lazy { DebugViewModel(settings, MockServer(), speechEngine) }
 

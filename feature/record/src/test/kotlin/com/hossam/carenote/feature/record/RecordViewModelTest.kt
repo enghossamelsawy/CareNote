@@ -357,23 +357,22 @@ class RecordViewModelTest {
     }
 
     @Test
-    fun `given a note in review, when recording more and nothing is heard, then the note stays as it was`() =
-        runTest {
-            // Given
-            val viewModel = reviewing("Pulse 72")
-            viewModel.onIntent(RecordIntent.RecordMoreClicked)
-            viewModel.onIntent(granted)
+    fun `given a note in review, when recording more and nothing is heard, then the note stays as it was`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+        viewModel.onIntent(RecordIntent.RecordMoreClicked)
+        viewModel.onIntent(granted)
 
-            // When
-            viewModel.onIntent(RecordIntent.StopClicked)
+        // When
+        viewModel.onIntent(RecordIntent.StopClicked)
 
-            // Then
-            val state = viewModel.state.value
-            assertEquals(RecordPhase.Done, state.phase)
-            assertEquals("Pulse 72", state.transcript)
-            assertEquals("72", state.vitals[VitalField.Pulse])
-            assertEquals(RecordError.NoSpeech, state.error)
-        }
+        // Then
+        val state = viewModel.state.value
+        assertEquals(RecordPhase.Done, state.phase)
+        assertEquals("Pulse 72", state.transcript)
+        assertEquals("72", state.vitals[VitalField.Pulse])
+        assertEquals(RecordError.NoSpeech, state.error)
+    }
 
     @Test
     fun `given a note in review, when starting over, then the old words and vitals are gone`() = runTest {

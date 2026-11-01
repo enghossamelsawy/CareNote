@@ -20,7 +20,7 @@ ktlint_standard_import-ordering = disabled
 # Composables are named like types (ResidentsScreen), which ktlint's function naming rule would reject.
 ktlint_function_naming_ignore_when_annotated_with = Composable
 # The design system's own theme extensions; any other CompositionLocal needs a reason to be added here.
-compose_allowed_composition_locals = LocalSpacing,LocalDimens,LocalStatusColors
+compose_allowed_composition_locals = LocalSpacing,LocalDimens,LocalStatusColors,LocalAvatarColors
 
 [*.md]
 trim_trailing_whitespace = false
