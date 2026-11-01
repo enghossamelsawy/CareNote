@@ -1,0 +1,50 @@
+package com.hossam.carenote.core.domain.usecase
+
+import com.hossam.carenote.core.domain.repository.CareNoteRepository
+import com.hossam.carenote.core.domain.vitals.VitalsProblem
+import com.hossam.carenote.core.domain.vitals.VitalsValidator
+import com.hossam.carenote.core.model.CareNote
+import com.hossam.carenote.core.model.Vitals
+import java.time.Clock
+import java.util.UUID
+import javax.inject.Inject
+
+sealed interface SaveResult {
+    data class Saved(val noteId: UUID) : SaveResult
+
+    /** Nothing was saved; the caller shows each problem next to its field. */
+    data class Invalid(val problems: Set<VitalsProblem>) : SaveResult
+
+    /** Neither words nor vitals: there's no note to save. */
+    data object Empty : SaveResult
+}
+
+/**
+ * Saves a new note locally as PENDING, queued for sync in the same transaction.
+ * Validates again instead of trusting the screen, so the rule holds for every caller.
+ */
+class SaveCareNoteUseCase @Inject constructor(
+    private val careNoteRepository: CareNoteRepository,
+    private val vitalsValidator: VitalsValidator,
+    private val clock: Clock,
+) {
+    suspend operator fun invoke(residentId: String, transcript: String, vitals: Vitals): SaveResult {
+        val text = transcript.trim()
+        if (text.isEmpty() && vitals.isEmpty) return SaveResult.Empty
+
+        val problems = vitalsValidator.validate(vitals)
+        if (problems.isNotEmpty()) return SaveResult.Invalid(problems)
+
+        // The id is made here, on the device, so every sync retry sends the same one.
+        val note = CareNote(
+            id = UUID.randomUUID(),
+            residentId = residentId,
+            transcript = text,
+            vitals = vitals,
+            createdAt = clock.instant(),
+        )
+        careNoteRepository.save(note)
+        // TODO(4.5): ask the SyncScheduler to send it as soon as the device is online.
+        return SaveResult.Saved(note.id)
+    }
+}
