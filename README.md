@@ -186,8 +186,6 @@ Found in review and planned next:
   syncs while the refused original stays hidden behind it, still counted as waiting, with no retry.
 - **No typing without dictating.** A note starts with a recording, so a phone without speech recognition,
   or with the microphone refused, can't create one.
-- **An unfinished note is lost if Android kills the app** in the background; it survives rotation, but not
-  process death.
 - **Earlier versions show their text only**, not their vitals, so a corrected pulse doesn't show what changed.
 
 ## Decisions and trade-offs

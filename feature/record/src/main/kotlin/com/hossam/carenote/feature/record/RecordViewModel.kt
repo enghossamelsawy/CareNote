@@ -1,5 +1,6 @@
 package com.hossam.carenote.feature.record
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.hossam.carenote.core.domain.speech.TranscriptionError
 import com.hossam.carenote.core.domain.speech.TranscriptionEvent
@@ -28,17 +29,21 @@ import java.util.UUID
  *
  * With [noteId] set it edits that note: the screen opens in review with the note filled in, "Record
  * more" adds to it, and saving stores the result as a new version of it.
+ *
+ * The unfinished note is kept in [RecordDraft], so it's still there if Android stops the app in the background.
  */
 @HiltViewModel(assistedFactory = RecordViewModel.Factory::class)
 class RecordViewModel @AssistedInject constructor(
     @Assisted private val residentId: String,
     @Assisted private val noteId: UUID?,
+    savedStateHandle: SavedStateHandle,
     observeResident: ObserveResidentUseCase,
     getCareNote: GetCareNoteUseCase,
     private val transcribeSpeech: TranscribeSpeechUseCase,
     private val parseVitals: ParseVitalsUseCase,
     private val saveCareNote: SaveCareNoteUseCase,
 ) : MviViewModel<RecordState, RecordIntent, RecordEffect>(RecordState()) {
+    private val draft = RecordDraft(savedStateHandle)
     private var recording: Job? = null
 
     // A permission request is on its way; further taps wait for it, so the first tap decides.
@@ -51,6 +56,8 @@ class RecordViewModel @AssistedInject constructor(
     private var heard = ""
 
     init {
+        draft.restore()?.let { restored -> setState { restored } }
+        state.onEach(draft::keep).launchIn(viewModelScope)
         observeResident(residentId)
             .onEach { resident ->
                 setState { copy(residentName = resident?.let { "${it.firstName} ${it.lastName}" }.orEmpty()) }
@@ -60,7 +67,7 @@ class RecordViewModel @AssistedInject constructor(
         }
     }
 
-    /** Opens the note in review, unless recording already started or the note isn't this resident's. */
+    /** Opens the note in review, unless it's already open (restored or being recorded) or isn't this resident's. */
     private fun startEditing(note: CareNote?) {
         if (note == null || note.residentId != residentId) {
             // A dictation here could never be saved as an edit, so recording isn't offered at all.
@@ -250,7 +257,10 @@ class RecordViewModel @AssistedInject constructor(
             )
             when (result) {
                 // Stays "saving" until the screen closes, so a second tap can't save the note twice.
-                is SaveResult.Saved -> sendEffect(RecordEffect.NoteSaved)
+                is SaveResult.Saved -> {
+                    draft.clear()
+                    sendEffect(RecordEffect.NoteSaved)
+                }
 
                 is SaveResult.Invalid -> setState {
                     copy(isSaving = false, vitals = vitals.copy(errors = vitals.errorsFor(result.problems)))

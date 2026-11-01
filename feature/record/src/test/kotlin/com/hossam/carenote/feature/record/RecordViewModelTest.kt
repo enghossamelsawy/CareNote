@@ -1,5 +1,6 @@
 package com.hossam.carenote.feature.record
 
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.hossam.carenote.core.domain.speech.TranscriptionError
 import com.hossam.carenote.core.domain.speech.TranscriptionEvent
@@ -36,6 +37,9 @@ class RecordViewModelTest {
     private val residentRepository = FakeResidentRepository()
     private val speechTranscriber = FakeSpeechTranscriber()
     private val careNoteRepository = FakeCareNoteRepository()
+
+    // Shared by every view model in a test, so a second one plays the screen after Android stopped the app.
+    private val savedStateHandle = SavedStateHandle()
 
     private val anna = Resident(id = "res-1", firstName = "Anna", lastName = "Becker", room = "101")
 
@@ -476,6 +480,7 @@ class RecordViewModelTest {
             viewModel.onIntent(granted)
 
             // Then
+            // Only the first screen's recording is listening; the restored one never starts its own.
             assertEquals(1, speechTranscriber.listenerCount)
             assertEquals("Pulse 72", viewModel.state.value.transcript)
         }
@@ -668,6 +673,76 @@ class RecordViewModelTest {
         }
     }
 
+    @Test
+    fun `given a corrected note in review, when Android stops the app, then the note comes back as it was`() =
+        runTest {
+            // Given
+            val viewModel = reviewing("Pulse 72, slept well")
+            viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Pulse, "76"))
+
+            // When
+            val restored = createViewModel()
+
+            // Then
+            val state = restored.state.value
+            assertEquals(RecordPhase.Done, state.phase)
+            assertEquals("Pulse 72, slept well", state.transcript)
+            assertEquals("76", state.vitals[VitalField.Pulse])
+            assertTrue(state.hasUnsavedNote)
+        }
+
+    @Test
+    fun `given a recording in progress, when Android stops the app, then the words heard come back in review`() =
+        runTest {
+            // Given
+            val viewModel = createViewModel()
+            viewModel.onIntent(RecordIntent.RecordClicked)
+            viewModel.onIntent(granted)
+            speechTranscriber.emit(TranscriptionEvent.Partial("Pulse 72"))
+
+            // When
+            val restored = createViewModel()
+
+            // Then
+            assertEquals(RecordPhase.Done, restored.state.value.phase)
+            assertEquals("Pulse 72", restored.state.value.transcript)
+            // Only the first screen's recording is listening; the restored one never starts its own.
+            assertEquals(1, speechTranscriber.listenerCount)
+        }
+
+    @Test
+    fun `given a changed edit, when Android stops the app, then the change comes back and still counts as an edit`() =
+        runTest {
+            // Given
+            careNoteRepository.save(savedNote)
+            val viewModel = createViewModel(noteId = savedNote.id)
+            viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Pulse, "76"))
+
+            // When
+            val restored = createViewModel(noteId = savedNote.id)
+
+            // Then
+            val state = restored.state.value
+            assertEquals("76", state.vitals[VitalField.Pulse])
+            assertEquals(EditedNote(transcript = "Pulse 72", vitals = savedNote.vitals.asForm()), state.editedFrom)
+            assertTrue(state.hasUnsavedNote)
+        }
+
+    @Test
+    fun `given a saved note, when Android stops the app, then the screen starts empty`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+        viewModel.onIntent(RecordIntent.SaveClicked)
+
+        // When
+        val restored = createViewModel()
+
+        // Then
+        assertEquals(RecordPhase.Idle, restored.state.value.phase)
+        assertEquals("", restored.state.value.transcript)
+        assertFalse(restored.state.value.hasUnsavedNote)
+    }
+
     private val savedNote = CareNote(
         id = UUID(0, 1),
         residentId = "res-1",
@@ -679,6 +754,7 @@ class RecordViewModelTest {
     private fun createViewModel(noteId: UUID? = null) = RecordViewModel(
         residentId = anna.id,
         noteId = noteId,
+        savedStateHandle = savedStateHandle,
         observeResident = ObserveResidentUseCase(residentRepository),
         getCareNote = GetCareNoteUseCase(careNoteRepository),
         transcribeSpeech = TranscribeSpeechUseCase(speechTranscriber),
