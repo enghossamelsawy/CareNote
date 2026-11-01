@@ -25,7 +25,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
-import com.hossam.carenote.core.domain.vitals.VitalsValidator
 
 /** The finished note: the transcript and every vital can still be corrected before saving. */
 @Composable
@@ -166,7 +165,7 @@ private fun VitalTextField(
         enabled = enabled,
         label = { Text(stringResource(label)) },
         suffix = { Text(stringResource(unit)) },
-        supportingText = error?.let { { Text(errorMessage(field, it)) } },
+        supportingText = error?.let { { Text(errorMessage(it)) } },
         isError = error != null,
         keyboardOptions = KeyboardOptions(
             keyboardType = if (field == VitalField.Temperature) KeyboardType.Decimal else KeyboardType.Number,
@@ -177,21 +176,9 @@ private fun VitalTextField(
 }
 
 @Composable
-private fun errorMessage(field: VitalField, error: FieldError): String = when (error) {
+private fun errorMessage(error: FieldError): String = when (error) {
     FieldError.NotANumber -> stringResource(R.string.record_field_error_not_a_number)
     FieldError.Missing -> stringResource(R.string.record_field_error_missing)
     FieldError.NotBelowSystolic -> stringResource(R.string.record_field_error_not_below_systolic)
-    FieldError.OutOfRange -> {
-        val (min, max) = field.plausibleRange()
-        stringResource(R.string.record_field_error_range, min, max)
-    }
-}
-
-/** The same ranges the save use case checks, so the message always matches the rule. */
-private fun VitalField.plausibleRange(): Pair<String, String> = when (this) {
-    VitalField.Systolic -> VitalsValidator.SYSTOLIC.let { "${it.first}" to "${it.last}" }
-    VitalField.Diastolic -> VitalsValidator.DIASTOLIC.let { "${it.first}" to "${it.last}" }
-    VitalField.Pulse -> VitalsValidator.PULSE.let { "${it.first}" to "${it.last}" }
-    VitalField.Temperature -> VitalsValidator.TEMPERATURE_CELSIUS.let { "${it.start}" to "${it.endInclusive}" }
-    VitalField.OxygenSaturation -> VitalsValidator.OXYGEN_SATURATION.let { "${it.first}" to "${it.last}" }
+    is FieldError.OutOfRange -> stringResource(R.string.record_field_error_range, error.min, error.max)
 }

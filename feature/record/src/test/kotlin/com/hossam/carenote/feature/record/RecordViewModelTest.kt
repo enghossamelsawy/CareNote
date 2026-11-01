@@ -408,9 +408,28 @@ class RecordViewModelTest {
         viewModel.onIntent(RecordIntent.SaveClicked)
 
         // Then
-        assertEquals(mapOf(VitalField.Pulse to FieldError.OutOfRange), viewModel.state.value.vitals.errors)
+        assertEquals(
+            mapOf(VitalField.Pulse to FieldError.OutOfRange(min = "20", max = "250")),
+            viewModel.state.value.vitals.errors,
+        )
         assertFalse(viewModel.state.value.isSaving)
         assertTrue(careNoteRepository.savedNotes.isEmpty())
+    }
+
+    @Test
+    fun `given an implausible temperature, when saving, then the error carries the accepted range`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+        viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Temperature, "48"))
+
+        // When
+        viewModel.onIntent(RecordIntent.SaveClicked)
+
+        // Then
+        assertEquals(
+            mapOf(VitalField.Temperature to FieldError.OutOfRange(min = "30.0", max = "43.0")),
+            viewModel.state.value.vitals.errors,
+        )
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.hossam.carenote.feature.record
 
 import com.hossam.carenote.core.domain.vitals.VitalsProblem
+import com.hossam.carenote.core.domain.vitals.VitalsValidator
 import com.hossam.carenote.core.model.Vitals
 
 /** Parsed vitals as editable text; missing values become empty fields. */
@@ -47,14 +48,20 @@ internal fun VitalsForm.errorsFor(problems: Set<VitalsProblem>): Map<VitalField,
                 missing to FieldError.Missing
             }
 
-            VitalsProblem.SystolicOutOfRange -> VitalField.Systolic to FieldError.OutOfRange
-            VitalsProblem.DiastolicOutOfRange -> VitalField.Diastolic to FieldError.OutOfRange
+            VitalsProblem.SystolicOutOfRange -> VitalField.Systolic to outOfRange(VitalsValidator.SYSTOLIC)
+            VitalsProblem.DiastolicOutOfRange -> VitalField.Diastolic to outOfRange(VitalsValidator.DIASTOLIC)
             VitalsProblem.DiastolicNotBelowSystolic -> VitalField.Diastolic to FieldError.NotBelowSystolic
-            VitalsProblem.PulseOutOfRange -> VitalField.Pulse to FieldError.OutOfRange
-            VitalsProblem.TemperatureOutOfRange -> VitalField.Temperature to FieldError.OutOfRange
-            VitalsProblem.OxygenSaturationOutOfRange -> VitalField.OxygenSaturation to FieldError.OutOfRange
+            VitalsProblem.PulseOutOfRange -> VitalField.Pulse to outOfRange(VitalsValidator.PULSE)
+            VitalsProblem.TemperatureOutOfRange ->
+                VitalField.Temperature to outOfRange(VitalsValidator.TEMPERATURE_CELSIUS)
+            VitalsProblem.OxygenSaturationOutOfRange ->
+                VitalField.OxygenSaturation to outOfRange(VitalsValidator.OXYGEN_SATURATION)
         }
     }
+
+/** The same range the save use case checked, so the message always matches the rule. */
+private fun outOfRange(range: ClosedRange<*>) =
+    FieldError.OutOfRange(min = "${range.start}", max = "${range.endInclusive}")
 
 /** Whole numbers, except temperature, which also accepts a decimal comma ("36,8"). */
 private fun VitalsForm.readNumber(field: VitalField): Number? {

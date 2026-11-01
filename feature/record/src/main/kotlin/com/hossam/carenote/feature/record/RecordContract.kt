@@ -75,13 +75,16 @@ enum class RecordError {
 
 enum class VitalField { Systolic, Diastolic, Pulse, Temperature, OxygenSaturation }
 
-enum class FieldError {
-    NotANumber,
-    OutOfRange,
+sealed interface FieldError {
+    data object NotANumber : FieldError
+
+    /** Outside what a person can have; [min] and [max] are the accepted range, ready to show. */
+    data class OutOfRange(val min: String, val max: String) : FieldError
 
     /** The other blood pressure value is given, this one is missing. */
-    Missing,
-    NotBelowSystolic,
+    data object Missing : FieldError
+
+    data object NotBelowSystolic : FieldError
 }
 
 /** The vitals as typed: plain text, so half-typed or wrong input can be shown and corrected. */

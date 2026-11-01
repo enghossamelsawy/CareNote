@@ -66,7 +66,7 @@ class RecordScreenScreenshotTest {
                 state = review.copy(
                     vitals = review.vitals.copy(
                         values = review.vitals.values + (VitalField.Pulse to "720"),
-                        errors = mapOf(VitalField.Pulse to FieldError.OutOfRange),
+                        errors = mapOf(VitalField.Pulse to FieldError.OutOfRange(min = "20", max = "250")),
                     ),
                 ),
                 onIntent = {},

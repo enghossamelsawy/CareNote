@@ -348,7 +348,7 @@ private fun RecordScreenReviewErrorPreview() {
             state = reviewPreviewState.copy(
                 vitals = reviewPreviewState.vitals.copy(
                     values = reviewPreviewState.vitals.values + (VitalField.Pulse to "720"),
-                    errors = mapOf(VitalField.Pulse to FieldError.OutOfRange),
+                    errors = mapOf(VitalField.Pulse to FieldError.OutOfRange(min = "20", max = "250")),
                 ),
             ),
             onIntent = {},
