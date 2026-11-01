@@ -38,7 +38,10 @@ internal abstract class DataModule {
         @Provides
         fun provideClock(): Clock = Clock.systemUTC()
 
-        /** Configured with Hilt's worker factory by the app, see CareNoteApplication. */
+        /**
+         * Configured with Hilt's worker factory by the app, see CareNoteApplication. Inject it as
+         * `Lazy<WorkManager>` in anything the Application itself depends on, or startup crashes.
+         */
         @Provides
         fun provideWorkManager(@ApplicationContext context: Context): WorkManager = WorkManager.getInstance(context)
     }
