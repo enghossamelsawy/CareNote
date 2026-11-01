@@ -7,13 +7,9 @@ plugins {
 android {
     namespace = "com.hossam.carenote.core.network"
 
+    // For BuildConfig.DEBUG, which turns HTTP logging on. The base URL comes from the app's flavor.
     buildFeatures {
         buildConfig = true
-    }
-
-    defaultConfig {
-        // TODO(4.3): provided per flavor by the app instead.
-        buildConfigField("String", "BASE_URL", "\"https://api.carenote.example/\"")
     }
 }
 

@@ -9,7 +9,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Pretends to hear a fixed sentence, word by word, so the app can be demoed on an emulator without a speech engine.
- * It invents vitals, so it must never reach real users: TODO(4.3) limit it to the mock flavor.
+ * It invents vitals, so only the mock flavor may use it, see [com.hossam.carenote.core.speech.di.DemoSpeechAllowed].
  */
 internal class DemoSpeechTranscriber @Inject constructor() : SpeechEngine {
     override val name = "Demo"

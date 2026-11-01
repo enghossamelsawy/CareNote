@@ -6,7 +6,6 @@ import com.hossam.carenote.core.database.CareNoteDatabase
 import com.hossam.carenote.core.database.dao.CareNoteDao
 import com.hossam.carenote.core.database.dao.OutboxDao
 import com.hossam.carenote.core.database.dao.ResidentDao
-import com.hossam.carenote.core.database.seed.SeedResidentsCallback
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,7 +20,6 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): CareNoteDatabase = Room
         .databaseBuilder(context, CareNoteDatabase::class.java, "care_note.db")
-        .addCallback(SeedResidentsCallback)
         .build()
 
     @Provides

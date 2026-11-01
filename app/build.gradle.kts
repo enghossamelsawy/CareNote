@@ -17,6 +17,20 @@ android {
         buildConfig = true
     }
 
+    // Only the app has flavors; library modules stay flavor-free and get what differs through Hilt.
+    flavorDimensions += "environment"
+    productFlavors {
+        // Talks to the in-memory mock server, for demos and development without a backend.
+        create("mock") {
+            dimension = "environment"
+            applicationIdSuffix = ".mock"
+            versionNameSuffix = "-mock"
+        }
+        create("prod") {
+            dimension = "environment"
+        }
+    }
+
     buildTypes {
         release {
             optimization {
@@ -32,7 +46,10 @@ dependencies {
     implementation(projects.core.designsystem)
     // For Hilt only: the app wires these implementations, features never see them.
     implementation(projects.core.data)
+    implementation(projects.core.network)
     implementation(projects.core.speech)
+    // The mock server exists only in mock builds; prod contains none of its code.
+    "mockImplementation"(projects.core.networkMock)
     implementation(projects.feature.residents)
     implementation(projects.feature.resident)
     implementation(projects.feature.record)

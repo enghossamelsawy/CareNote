@@ -28,6 +28,11 @@ import javax.inject.Singleton
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ExtraInterceptors
 
+/** The server's address, ending in "/". Each app flavor provides its own. */
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class BaseUrl
+
 @Module
 @InstallIn(SingletonComponent::class)
 internal abstract class NetworkModule {
@@ -61,8 +66,8 @@ internal abstract class NetworkModule {
 
         @Provides
         @Singleton
-        fun provideCareNoteApi(client: OkHttpClient): CareNoteApi =
-            careNoteApi(baseUrl = BuildConfig.BASE_URL.toHttpUrl(), client = client)
+        fun provideCareNoteApi(@BaseUrl baseUrl: String, client: OkHttpClient): CareNoteApi =
+            careNoteApi(baseUrl = baseUrl.toHttpUrl(), client = client)
 
         private const val TIMEOUT_SECONDS = 20L
         private const val HTTP_TAG = "CareNoteHttp"

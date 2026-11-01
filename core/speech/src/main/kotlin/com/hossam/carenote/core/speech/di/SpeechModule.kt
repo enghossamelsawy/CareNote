@@ -13,6 +13,15 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Qualifier
+
+/**
+ * Whether the demo engine may be used when no real one is ready. The app's mock flavor says yes,
+ * prod says no: the demo invents vitals, so in prod the user sees "speech unavailable" instead.
+ */
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class DemoSpeechAllowed
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -29,8 +38,8 @@ internal abstract class SpeechModule {
         fun provideSpeechEngines(
             mlKit: MlKitSpeechTranscriber,
             platform: PlatformSpeechTranscriber,
-            // TODO(4.3): mock flavor only; prod ends with "unavailable" instead of invented vitals.
             demo: DemoSpeechTranscriber,
-        ): List<SpeechEngine> = listOf(mlKit, platform, demo)
+            @DemoSpeechAllowed demoAllowed: Boolean,
+        ): List<SpeechEngine> = listOfNotNull(mlKit, platform, demo.takeIf { demoAllowed })
     }
 }

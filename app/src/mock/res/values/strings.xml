@@ -1,0 +1,4 @@
+<resources>
+    <!-- Both flavors can be installed side by side; the name tells them apart. -->
+    <string name="app_name">CareNote Mock</string>
+</resources>

@@ -31,19 +31,21 @@ jobs:
       - name: Check formatting
         run: ./gradlew ktlintCheck
 
+      # Libraries have lintDebug; the app has one lint task per flavor.
       - name: Lint
-        run: ./gradlew lintDebug
+        run: ./gradlew lintDebug lintMockDebug lintProdDebug
 
-      # Runs JVM module tests (test) and Android unit tests (testDebugUnitTest, testReleaseUnitTest).
+      # Runs JVM module tests (test) and Android unit tests for every variant, both flavors included.
       - name: Unit tests
         run: ./gradlew test
 
+      # Both flavors: mock is what demos run, prod is what would ship.
       - name: Build
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleMockDebug assembleProdDebug
 
       # Device tests need a phone, but they must at least compile.
       - name: Compile device tests
-        run: ./gradlew assembleDebugAndroidTest
+        run: ./gradlew assembleMockDebugAndroidTest
 
       - name: Upload reports
         if: failure()
