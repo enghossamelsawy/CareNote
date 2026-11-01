@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -24,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -103,6 +106,11 @@ fun RecordRoute(
         viewModel.onIntent(RecordIntent.StopClicked)
     }
 
+    // The system back gesture asks first too, but only while there is something to lose.
+    BackHandler(enabled = state.hasUnsavedNote) {
+        viewModel.onIntent(RecordIntent.BackClicked)
+    }
+
     RecordScreen(state = state, onIntent = viewModel::onIntent, modifier = modifier)
 }
 
@@ -111,6 +119,9 @@ fun RecordRoute(
 @Composable
 fun RecordScreen(state: RecordState, onIntent: (RecordIntent) -> Unit, modifier: Modifier = Modifier) {
     val isRecording = state.phase == RecordPhase.Recording
+    if (state.showDiscardDialog) {
+        DiscardNoteDialog(onIntent = onIntent)
+    }
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -219,6 +230,30 @@ private fun PermissionCard(permission: MicPermission, onIntent: (RecordIntent) -
             }
         }
     }
+}
+
+/** Keeping the note is the safe default, so it's the confirm button; discarding needs the deliberate choice. */
+@Composable
+private fun DiscardNoteDialog(onIntent: (RecordIntent) -> Unit, modifier: Modifier = Modifier) {
+    AlertDialog(
+        onDismissRequest = { onIntent(RecordIntent.DiscardDismissed) },
+        modifier = modifier,
+        title = { Text(stringResource(R.string.record_discard_title)) },
+        text = { Text(stringResource(R.string.record_discard_text)) },
+        confirmButton = {
+            TextButton(onClick = { onIntent(RecordIntent.DiscardDismissed) }) {
+                Text(stringResource(R.string.record_discard_keep))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { onIntent(RecordIntent.DiscardConfirmed) }) {
+                Text(
+                    text = stringResource(R.string.record_discard_confirm),
+                    color = CareNoteTheme.colors.error,
+                )
+            }
+        },
+    )
 }
 
 private fun RecordError.message(): Int = when (this) {

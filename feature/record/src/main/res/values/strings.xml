@@ -34,4 +34,8 @@
     <string name="record_save">Save note</string>
     <string name="record_more">Record more</string>
     <string name="record_start_over">Start over</string>
+    <string name="record_discard_title">Discard this note?</string>
+    <string name="record_discard_text">It hasn\'t been saved. What you dictated and typed will be lost.</string>
+    <string name="record_discard_keep">Keep editing</string>
+    <string name="record_discard_confirm">Discard</string>
 </resources>

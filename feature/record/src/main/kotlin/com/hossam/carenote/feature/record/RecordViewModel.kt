@@ -54,7 +54,19 @@ class RecordViewModel @AssistedInject constructor(
             RecordIntent.StopClicked -> stopRecording()
             is RecordIntent.PermissionResult -> onPermissionResult(intent)
             RecordIntent.OpenSettingsClicked -> sendEffect(RecordEffect.OpenAppSettings)
-            RecordIntent.BackClicked -> sendEffect(RecordEffect.NavigateBack)
+            RecordIntent.BackClicked -> if (currentState.hasUnsavedNote && !currentState.isSaving) {
+                setState { copy(showDiscardDialog = true) }
+            } else {
+                sendEffect(RecordEffect.NavigateBack)
+            }
+
+            RecordIntent.DiscardConfirmed -> {
+                setState { copy(showDiscardDialog = false) }
+                // Closing the screen clears this ViewModel, which also stops a running recording.
+                sendEffect(RecordEffect.NavigateBack)
+            }
+
+            RecordIntent.DiscardDismissed -> setState { copy(showDiscardDialog = false) }
             is RecordIntent.TranscriptChanged -> if (currentState.phase == RecordPhase.Done) {
                 setState { copy(transcript = intent.text, error = null) }
             }

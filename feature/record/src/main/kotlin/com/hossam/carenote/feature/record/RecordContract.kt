@@ -13,7 +13,14 @@ data class RecordState(
     val permission: MicPermission = MicPermission.Unknown,
     val vitals: VitalsForm = VitalsForm(),
     val isSaving: Boolean = false,
-) : UiState
+    /** Leaving would lose a recording or an unsaved note, so the screen asks first. */
+    val showDiscardDialog: Boolean = false,
+) : UiState {
+    /** Whether going back now would throw away something the user dictated or typed. */
+    val hasUnsavedNote: Boolean
+        get() = phase == RecordPhase.Recording ||
+            (phase == RecordPhase.Done && (transcript.isNotBlank() || vitals.values.values.any { it.isNotBlank() }))
+}
 
 enum class RecordPhase {
     Idle,
@@ -73,7 +80,12 @@ sealed interface RecordIntent : UiIntent {
 
     data object OpenSettingsClicked : RecordIntent
 
+    /** The top bar arrow or the system back gesture. */
     data object BackClicked : RecordIntent
+
+    data object DiscardConfirmed : RecordIntent
+
+    data object DiscardDismissed : RecordIntent
 
     data class TranscriptChanged(val text: String) : RecordIntent
 

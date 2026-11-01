@@ -387,6 +387,63 @@ class RecordViewModelTest {
         assertEquals("", viewModel.state.value.vitals[VitalField.Pulse])
     }
 
+    @Test
+    fun `given nothing dictated yet, when back is clicked, then the screen closes without asking`() = runTest {
+        // Given
+        val viewModel = createViewModel()
+
+        // When
+        viewModel.onIntent(RecordIntent.BackClicked)
+
+        // Then
+        assertFalse(viewModel.state.value.showDiscardDialog)
+        viewModel.effects.test {
+            assertEquals(RecordEffect.NavigateBack, awaitItem())
+        }
+    }
+
+    @Test
+    fun `given an unsaved note, when back is clicked, then it asks before discarding`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+
+        // When
+        viewModel.onIntent(RecordIntent.BackClicked)
+
+        // Then
+        assertTrue(viewModel.state.value.showDiscardDialog)
+    }
+
+    @Test
+    fun `given the discard question, when discarding is confirmed, then the screen closes`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+        viewModel.onIntent(RecordIntent.BackClicked)
+
+        // When
+        viewModel.onIntent(RecordIntent.DiscardConfirmed)
+
+        // Then
+        assertFalse(viewModel.state.value.showDiscardDialog)
+        viewModel.effects.test {
+            assertEquals(RecordEffect.NavigateBack, expectMostRecentItem())
+        }
+    }
+
+    @Test
+    fun `given the discard question, when the user keeps editing, then the note stays`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+        viewModel.onIntent(RecordIntent.BackClicked)
+
+        // When
+        viewModel.onIntent(RecordIntent.DiscardDismissed)
+
+        // Then
+        assertFalse(viewModel.state.value.showDiscardDialog)
+        assertEquals("Pulse 72", viewModel.state.value.transcript)
+    }
+
     private val granted = RecordIntent.PermissionResult(granted = true, canAskAgain = true)
 
     /** "Record more", the permission granted, then the engine hears [words]. */
