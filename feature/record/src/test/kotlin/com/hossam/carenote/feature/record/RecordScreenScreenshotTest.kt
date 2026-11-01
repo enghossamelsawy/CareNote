@@ -31,6 +31,13 @@ class RecordScreenScreenshotTest {
     )
 
     @Test
+    fun `given nothing recorded yet, when the screen opens, then it matches the screenshots`() {
+        screenshots("record_idle") {
+            RecordScreen(state = RecordState(residentName = "Anna Becker"), onIntent = {})
+        }
+    }
+
+    @Test
     fun `given recording, when words are heard, then the screen matches the screenshots`() {
         screenshots("record_recording") {
             RecordScreen(

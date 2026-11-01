@@ -90,6 +90,7 @@ class RecordViewModel @AssistedInject constructor(
         when (intent) {
             RecordIntent.RecordClicked -> requestRecording(append = false)
             RecordIntent.RecordMoreClicked -> requestRecording(append = true)
+            RecordIntent.TypeInsteadClicked -> typeInstead()
             RecordIntent.AllowMicrophoneClicked -> sendEffect(RecordEffect.RequestMicPermission)
             RecordIntent.StopClicked -> stopRecording()
             is RecordIntent.PermissionResult -> onPermissionResult(intent)
@@ -127,6 +128,12 @@ class RecordViewModel @AssistedInject constructor(
         awaitingPermission = true
         appendNext = append
         sendEffect(RecordEffect.RequestMicPermission)
+    }
+
+    /** The same review form as after dictating, empty; saving, checks and "Record more" all work as usual. */
+    private fun typeInstead() {
+        if (currentState.phase != RecordPhase.Idle || currentState.cannotEdit) return
+        setState { copy(phase = RecordPhase.Done, transcript = "", vitals = VitalsForm(), error = null) }
     }
 
     private fun onPermissionResult(result: RecordIntent.PermissionResult) {

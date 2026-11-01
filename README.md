@@ -19,6 +19,8 @@ whenever there is a connection, so a dead spot in the building never loses a wor
 
 - **Dictate, review, save.** Speech becomes text, and blood pressure, pulse, temperature and SpO₂ are read
   out of it ("pulse is about 72" works too). Every value can be corrected by hand before saving.
+- **Type instead.** No speech recognition on the phone, the microphone refused, or a room where dictating
+  isn't right: the same form can be filled in by hand.
 - **Record more.** Dictate the temperature, then the pulse: each recording adds to the note instead of
   replacing it.
 - **Values that need attention stand out.** Normal readings stay calm; a value outside the usual adult range
@@ -183,13 +185,6 @@ Windows, and CI's Linux renders a few pixels differently.
 | Speech | ML Kit GenAI speech recognition |
 | Tests | JUnit 4, Turbine, Robolectric, Roborazzi |
 | Quality | ktlint with Compose rules, Android Lint |
-
-## Known limitations
-
-Found in review and planned next:
-
-- **No typing without dictating.** A note starts with a recording, so a phone without speech recognition,
-  or with the microphone refused, can't create one.
 
 ## Decisions and trade-offs
 

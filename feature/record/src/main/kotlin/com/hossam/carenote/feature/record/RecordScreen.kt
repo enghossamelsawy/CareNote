@@ -193,6 +193,12 @@ fun RecordScreen(state: RecordState, onIntent: (RecordIntent) -> Unit, modifier:
                     onClick = { onIntent(if (isRecording) RecordIntent.StopClicked else RecordIntent.RecordClicked) },
                     contentDescription = stringResource(description),
                 )
+                // Always there before recording, so a refused microphone or a phone without speech is no dead end.
+                if (state.phase == RecordPhase.Idle) {
+                    TextButton(onClick = { onIntent(RecordIntent.TypeInsteadClicked) }) {
+                        Text(stringResource(R.string.record_type_instead))
+                    }
+                }
             }
         }
     }

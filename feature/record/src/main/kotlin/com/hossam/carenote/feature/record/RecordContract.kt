@@ -99,6 +99,12 @@ sealed interface RecordIntent : UiIntent {
     /** From [RecordPhase.Done]: dictates more and adds it to the note, e.g. one vital at a time. */
     data object RecordMoreClicked : RecordIntent
 
+    /**
+     * From [RecordPhase.Idle]: opens the review form empty, to write the note by hand. For a phone without
+     * speech recognition, a refused microphone, or a room where dictating isn't possible.
+     */
+    data object TypeInsteadClicked : RecordIntent
+
     /** Asks for the microphone again after a refusal, for whichever recording was asked for. */
     data object AllowMicrophoneClicked : RecordIntent
 

@@ -170,6 +170,84 @@ class RecordViewModelTest {
     }
 
     @Test
+    fun `given the screen, when type instead is clicked, then an empty note opens for review`() = runTest {
+        // Given
+        val viewModel = createViewModel()
+
+        // When
+        viewModel.onIntent(RecordIntent.TypeInsteadClicked)
+
+        // Then
+        val state = viewModel.state.value
+        assertEquals(RecordPhase.Done, state.phase)
+        assertEquals("", state.transcript)
+        assertFalse(state.hasUnsavedNote)
+        assertEquals(0, speechTranscriber.listenerCount)
+    }
+
+    @Test
+    fun `given a typed note, when it is saved, then it is stored like a dictated one`() = runTest {
+        // Given
+        val viewModel = createViewModel()
+        viewModel.onIntent(RecordIntent.TypeInsteadClicked)
+        viewModel.onIntent(RecordIntent.TranscriptChanged("Ate well, no pain."))
+        viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Pulse, "72"))
+
+        // When
+        viewModel.onIntent(RecordIntent.SaveClicked)
+
+        // Then
+        val saved = careNoteRepository.savedNotes.single()
+        assertEquals("Ate well, no pain.", saved.transcript)
+        assertEquals(Vitals(pulse = 72), saved.vitals)
+    }
+
+    @Test
+    fun `given a refused microphone, when type instead is clicked, then the note can still be written`() = runTest {
+        // Given
+        val viewModel = createViewModel()
+        viewModel.onIntent(RecordIntent.RecordClicked)
+        viewModel.onIntent(RecordIntent.PermissionResult(granted = false, canAskAgain = false))
+
+        // When
+        viewModel.onIntent(RecordIntent.TypeInsteadClicked)
+
+        // Then
+        assertEquals(RecordPhase.Done, viewModel.state.value.phase)
+    }
+
+    @Test
+    fun `given speech is unavailable, when type instead is clicked, then the error clears and the form opens`() =
+        runTest {
+            // Given
+            val viewModel = createViewModel()
+            viewModel.onIntent(granted)
+            speechTranscriber.emit(TranscriptionEvent.Error(TranscriptionError.Unavailable))
+
+            // When
+            viewModel.onIntent(RecordIntent.TypeInsteadClicked)
+
+            // Then
+            assertEquals(RecordPhase.Done, viewModel.state.value.phase)
+            assertEquals(null, viewModel.state.value.error)
+        }
+
+    @Test
+    fun `given recording, when type instead is clicked, then the recording goes on`() = runTest {
+        // Given
+        val viewModel = createViewModel()
+        viewModel.onIntent(granted)
+        speechTranscriber.emit(TranscriptionEvent.Partial("Pulse 72"))
+
+        // When
+        viewModel.onIntent(RecordIntent.TypeInsteadClicked)
+
+        // Then
+        assertEquals(RecordPhase.Recording, viewModel.state.value.phase)
+        assertEquals("Pulse 72", viewModel.state.value.transcript)
+    }
+
+    @Test
     fun `given recording, when the engine is unavailable, then the error is shown`() = runTest {
         // Given
         val viewModel = createViewModel()

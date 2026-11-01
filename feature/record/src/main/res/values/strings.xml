@@ -40,6 +40,7 @@
     <string name="record_field_error_not_below_systolic">Must be lower than the upper value</string>
     <string name="record_save">Save note</string>
     <string name="record_more">Record more</string>
+    <string name="record_type_instead">Type instead</string>
     <string name="record_start_over">Start over</string>
     <string name="record_discard_title">Discard this note?</string>
     <string name="record_discard_text">It hasn\'t been saved. What you dictated and typed will be lost.</string>
