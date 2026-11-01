@@ -20,7 +20,7 @@ data class RecordState(
 ) : UiState {
     val isEditing: Boolean
         get() = editedFrom != null
-that
+
     /** Whether going back now would throw away something the user dictated or typed. */
     val hasUnsavedNote: Boolean
         get() = phase == RecordPhase.Recording || (phase == RecordPhase.Done && hasChanges)
