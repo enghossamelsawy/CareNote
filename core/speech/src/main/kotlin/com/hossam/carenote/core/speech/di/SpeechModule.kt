@@ -1,6 +1,7 @@
 package com.hossam.carenote.core.speech.di
 
 import com.hossam.carenote.core.domain.speech.SpeechTranscriber
+import com.hossam.carenote.core.speech.ActiveSpeechEngine
 import com.hossam.carenote.core.speech.AndroidSpeechRecognizerFactory
 import com.hossam.carenote.core.speech.DemoSpeechTranscriber
 import com.hossam.carenote.core.speech.MlKitSpeechTranscriber
@@ -28,6 +29,10 @@ annotation class DemoSpeechAllowed
 internal abstract class SpeechModule {
     @Binds
     abstract fun bindSpeechTranscriber(impl: SelectingSpeechTranscriber): SpeechTranscriber
+
+    /** The same singleton as [bindSpeechTranscriber], seen only as the name of its current engine. */
+    @Binds
+    abstract fun bindActiveSpeechEngine(impl: SelectingSpeechTranscriber): ActiveSpeechEngine
 
     @Binds
     abstract fun bindSpeechRecognizerFactory(impl: AndroidSpeechRecognizerFactory): SpeechRecognizerFactory

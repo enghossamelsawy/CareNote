@@ -22,11 +22,11 @@ import javax.inject.Singleton
 internal class SelectingSpeechTranscriber @Inject constructor(
     private val engines: List<SpeechEngine>,
     private val logger: Logger,
-) : SpeechTranscriber {
+) : SpeechTranscriber,
+    ActiveSpeechEngine {
     private val _activeEngine = MutableStateFlow<String?>(null)
 
-    /** Name of the engine the last recording used; null before the first one or when none was ready. */
-    val activeEngine: StateFlow<String?> = _activeEngine.asStateFlow()
+    override val activeEngine: StateFlow<String?> = _activeEngine.asStateFlow()
 
     override fun transcribe(): Flow<TranscriptionEvent> = flow {
         val engine = engines.firstOrNull { it.isReady() }
