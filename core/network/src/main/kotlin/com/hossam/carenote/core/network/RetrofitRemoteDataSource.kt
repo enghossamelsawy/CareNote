@@ -28,10 +28,14 @@ internal class RetrofitRemoteDataSource @Inject constructor(private val api: Car
             NetworkResult.BadResponse -> FetchResult.Failed
         }
 
-    /** The server is down or asks us to slow down: the request itself was fine. */
-    private fun Int.isTemporary() = this == TOO_MANY_REQUESTS || this >= SERVER_ERROR
+    /**
+     * The request timed out, the server is down, or it asks us to slow down: the request itself was fine.
+     * 401 and 403 count as refused for now; once there is a login, an expired one must not fail every note.
+     */
+    private fun Int.isTemporary() = this == REQUEST_TIMEOUT || this == TOO_MANY_REQUESTS || this >= SERVER_ERROR
 
     private companion object {
+        const val REQUEST_TIMEOUT = 408
         const val CONFLICT = 409
         const val TOO_MANY_REQUESTS = 429
         const val SERVER_ERROR = 500

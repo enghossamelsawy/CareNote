@@ -10,6 +10,8 @@ import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.network.SendResult
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -123,6 +125,36 @@ class NoteSyncerTest {
         // Then
         assertEquals(SyncOutcome.Done, outcome)
         assertTrue(remoteDataSource.sentNotes.isEmpty())
+    }
+
+    @Test
+    fun `given a send in flight, when the sync is cancelled, then the note is waiting and still queued`() = runTest {
+        // Given
+        repository.save(note(id = 1, createdAt = 10))
+        remoteDataSource.hangSends = true
+        val sync = launch { syncer.syncPending() }
+        remoteDataSource.sendStarted.await()
+
+        // When
+        sync.cancelAndJoin()
+
+        // Then
+        assertEquals(listOf(SyncStatus.PENDING), statuses())
+        assertEquals(1, database.outboxDao().oldest(limit = 10).size)
+    }
+
+    @Test
+    fun `given a note left syncing by a killed app, when syncing, then it is sent and synced`() = runTest {
+        // Given
+        repository.save(note(id = 1, createdAt = 10))
+        database.careNoteDao().updateSyncStatus(UUID(0, 1).toString(), SyncStatus.SYNCING)
+
+        // When
+        syncer.syncPending()
+
+        // Then
+        assertEquals(listOf(UUID(0, 1)), remoteDataSource.sentNotes.map { it.id })
+        assertEquals(listOf(SyncStatus.SYNCED), statuses())
     }
 
     /** Sync status of every note, oldest first. */

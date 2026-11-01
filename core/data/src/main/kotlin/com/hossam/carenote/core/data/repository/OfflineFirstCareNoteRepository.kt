@@ -43,6 +43,10 @@ internal class OfflineFirstCareNoteRepository @Inject constructor(
         careNoteDao.requeue(outboxEntry(noteId))
     }
 
+    override suspend fun resetInterruptedSyncs() {
+        storage { careNoteDao.resetSyncing() }
+    }
+
     /** Only database errors become [StorageException]; anything else is a bug and stays as it is. */
     private suspend fun <T> storage(block: suspend () -> T): T = try {
         block()

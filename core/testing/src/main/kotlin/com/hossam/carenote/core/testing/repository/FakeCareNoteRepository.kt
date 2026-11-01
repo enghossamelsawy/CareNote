@@ -48,4 +48,10 @@ class FakeCareNoteRepository : CareNoteRepository {
     override suspend fun retry(noteId: UUID) {
         setSyncStatus(noteId, SyncStatus.PENDING)
     }
+
+    override suspend fun resetInterruptedSyncs() {
+        notes.update { list ->
+            list.map { if (it.syncStatus == SyncStatus.SYNCING) it.copy(syncStatus = SyncStatus.PENDING) else it }
+        }
+    }
 }

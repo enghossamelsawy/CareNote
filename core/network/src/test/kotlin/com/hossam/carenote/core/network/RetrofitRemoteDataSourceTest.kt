@@ -89,6 +89,18 @@ class RetrofitRemoteDataSourceTest {
     }
 
     @Test
+    fun `given the request timed out, when sending, then it is retried later`() = runTest {
+        // Given
+        server.enqueue(response(code = 408))
+
+        // When
+        val result = remoteDataSource.sendNote(note)
+
+        // Then
+        assertEquals(SendResult.RetryLater, result)
+    }
+
+    @Test
     fun `given the server refuses the note, when sending, then it is rejected`() = runTest {
         // Given
         server.enqueue(response(code = 400))

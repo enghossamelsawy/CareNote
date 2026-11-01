@@ -6,6 +6,9 @@ import com.hossam.carenote.core.database.dao.OutboxDao
 import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.network.RemoteDataSource
 import com.hossam.carenote.core.network.SendResult
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import java.time.Clock
 import javax.inject.Inject
 
@@ -29,6 +32,8 @@ internal class NoteSyncer @Inject constructor(
     private val clock: Clock,
 ) {
     suspend fun syncPending(): SyncOutcome {
+        // Only one sync runs at a time, so a note still marked as syncing is left over from one that never finished.
+        careNoteDao.resetSyncing()
         while (true) {
             val batch = outboxDao.oldest(limit = BATCH_SIZE)
             if (batch.isEmpty()) return SyncOutcome.Done
@@ -42,7 +47,14 @@ internal class NoteSyncer @Inject constructor(
                 }
 
                 careNoteDao.updateSyncStatus(note.id, SyncStatus.SYNCING)
-                when (val result = remoteDataSource.sendNote(note.asExternalModel())) {
+                val result = try {
+                    remoteDataSource.sendNote(note.asExternalModel())
+                } catch (cancellation: CancellationException) {
+                    // Stopped mid-send, e.g. the network dropped: back to waiting; it's still queued.
+                    withContext(NonCancellable) { careNoteDao.updateSyncStatus(note.id, SyncStatus.PENDING) }
+                    throw cancellation
+                }
+                when (result) {
                     SendResult.Accepted -> careNoteDao.markSynced(note.id)
 
                     is SendResult.Rejected -> careNoteDao.markFailed(note.id)

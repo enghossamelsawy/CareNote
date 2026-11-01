@@ -84,6 +84,21 @@ class CareNoteDaoTest {
     }
 
     @Test
+    fun `given notes in every status, when resetting interrupted syncs, then only syncing ones wait again`() = runTest {
+        // Given
+        dao.insert(careNote("1", "r1", syncStatus = SyncStatus.SYNCING))
+        dao.insert(careNote("2", "r1", syncStatus = SyncStatus.SYNCED))
+        dao.insert(careNote("3", "r1", syncStatus = SyncStatus.FAILED))
+
+        // When
+        dao.resetSyncing()
+
+        // Then
+        val statuses = listOf("1", "2", "3").map { dao.getById(it)?.syncStatus }
+        assertEquals(listOf(SyncStatus.PENDING, SyncStatus.SYNCED, SyncStatus.FAILED), statuses)
+    }
+
+    @Test
     fun `given only synced notes, when counting pending, then nothing is counted`() = runTest {
         // Given
         dao.insert(careNote("1", "r1", syncStatus = SyncStatus.SYNCED))

@@ -41,6 +41,13 @@ interface CareNoteDao {
     @Query("SELECT * FROM care_notes WHERE id = :id")
     suspend fun getById(id: String): CareNoteEntity?
 
+    /**
+     * Notes left SYNCING by a sync that never finished, e.g. because the app was killed mid-send, go back to
+     * waiting. Their outbox entries were never removed, so they are sent again.
+     */
+    @Query("UPDATE care_notes SET syncStatus = 'PENDING' WHERE syncStatus = 'SYNCING'")
+    suspend fun resetSyncing()
+
     /** True when another note revises this one; edits never change a note, they add a new one. */
     @Query("SELECT EXISTS(SELECT 1 FROM care_notes WHERE revisionOf = :id)")
     suspend fun hasRevision(id: String): Boolean

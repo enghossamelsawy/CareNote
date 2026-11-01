@@ -6,7 +6,8 @@ import java.util.UUID
 
 /**
  * Care notes, stored locally first and synced to the server later.
- * [getNote], [hasRevision] and [save] throw [StorageException] when the phone's storage fails.
+ * [getNote], [hasRevision], [save] and [resetInterruptedSyncs] throw [StorageException] when the phone's
+ * storage fails.
  */
 interface CareNoteRepository {
     /** Notes for one resident, newest first. */
@@ -26,4 +27,7 @@ interface CareNoteRepository {
 
     /** Queues a FAILED note for another sync attempt. */
     suspend fun retry(noteId: UUID)
+
+    /** Notes still marked as syncing from a sync that never finished go back to waiting. */
+    suspend fun resetInterruptedSyncs()
 }
