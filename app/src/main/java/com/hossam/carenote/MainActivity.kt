@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
-import com.hossam.carenote.feature.residents.ResidentsRoute
+import com.hossam.carenote.navigation.CareNoteNavDisplay
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -15,8 +15,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CareNoteTheme {
-                // TODO(2.3): replace with the Navigation 3 host.
-                ResidentsRoute(onOpenResident = {})
+                CareNoteNavDisplay()
             }
         }
     }
