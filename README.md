@@ -188,6 +188,23 @@ the old, new and difference images.
 | Tests | JUnit 4, Turbine, Robolectric, Roborazzi |
 | Quality | ktlint with Compose rules, Android Lint |
 
+## Before a real release
+
+The database is not encrypted yet. Android already encrypts the whole phone storage, and the app keeps care
+data out of backups and screenshots, but a care app should also encrypt its own database, so the data stays
+protected on a rooted or compromised phone. This is planned as a release step, not done yet:
+
+1. **Encrypt Room with SQLCipher** (`net.zetetic:sqlcipher-android`), passed to the Room builder in
+   `DatabaseModule` as its `SupportOpenHelperFactory`.
+2. **Keep the key in the Android Keystore.** Generate a random passphrase on first start, store it encrypted
+   with a Keystore AES key, and never hard-code it or keep it in plain preferences.
+3. **Move existing data across.** A phone with the plain database exports it into an encrypted copy once
+   (`sqlcipher_export`), then deletes the plain file; the migration tests then run on an encrypted database.
+4. **Measure.** Encryption costs some speed on open and on queries; check note lists and sync on a low-end phone.
+
+It isn't done now because it touches the key handling, the migrations and the tests at once, and the demo data
+isn't real.
+
 ## Decisions and trade-offs
 
 - **An outbox instead of sending on save.** Saving is instant and can't fail because of the network, and a
