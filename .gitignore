@@ -29,3 +29,6 @@ local.properties
 # Module build output
 /core/*/build
 /feature/*/build
+/.idea/compiler.xml
+/.idea/gradle.xml
+/.idea/kotlinc.xml
