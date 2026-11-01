@@ -17,4 +17,9 @@ internal object DispatchersModule {
     @Provides
     @Dispatcher(CareNoteDispatchers.Default)
     fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+
+    /** Immediate: no extra dispatch when the caller is already on the main thread. */
+    @Provides
+    @Dispatcher(CareNoteDispatchers.Main)
+    fun provideMainDispatcher(): CoroutineDispatcher = Dispatchers.Main.immediate
 }
