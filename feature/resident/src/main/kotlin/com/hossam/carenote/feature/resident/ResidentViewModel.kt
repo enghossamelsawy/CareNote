@@ -33,6 +33,7 @@ class ResidentViewModel @AssistedInject constructor(
             } else {
                 ResidentState(
                     isLoading = false,
+                    residentId = resident.id,
                     name = "${resident.firstName} ${resident.lastName}",
                     room = resident.room,
                     notes = notes.map { it.asItem() },

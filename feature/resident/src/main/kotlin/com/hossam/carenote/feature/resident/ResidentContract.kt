@@ -11,6 +11,8 @@ import java.util.UUID
 /** [notFound] is true when the resident no longer exists, e.g. after a server-side removal. */
 data class ResidentState(
     val isLoading: Boolean = true,
+    /** Picks the avatar's color, so it matches the one in the residents list. */
+    val residentId: String = "",
     val name: String = "",
     val room: String = "",
     val notFound: Boolean = false,

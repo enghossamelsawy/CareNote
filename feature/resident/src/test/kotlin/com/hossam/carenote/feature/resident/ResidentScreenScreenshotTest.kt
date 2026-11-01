@@ -45,6 +45,7 @@ class ResidentScreenScreenshotTest {
             ResidentScreen(
                 state = ResidentState(
                     isLoading = false,
+                    residentId = "1",
                     name = "Anna Becker",
                     room = "101",
                     notes = listOf(
@@ -62,7 +63,10 @@ class ResidentScreenScreenshotTest {
     @Test
     fun `given no notes, when the resident is shown, then the empty state matches the screenshots`() {
         screenshots("resident_no_notes") {
-            ResidentScreen(state = ResidentState(isLoading = false, name = "Anna Becker", room = "101"), onIntent = {})
+            ResidentScreen(
+                state = ResidentState(isLoading = false, residentId = "1", name = "Anna Becker", room = "101"),
+                onIntent = {},
+            )
         }
     }
 

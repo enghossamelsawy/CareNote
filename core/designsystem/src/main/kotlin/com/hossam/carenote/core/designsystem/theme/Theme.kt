@@ -20,6 +20,7 @@ fun CareNoteTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composab
         LocalSpacing provides Spacing(),
         LocalDimens provides Dimens(),
         LocalStatusColors provides if (darkTheme) DarkStatusColors else LightStatusColors,
+        LocalAvatarColors provides if (darkTheme) DarkAvatarColors else LightAvatarColors,
     ) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
@@ -65,4 +66,9 @@ object CareNoteTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalStatusColors.current
+
+    val avatarColors: AvatarColors
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalAvatarColors.current
 }

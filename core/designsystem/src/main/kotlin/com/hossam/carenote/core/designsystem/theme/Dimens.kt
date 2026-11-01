@@ -14,6 +14,8 @@ data class Dimens(
     val iconSm: Dp = 16.dp,
     val iconMd: Dp = 24.dp,
     val iconLg: Dp = 48.dp,
+    val avatarSm: Dp = 40.dp,
+    val avatarLg: Dp = 72.dp,
     val borderThin: Dp = 1.dp,
     val elevationLow: Dp = 1.dp,
     val elevationMid: Dp = 3.dp,

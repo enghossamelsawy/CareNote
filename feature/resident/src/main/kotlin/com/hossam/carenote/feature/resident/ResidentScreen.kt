@@ -1,9 +1,11 @@
 package com.hossam.carenote.feature.resident
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -18,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import com.hossam.carenote.core.designsystem.component.Avatar
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
@@ -59,13 +62,19 @@ fun ResidentScreen(state: ResidentState, onIntent: (ResidentIntent) -> Unit, mod
             TopAppBar(
                 title = {
                     if (!state.isLoading && !state.notFound) {
-                        Column {
-                            Text(text = state.name)
-                            Text(
-                                text = stringResource(R.string.resident_room, state.room),
-                                style = CareNoteTheme.typography.bodyMedium,
-                                color = CareNoteTheme.colors.onSurfaceVariant,
-                            )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.sm),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Avatar(name = state.name, colorKey = state.residentId)
+                            Column {
+                                Text(text = state.name)
+                                Text(
+                                    text = stringResource(R.string.resident_room, state.room),
+                                    style = CareNoteTheme.typography.bodyMedium,
+                                    color = CareNoteTheme.colors.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 },
@@ -124,6 +133,7 @@ private fun ResidentScreenPreview() {
         ResidentScreen(
             state = ResidentState(
                 isLoading = false,
+                residentId = "1",
                 name = "Anna Becker",
                 room = "101",
                 notes = listOf(
@@ -142,7 +152,7 @@ private fun ResidentScreenPreview() {
 private fun ResidentScreenNoNotesPreview() {
     CareNoteTheme {
         ResidentScreen(
-            state = ResidentState(isLoading = false, name = "Anna Becker", room = "101"),
+            state = ResidentState(isLoading = false, residentId = "1", name = "Anna Becker", room = "101"),
             onIntent = {},
         )
     }

@@ -38,7 +38,10 @@ class ResidentViewModelTest {
         val viewModel = createViewModel(anna.id)
 
         // Then
-        assertEquals(ResidentState(isLoading = false, name = "Anna Becker", room = "101"), viewModel.state.value)
+        assertEquals(
+            ResidentState(isLoading = false, residentId = "res-1", name = "Anna Becker", room = "101"),
+            viewModel.state.value,
+        )
     }
 
     @Test

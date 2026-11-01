@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.hossam.carenote.core.designsystem.component.Avatar
 import com.hossam.carenote.core.designsystem.component.StatusBadge
 import com.hossam.carenote.core.designsystem.component.StatusBanner
 import com.hossam.carenote.core.designsystem.component.StatusTone
@@ -131,6 +132,7 @@ private fun ResidentsContent(
 private fun ResidentRow(resident: ResidentItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
     // ListItem is at least 56dp tall, above the 48dp touch target.
     ListItem(
+        leadingContent = { Avatar(name = resident.name, colorKey = resident.id) },
         headlineContent = { Text(resident.name) },
         supportingContent = { Text(stringResource(R.string.residents_room, resident.room)) },
         trailingContent = {
