@@ -77,6 +77,18 @@ class CareNoteDaoTest {
         assertEquals(listOf(PendingCount("r1", 3), PendingCount("r2", 1)), counts)
     }
 
+    @Test(expected = SQLiteConstraintException::class)
+    fun `given an edited note, when inserting a second edit of it, then it throws`() = runTest {
+        // Given
+        dao.insert(careNote("original", "r1"))
+        dao.insert(careNote("edit", "r1", revisionOf = "original"))
+
+        // When
+        dao.insert(careNote("other edit", "r1", revisionOf = "original"))
+
+        // Then: SQLiteConstraintException
+    }
+
     @Test
     fun `given a note and an edit of it, when checking for revisions, then only the original has one`() = runTest {
         // Given

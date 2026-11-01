@@ -116,7 +116,8 @@ changed or deleted.
 - **The record stays auditable**, which care documentation requires: every version is kept locally and on
   the server, and the note screen shows the earlier ones with the vitals each edit changed, such as
   "Pulse was 72 bpm".
-- **Only the latest version can be edited**, so the history never splits in two.
+- **Only the latest version can be edited**, so the history never splits in two. A unique index on
+  `revisionOf` enforces it in the database too, even for two edits saved at the same moment.
 - The list shows the latest version at the time the note was first written, marked "Edited".
 
 ## Speech

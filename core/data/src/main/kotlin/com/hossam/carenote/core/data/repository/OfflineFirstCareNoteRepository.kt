@@ -1,5 +1,6 @@
 package com.hossam.carenote.core.data.repository
 
+import android.database.sqlite.SQLiteConstraintException
 import android.database.sqlite.SQLiteException
 import com.hossam.carenote.core.data.mapper.asEntity
 import com.hossam.carenote.core.data.mapper.asExternalModel
@@ -7,6 +8,7 @@ import com.hossam.carenote.core.data.mapper.asPendingCountMap
 import com.hossam.carenote.core.database.dao.CareNoteDao
 import com.hossam.carenote.core.database.model.OutboxEntity
 import com.hossam.carenote.core.domain.repository.CareNoteRepository
+import com.hossam.carenote.core.domain.repository.NoteAlreadyRevisedException
 import com.hossam.carenote.core.domain.repository.StorageException
 import com.hossam.carenote.core.model.CareNote
 import kotlinx.coroutines.flow.Flow
@@ -36,7 +38,16 @@ internal class OfflineFirstCareNoteRepository @Inject constructor(
     override suspend fun hasRevision(noteId: UUID): Boolean = storage { careNoteDao.hasRevision(noteId.toString()) }
 
     override suspend fun save(note: CareNote) {
-        storage { careNoteDao.insertAndQueue(note.asEntity(), outboxEntry(note.id)) }
+        try {
+            storage { careNoteDao.insertAndQueue(note.asEntity(), outboxEntry(note.id)) }
+        } catch (error: StorageException) {
+            val original = note.revisionOf
+            // The unique index on revisionOf refused a second edit of the same version.
+            if (original != null && error.cause is SQLiteConstraintException && hasRevision(original)) {
+                throw NoteAlreadyRevisedException(original)
+            }
+            throw error
+        }
     }
 
     override suspend fun retry(noteId: UUID): Boolean = storage { careNoteDao.requeue(outboxEntry(noteId)) }

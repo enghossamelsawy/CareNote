@@ -1,6 +1,7 @@
 package com.hossam.carenote.core.domain.usecase
 
 import com.hossam.carenote.core.domain.repository.CareNoteRepository
+import com.hossam.carenote.core.domain.repository.NoteAlreadyRevisedException
 import com.hossam.carenote.core.domain.repository.StorageException
 import com.hossam.carenote.core.domain.repository.SyncScheduler
 import com.hossam.carenote.core.domain.vitals.VitalsProblem
@@ -33,7 +34,8 @@ sealed interface SaveResult {
  *
  * Editing works the same way: with [revisionOf] set, the edit is saved as a new note pointing at the
  * one it replaces, which stays unchanged. Sync stays insert-only, and the record keeps every version.
- * Only the current version can be edited, so the history never splits in two.
+ * Only the current version can be edited, so the history never splits in two. That's checked first for a
+ * clear answer, and storage enforces it too, for two edits saved at the same moment.
  */
 class SaveCareNoteUseCase @Inject constructor(
     private val careNoteRepository: CareNoteRepository,
@@ -48,6 +50,8 @@ class SaveCareNoteUseCase @Inject constructor(
         revisionOf: UUID? = null,
     ): SaveResult = try {
         save(residentId, transcript, vitals, revisionOf)
+    } catch (error: NoteAlreadyRevisedException) {
+        SaveResult.CannotRevise
     } catch (error: StorageException) {
         SaveResult.Failed
     }

@@ -196,6 +196,29 @@ class SaveCareNoteUseCaseTest {
         assertEquals(listOf(original, firstEdit), careNoteRepository.savedNotes)
     }
 
+    @Test
+    fun `given two edits of one note saved at once, when the second is saved, then it is refused`() = runTest {
+        // Given
+        careNoteRepository.save(original)
+        val firstEdit = original.copy(id = UUID(0, 2), transcript = "Pulse 76", revisionOf = original.id)
+        careNoteRepository.save(firstEdit)
+        // The second save checked for an edit just before the first one was stored.
+        careNoteRepository.missNextRevision = true
+
+        // When
+        val result = saveCareNote(
+            residentId = "res-1",
+            transcript = "Pulse 80",
+            vitals = Vitals(pulse = 80),
+            revisionOf = original.id,
+        )
+
+        // Then
+        assertEquals(SaveResult.CannotRevise, result)
+        assertEquals(listOf(original, firstEdit), careNoteRepository.savedNotes)
+        assertEquals(0, syncScheduler.requestCount)
+    }
+
     private val original: CareNote
         get() = CareNote(
             id = UUID(0, 1),

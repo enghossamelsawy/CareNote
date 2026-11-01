@@ -27,7 +27,8 @@ import java.time.Instant
             childColumns = ["residentId"],
         ),
     ],
-    indices = [Index("residentId")],
+    // Unique: a version can be replaced by only one edit, so the history never splits. NULLs don't clash.
+    indices = [Index("residentId"), Index(value = ["revisionOf"], unique = true)],
 )
 data class CareNoteEntity(
     @PrimaryKey val id: String,

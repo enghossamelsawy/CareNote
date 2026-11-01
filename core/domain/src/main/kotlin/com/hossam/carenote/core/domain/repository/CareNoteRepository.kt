@@ -22,7 +22,10 @@ interface CareNoteRepository {
     /** True when a newer note revises [noteId], so it is no longer the current version. */
     suspend fun hasRevision(noteId: UUID): Boolean
 
-    /** Stores the note and queues it for sync in one transaction. */
+    /**
+     * Stores the note and queues it for sync in one transaction. Throws [NoteAlreadyRevisedException] when the
+     * note is an edit of a version that already has one.
+     */
     suspend fun save(note: CareNote)
 
     /** Queues a FAILED note for another sync attempt; any other note is left as it is and false returned. */

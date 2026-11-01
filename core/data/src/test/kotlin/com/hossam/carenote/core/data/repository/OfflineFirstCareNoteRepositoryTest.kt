@@ -4,6 +4,7 @@ import com.hossam.carenote.core.data.inMemoryDatabase
 import com.hossam.carenote.core.database.CareNoteDatabase
 import com.hossam.carenote.core.database.model.OutboxEntity
 import com.hossam.carenote.core.database.model.ResidentEntity
+import com.hossam.carenote.core.domain.repository.NoteAlreadyRevisedException
 import com.hossam.carenote.core.domain.repository.StorageException
 import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.SyncStatus
@@ -136,6 +137,21 @@ class OfflineFirstCareNoteRepositoryTest {
 
         // Then
         assertTrue(error is StorageException)
+    }
+
+    @Test
+    fun `given an edited note, when saving a second edit of it, then it is refused as already edited`() = runTest {
+        // Given
+        val original = careNote(id = 1)
+        repository.save(original)
+        repository.save(careNote(id = 2).copy(revisionOf = original.id))
+
+        // When
+        val error = runCatching { repository.save(careNote(id = 3).copy(revisionOf = original.id)) }.exceptionOrNull()
+
+        // Then
+        assertEquals(original.id, (error as NoteAlreadyRevisedException).noteId)
+        assertFalse(repository.observeNotes("res-1").first().any { it.id == uuid(3) })
     }
 
     private fun uuid(id: Int): UUID = UUID(0, id.toLong())

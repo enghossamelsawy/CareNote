@@ -25,5 +25,16 @@ object Migrations {
         }
     }
 
-    val all: Array<Migration> = arrayOf(MIGRATION_1_2)
+    /**
+     * Allows only one edit per version, see [com.hossam.carenote.core.database.model.CareNoteEntity]. Before
+     * this, the app checked that rule in code, so a v2 database has no two edits of one version; if one did,
+     * creating the index fails instead of deleting a care record to make it fit.
+     */
+    val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_care_notes_revisionOf ON care_notes (revisionOf)")
+        }
+    }
+
+    val all: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
 }

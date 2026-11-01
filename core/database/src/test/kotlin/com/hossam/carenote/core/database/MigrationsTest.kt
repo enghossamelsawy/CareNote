@@ -1,13 +1,16 @@
 package com.hossam.carenote.core.database
 
 import android.content.Context
+import android.database.sqlite.SQLiteConstraintException
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -51,6 +54,26 @@ class MigrationsTest {
         migrated.close()
     }
 
+    @Test
+    fun `given an edited note in a v2 database, when migrating to v3, then a second edit of it is refused`() {
+        // Given
+        createDatabase(version = 2).use { db ->
+            db.execSQL("INSERT INTO residents (id, firstName, lastName, room) VALUES ('r1', 'Anna', 'Becker', '101')")
+            insertNote(db, id = "original", createdAt = 1_000)
+            insertNote(db, id = "edit", createdAt = 2_000, revisionOf = "original")
+        }
+
+        // When
+        val migrated = openWithMigrations()
+
+        // Then
+        val db = migrated.openHelper.writableDatabase
+        assertThrows(SQLiteConstraintException::class.java) {
+            insertNote(db, id = "other edit", createdAt = 3_000, revisionOf = "original")
+        }
+        migrated.close()
+    }
+
     /** The database exactly as [version] created it, from that version's exported schema. */
     private fun createDatabase(version: Int): SQLiteDatabase {
         val json = context.assets.open("$SCHEMAS/$version.json").bufferedReader().use { it.readText() }
@@ -81,11 +104,18 @@ class MigrationsTest {
         .allowMainThreadQueries()
         .build()
 
-    private fun insertNote(db: SQLiteDatabase, id: String, createdAt: Long) {
-        db.execSQL(
-            "INSERT INTO care_notes (id, residentId, transcript, createdAt, revisionOf, syncStatus, pulse) " +
-                "VALUES ('$id', 'r1', 'Pulse 72', $createdAt, NULL, 'PENDING', 72)",
-        )
+    private fun insertNote(db: SQLiteDatabase, id: String, createdAt: Long, revisionOf: String? = null) {
+        db.execSQL(insertNoteSql(id, createdAt, revisionOf))
+    }
+
+    private fun insertNote(db: SupportSQLiteDatabase, id: String, createdAt: Long, revisionOf: String? = null) {
+        db.execSQL(insertNoteSql(id, createdAt, revisionOf))
+    }
+
+    private fun insertNoteSql(id: String, createdAt: Long, revisionOf: String?): String {
+        val revision = revisionOf?.let { "'$it'" } ?: "NULL"
+        return "INSERT INTO care_notes (id, residentId, transcript, createdAt, revisionOf, syncStatus, pulse) " +
+            "VALUES ('$id', 'r1', 'Pulse 72', $createdAt, $revision, 'PENDING', 72)"
     }
 
     private companion object {

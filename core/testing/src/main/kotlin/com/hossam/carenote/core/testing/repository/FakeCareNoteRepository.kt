@@ -1,6 +1,7 @@
 package com.hossam.carenote.core.testing.repository
 
 import com.hossam.carenote.core.domain.repository.CareNoteRepository
+import com.hossam.carenote.core.domain.repository.NoteAlreadyRevisedException
 import com.hossam.carenote.core.domain.repository.StorageException
 import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.SyncStatus
@@ -16,6 +17,9 @@ class FakeCareNoteRepository : CareNoteRepository {
 
     /** When true, the next [save] fails like a full disk would, and stores nothing. */
     var failNextSave = false
+
+    /** When true, the next [hasRevision] answers false, like a check made just before another edit was saved. */
+    var missNextRevision = false
 
     /** Every note saved so far, in the order they were saved. */
     val savedNotes: List<CareNote>
@@ -34,7 +38,13 @@ class FakeCareNoteRepository : CareNoteRepository {
 
     override suspend fun getNote(noteId: UUID): CareNote? = notes.value.find { it.id == noteId }
 
-    override suspend fun hasRevision(noteId: UUID): Boolean = notes.value.any { it.revisionOf == noteId }
+    override suspend fun hasRevision(noteId: UUID): Boolean {
+        if (missNextRevision) {
+            missNextRevision = false
+            return false
+        }
+        return notes.value.any { it.revisionOf == noteId }
+    }
 
     override suspend fun save(note: CareNote) {
         if (failNextSave) {
@@ -42,6 +52,11 @@ class FakeCareNoteRepository : CareNoteRepository {
             throw StorageException(IllegalStateException("Disk full"))
         }
         check(notes.value.none { it.id == note.id }) { "Notes are append-only; ${note.id} already exists" }
+        val original = note.revisionOf
+        // Like the database's unique index: one edit per version.
+        if (original != null && notes.value.any { it.revisionOf == original }) {
+            throw NoteAlreadyRevisedException(original)
+        }
         notes.update { it + note }
     }
 
