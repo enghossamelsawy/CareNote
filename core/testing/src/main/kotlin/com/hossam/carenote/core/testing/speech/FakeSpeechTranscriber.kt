@@ -15,9 +15,13 @@ import kotlinx.coroutines.flow.transformWhile
 class FakeSpeechTranscriber : SpeechTranscriber {
     private val events = MutableSharedFlow<TranscriptionEvent>()
 
-    /** True only while a collector is listening, so tests can check that stopping really stops. */
-    var isListening = false
+    /** How many collectors are listening right now; more than one means two recordings hold the microphone. */
+    var listenerCount = 0
         private set
+
+    /** True only while a collector is listening, so tests can check that stopping really stops. */
+    val isListening: Boolean
+        get() = listenerCount > 0
 
     suspend fun emit(event: TranscriptionEvent) {
         events.emit(event)
@@ -27,6 +31,6 @@ class FakeSpeechTranscriber : SpeechTranscriber {
         .transformWhile { event ->
             emit(event)
             event is TranscriptionEvent.Partial
-        }.onStart { isListening = true }
-        .onCompletion { isListening = false }
+        }.onStart { listenerCount++ }
+        .onCompletion { listenerCount-- }
 }

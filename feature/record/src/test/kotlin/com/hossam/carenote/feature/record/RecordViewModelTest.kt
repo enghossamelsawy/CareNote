@@ -464,6 +464,39 @@ class RecordViewModelTest {
     }
 
     @Test
+    fun `given a note in review, when record more and start over are tapped quickly, then only one recording runs`() =
+        runTest {
+            // Given
+            val viewModel = reviewing("Pulse 72")
+
+            // When
+            viewModel.onIntent(RecordIntent.RecordMoreClicked)
+            viewModel.onIntent(RecordIntent.RecordClicked)
+            viewModel.onIntent(granted)
+            viewModel.onIntent(granted)
+
+            // Then
+            assertEquals(1, speechTranscriber.listenerCount)
+            assertEquals("Pulse 72", viewModel.state.value.transcript)
+        }
+
+    @Test
+    fun `given a doubled start, when recording is stopped, then the microphone is free`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72")
+        viewModel.onIntent(RecordIntent.RecordMoreClicked)
+        viewModel.onIntent(RecordIntent.RecordClicked)
+        viewModel.onIntent(granted)
+        viewModel.onIntent(granted)
+
+        // When
+        viewModel.onIntent(RecordIntent.StopClicked)
+
+        // Then
+        assertEquals(0, speechTranscriber.listenerCount)
+    }
+
+    @Test
     fun `given a note being saved, when the words or a vital change, then the note stays as saved`() = runTest {
         // Given
         val viewModel = reviewing("Pulse 72")

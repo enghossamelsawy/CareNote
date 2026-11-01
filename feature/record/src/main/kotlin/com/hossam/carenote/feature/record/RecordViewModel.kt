@@ -41,6 +41,9 @@ class RecordViewModel @AssistedInject constructor(
 ) : MviViewModel<RecordState, RecordIntent, RecordEffect>(RecordState()) {
     private var recording: Job? = null
 
+    // A permission request is on its way; further taps wait for it, so the first tap decides.
+    private var awaitingPermission = false
+
     // One recording's bookkeeping: what the note held before it started, and the words heard since.
     private var appendNext = false
     private var keptTranscript = ""
@@ -111,12 +114,14 @@ class RecordViewModel @AssistedInject constructor(
 
     /** [append] keeps the note in review and adds the new words to it; otherwise the next recording starts over. */
     private fun requestRecording(append: Boolean) {
-        if (currentState.phase == RecordPhase.Recording || currentState.isSaving) return
+        if (awaitingPermission || currentState.phase == RecordPhase.Recording || currentState.isSaving) return
+        awaitingPermission = true
         appendNext = append
         sendEffect(RecordEffect.RequestMicPermission)
     }
 
     private fun onPermissionResult(result: RecordIntent.PermissionResult) {
+        awaitingPermission = false
         when {
             result.granted -> startRecording()
             result.canAskAgain -> setState { copy(permission = MicPermission.Denied) }
@@ -124,7 +129,10 @@ class RecordViewModel @AssistedInject constructor(
         }
     }
 
+    /** Only ever one recording: a second start is ignored, and no earlier listener is left holding the microphone. */
     private fun startRecording() {
+        if (currentState.phase == RecordPhase.Recording) return
+        recording?.cancel()
         val append = appendNext && currentState.phase == RecordPhase.Done
         keptTranscript = if (append) currentState.transcript else ""
         keptVitals = if (append) currentState.vitals else VitalsForm()
