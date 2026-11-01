@@ -118,6 +118,27 @@ class NoteSyncerTest {
     }
 
     @Test
+    fun `given a refused original that was edited, when it is retried, then the server gets it before the edit`() =
+        runTest {
+            // Given
+            val original = note(id = 1, createdAt = 10)
+            repository.save(original)
+            remoteDataSource.sendResults[original.id] = SendResult.Rejected(400)
+            syncer.syncPending()
+            remoteDataSource.sendResults.clear()
+            remoteDataSource.sentNotes.clear()
+            val edit = note(id = 2, createdAt = 20).copy(revisionOf = original.id)
+            repository.save(edit)
+            repository.retry(original.id)
+
+            // When
+            syncer.syncPending()
+
+            // Then
+            assertEquals(listOf(original.id, edit.id), remoteDataSource.sentNotes.map { it.id })
+        }
+
+    @Test
     fun `given an empty queue, when syncing, then nothing is sent`() = runTest {
         // When
         val outcome = syncer.syncPending()

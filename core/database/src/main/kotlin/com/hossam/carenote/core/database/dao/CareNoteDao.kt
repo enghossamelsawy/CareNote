@@ -24,17 +24,26 @@ interface CareNoteDao {
     )
     fun observePendingCounts(): Flow<List<PendingCount>>
 
-    /** Notes are append-only, so saving an existing id throws instead of replacing it. */
+    /**
+     * Notes are append-only, so saving an existing id throws instead of replacing it. The app saves through
+     * [insertAndQueue], which also numbers the note; this stays for tests that only need rows.
+     */
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(note: CareNoteEntity)
+
+    @Query("SELECT COALESCE(MAX(saveOrder), 0) + 1 FROM care_notes")
+    suspend fun nextSaveOrder(): Long
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertOutboxEntry(entry: OutboxEntity)
 
-    /** Saves the note and queues it for sync in one transaction, so a note can't exist without its queue entry. */
+    /**
+     * Saves the note and queues it for sync in one transaction, so a note can't exist without its queue entry.
+     * The note gets the next [CareNoteEntity.saveOrder]; the transaction keeps two saves from getting the same one.
+     */
     @Transaction
     suspend fun insertAndQueue(note: CareNoteEntity, entry: OutboxEntity) {
-        insert(note)
+        insert(note.copy(saveOrder = nextSaveOrder()))
         insertOutboxEntry(entry)
     }
 

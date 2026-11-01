@@ -33,17 +33,47 @@ class OutboxDaoTest {
     }
 
     @Test
-    fun `given several entries, when reading the oldest, then they come in enqueue order up to the limit`() = runTest {
+    fun `given notes saved one after another, when reading the oldest, then they come in save order`() = runTest {
         // Given
-        queue("late", enqueuedAt = Instant.ofEpochSecond(3))
-        queue("early", enqueuedAt = Instant.ofEpochSecond(1))
-        queue("middle", enqueuedAt = Instant.ofEpochSecond(2))
+        // Queue times that disagree with the save order, as after the phone's clock was moved back.
+        queue("first", enqueuedAt = Instant.ofEpochSecond(3))
+        queue("second", enqueuedAt = Instant.ofEpochSecond(1))
+        queue("third", enqueuedAt = Instant.ofEpochSecond(2))
 
         // When
         val entries = dao.oldest(limit = 2)
 
         // Then
-        assertEquals(listOf("early", "middle"), entries.map { it.noteId })
+        assertEquals(listOf("first", "second"), entries.map { it.noteId })
+    }
+
+    @Test
+    fun `given notes saved in the same instant, when reading the oldest, then they come in save order`() = runTest {
+        // Given
+        listOf("a", "b", "c").forEach { queue(it, enqueuedAt = Instant.EPOCH) }
+
+        // When
+        val entries = dao.oldest(limit = 10)
+
+        // Then
+        assertEquals(listOf("a", "b", "c"), entries.map { it.noteId })
+    }
+
+    @Test
+    fun `given a refused original that was edited, when it is retried, then it is sent before its edit`() = runTest {
+        // Given
+        queue("original", enqueuedAt = Instant.ofEpochSecond(1))
+        database.careNoteDao().markFailed("original")
+        database.careNoteDao().insertAndQueue(
+            careNote("edit", "r1", revisionOf = "original"),
+            outboxEntry("edit", enqueuedAt = Instant.ofEpochSecond(2)),
+        )
+
+        // When
+        database.careNoteDao().requeue(outboxEntry("original", enqueuedAt = Instant.ofEpochSecond(3)))
+
+        // Then
+        assertEquals(listOf("original", "edit"), dao.oldest(limit = 10).map { it.noteId })
     }
 
     @Test

@@ -39,6 +39,15 @@ class CareNoteDaoTest {
     }
 
     @Test
+    fun `given three notes, when they are saved and queued, then they are numbered in save order`() = runTest {
+        // When
+        listOf("a", "b", "c").forEach { dao.insertAndQueue(careNote(it, "r1"), outboxEntry(it)) }
+
+        // Then
+        assertEquals(listOf(1L, 2L, 3L), listOf("a", "b", "c").map { dao.getById(it)?.saveOrder })
+    }
+
+    @Test
     fun `given notes for two residents, when observing one, then only theirs come newest first`() = runTest {
         // Given
         dao.insert(careNote("old", "r1", createdAt = Instant.ofEpochSecond(1)))

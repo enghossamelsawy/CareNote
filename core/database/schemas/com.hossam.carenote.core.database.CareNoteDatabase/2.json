@@ -1,0 +1,205 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "455e2db03d93fc42cf1ea7a299e7908f",
+    "entities": [
+      {
+        "tableName": "residents",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `room` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstName",
+            "columnName": "firstName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastName",
+            "columnName": "lastName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "room",
+            "columnName": "room",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "care_notes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `residentId` TEXT NOT NULL, `transcript` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `revisionOf` TEXT, `syncStatus` TEXT NOT NULL, `saveOrder` INTEGER NOT NULL DEFAULT 0, `systolic` INTEGER, `diastolic` INTEGER, `pulse` INTEGER, `temperatureCelsius` REAL, `oxygenSaturation` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`residentId`) REFERENCES `residents`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "residentId",
+            "columnName": "residentId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transcript",
+            "columnName": "transcript",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "revisionOf",
+            "columnName": "revisionOf",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "syncStatus",
+            "columnName": "syncStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "saveOrder",
+            "columnName": "saveOrder",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "vitals.systolic",
+            "columnName": "systolic",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "vitals.diastolic",
+            "columnName": "diastolic",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "vitals.pulse",
+            "columnName": "pulse",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "vitals.temperatureCelsius",
+            "columnName": "temperatureCelsius",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "vitals.oxygenSaturation",
+            "columnName": "oxygenSaturation",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_care_notes_residentId",
+            "unique": false,
+            "columnNames": [
+              "residentId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_care_notes_residentId` ON `${TABLE_NAME}` (`residentId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "residents",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "residentId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "outbox",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`noteId` TEXT NOT NULL, `enqueuedAt` INTEGER NOT NULL, `attempts` INTEGER NOT NULL, `lastAttemptAt` INTEGER, `lastError` TEXT, PRIMARY KEY(`noteId`), FOREIGN KEY(`noteId`) REFERENCES `care_notes`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "noteId",
+            "columnName": "noteId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enqueuedAt",
+            "columnName": "enqueuedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "attempts",
+            "columnName": "attempts",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastAttemptAt",
+            "columnName": "lastAttemptAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastError",
+            "columnName": "lastError",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "noteId"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "care_notes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "noteId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '455e2db03d93fc42cf1ea7a299e7908f')"
+    ]
+  }
+}

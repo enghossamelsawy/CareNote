@@ -10,9 +10,10 @@ import com.hossam.carenote.core.database.model.CareNoteEntity
 import com.hossam.carenote.core.database.model.OutboxEntity
 import com.hossam.carenote.core.database.model.ResidentEntity
 
+/** Every schema change adds a version and a migration in [Migrations]; the exported schemas are tested. */
 @Database(
     entities = [ResidentEntity::class, CareNoteEntity::class, OutboxEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(InstantConverters::class)

@@ -3,6 +3,7 @@ package com.hossam.carenote.core.database.di
 import android.content.Context
 import androidx.room.Room
 import com.hossam.carenote.core.database.CareNoteDatabase
+import com.hossam.carenote.core.database.Migrations
 import com.hossam.carenote.core.database.dao.CareNoteDao
 import com.hossam.carenote.core.database.dao.OutboxDao
 import com.hossam.carenote.core.database.dao.ResidentDao
@@ -20,6 +21,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): CareNoteDatabase = Room
         .databaseBuilder(context, CareNoteDatabase::class.java, "care_note.db")
+        .addMigrations(*Migrations.all)
         .build()
 
     @Provides

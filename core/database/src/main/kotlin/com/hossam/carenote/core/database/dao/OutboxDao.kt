@@ -8,7 +8,14 @@ import java.time.Instant
 /** The sync queue, as the sync worker sees it. Entries are added together with their note, see [CareNoteDao]. */
 @Dao
 interface OutboxDao {
-    @Query("SELECT * FROM outbox ORDER BY enqueuedAt LIMIT :limit")
+    /**
+     * The next entries to send, in the order their notes were saved. A retried note keeps its place, so an
+     * original always goes before its edit, whenever it was queued again.
+     */
+    @Query(
+        "SELECT outbox.* FROM outbox JOIN care_notes ON care_notes.id = outbox.noteId " +
+            "ORDER BY care_notes.saveOrder LIMIT :limit",
+    )
     suspend fun oldest(limit: Int): List<OutboxEntity>
 
     @Query("UPDATE outbox SET attempts = attempts + 1, lastAttemptAt = :at, lastError = :error WHERE noteId = :noteId")

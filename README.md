@@ -96,7 +96,9 @@ sequenceDiagram
   note reached the server before a crash or timeout, the server answers 409 and the app treats it as stored.
   A note is never stored twice.
 - **Oldest first, stop at the first "try later".** If the server is down for one note it's down for all,
-  so the worker stops instead of failing each one, and the order notes were queued in is kept. A note the
+  so the worker stops instead of failing each one. "Oldest" means the order notes were saved in, numbered
+  in the database, not a clock time: a retried note keeps its place, so an original always goes before its
+  edit, even if the phone's clock was changed. A note the
   server *refuses* is set aside as "not synced" and the queue moves on. Retry only works on such a note, so
   a double tap or a note that synced meanwhile changes nothing.
 - **One sync at a time.** Unique work (`note-sync`, `APPEND_OR_REPLACE`) only runs with a network and
@@ -108,7 +110,7 @@ Editing a note saves a **new note** whose `revisionOf` points at the version it 
 changed or deleted.
 
 - **Sync stays insert-only.** Edits travel through the same outbox and idempotency key as new notes. The
-  queue is oldest first, so the original normally reaches the server before its edit; if the server refuses
+  queue follows save order, so the original is sent before its edit, retries included; if the server refuses
   the original, the edit can still sync on its own (see [Known limitations](#known-limitations)).
 - **The record stays auditable**, which care documentation requires: every version is kept locally and on
   the server, and the note screen shows the earlier ones.
