@@ -2,8 +2,11 @@
 <resources>
     <string name="resident_room">Room %1$s</string>
     <string name="resident_back">Back</string>
-    <string name="resident_no_notes">No notes yet</string>
-    <string name="resident_not_found">Resident not found</string>
+    <string name="resident_no_notes_title">No notes for %1$s yet</string>
+    <string name="resident_no_notes_message">Tap Record note to dictate the first one.</string>
+    <string name="resident_not_found_title">Resident not found</string>
+    <string name="resident_not_found_message">They may have been moved or removed.</string>
+    <string name="resident_not_found_action">Back to residents</string>
     <string name="resident_record_note">Record note</string>
     <string name="resident_note_pending">Waiting to sync</string>
     <string name="resident_note_syncing">Syncing</string>

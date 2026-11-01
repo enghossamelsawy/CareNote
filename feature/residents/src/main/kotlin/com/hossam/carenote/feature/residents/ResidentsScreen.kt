@@ -26,6 +26,8 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hossam.carenote.core.designsystem.component.Avatar
+import com.hossam.carenote.core.designsystem.component.EmptyState
+import com.hossam.carenote.core.designsystem.component.EmptyStateIcon
 import com.hossam.carenote.core.designsystem.component.StatusBadge
 import com.hossam.carenote.core.designsystem.component.StatusBanner
 import com.hossam.carenote.core.designsystem.component.StatusTone
@@ -105,16 +107,14 @@ private fun ResidentsContent(
             CircularProgressIndicator()
         }
 
-        state.residents.isEmpty() -> Box(
-            modifier = modifier.fillMaxSize().padding(CareNoteTheme.spacing.lg),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = stringResource(R.string.residents_empty),
-                style = CareNoteTheme.typography.bodyLarge,
-                color = CareNoteTheme.colors.onSurfaceVariant,
-            )
-        }
+        state.residents.isEmpty() -> EmptyState(
+            title = stringResource(R.string.residents_empty_title),
+            message = stringResource(R.string.residents_empty_message),
+            illustration = { EmptyStateIcon(CareNoteIcons.Group) },
+            modifier = modifier,
+            actionLabel = stringResource(R.string.residents_empty_action),
+            onAction = { onIntent(ResidentsIntent.RetryClicked) },
+        )
 
         else -> LazyColumn(modifier = modifier) {
             items(state.residents, key = { it.id }) { resident ->

@@ -2,7 +2,9 @@
 <resources>
     <string name="residents_title">Residents</string>
     <string name="residents_room">Room %1$s</string>
-    <string name="residents_empty">No residents yet</string>
+    <string name="residents_empty_title">No residents yet</string>
+    <string name="residents_empty_message">The list downloads when the phone is online.</string>
+    <string name="residents_empty_action">Try again</string>
     <string name="residents_debug_menu">Debug menu</string>
     <string name="residents_offline">Offline. New notes are saved on this phone and sync when you\'re back online.</string>
     <plurals name="residents_pending">

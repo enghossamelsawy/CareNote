@@ -21,6 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.hossam.carenote.core.designsystem.component.Avatar
+import com.hossam.carenote.core.designsystem.component.AvatarSize
+import com.hossam.carenote.core.designsystem.component.EmptyState
+import com.hossam.carenote.core.designsystem.component.EmptyStateIcon
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
@@ -105,18 +108,21 @@ fun ResidentScreen(state: ResidentState, onIntent: (ResidentIntent) -> Unit, mod
                 CircularProgressIndicator()
             }
 
-            state.notFound || state.notes.isEmpty() -> Box(
-                modifier = contentModifier.padding(CareNoteTheme.spacing.lg),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(
-                        if (state.notFound) R.string.resident_not_found else R.string.resident_no_notes,
-                    ),
-                    style = CareNoteTheme.typography.bodyLarge,
-                    color = CareNoteTheme.colors.onSurfaceVariant,
-                )
-            }
+            state.notFound -> EmptyState(
+                title = stringResource(R.string.resident_not_found_title),
+                message = stringResource(R.string.resident_not_found_message),
+                illustration = { EmptyStateIcon(CareNoteIcons.PersonOff) },
+                modifier = contentModifier,
+                actionLabel = stringResource(R.string.resident_not_found_action),
+                onAction = { onIntent(ResidentIntent.BackClicked) },
+            )
+
+            state.notes.isEmpty() -> EmptyState(
+                title = stringResource(R.string.resident_no_notes_title, state.name),
+                message = stringResource(R.string.resident_no_notes_message),
+                illustration = { Avatar(name = state.name, colorKey = state.residentId, size = AvatarSize.Large) },
+                modifier = contentModifier,
+            )
 
             else -> NotesList(
                 notes = state.notes,

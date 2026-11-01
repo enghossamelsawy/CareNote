@@ -16,6 +16,9 @@ data class ResidentItem(val id: String, val name: String, val room: String, val 
 
 sealed interface ResidentsIntent : UiIntent {
     data class ResidentClicked(val residentId: String) : ResidentsIntent
+
+    /** Offered when the list is empty, e.g. the first download failed. */
+    data object RetryClicked : ResidentsIntent
 }
 
 sealed interface ResidentsEffect : UiEffect {

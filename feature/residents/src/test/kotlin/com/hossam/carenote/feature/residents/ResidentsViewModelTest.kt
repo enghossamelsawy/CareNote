@@ -104,6 +104,19 @@ class ResidentsViewModelTest {
         assertEquals(listOf("res-1"), viewModel.state.value.residents.map { it.id })
     }
 
+    @Test
+    fun `given the first download failed, when try again is clicked, then residents are refreshed again`() = runTest {
+        // Given
+        residentRepository.refreshResult = RefreshResult.Unavailable
+        val viewModel = createViewModel()
+
+        // When
+        viewModel.onIntent(ResidentsIntent.RetryClicked)
+
+        // Then
+        assertEquals(2, residentRepository.refreshCount)
+    }
+
     private fun createViewModel() = ResidentsViewModel(
         observeResidentsWithPendingCount = ObserveResidentsWithPendingCountUseCase(
             residentRepository = residentRepository,

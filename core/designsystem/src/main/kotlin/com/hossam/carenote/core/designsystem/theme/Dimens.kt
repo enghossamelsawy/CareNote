@@ -16,6 +16,8 @@ data class Dimens(
     val iconLg: Dp = 48.dp,
     val avatarSm: Dp = 40.dp,
     val avatarLg: Dp = 72.dp,
+    /** The circle above an empty screen's title. */
+    val emptyStateIllustration: Dp = 96.dp,
     val borderThin: Dp = 1.dp,
     /** The colored edge that marks a card needing attention. */
     val accentStrip: Dp = 4.dp,

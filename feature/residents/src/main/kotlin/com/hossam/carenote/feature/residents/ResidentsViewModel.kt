@@ -15,7 +15,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ResidentsViewModel @Inject constructor(
     observeResidentsWithPendingCount: ObserveResidentsWithPendingCountUseCase,
-    refreshResidents: RefreshResidentsUseCase,
+    private val refreshResidents: RefreshResidentsUseCase,
     observeNetworkStatus: ObserveNetworkStatusUseCase,
 ) : MviViewModel<ResidentsState, ResidentsIntent, ResidentsEffect>(ResidentsState()) {
     init {
@@ -33,6 +33,7 @@ class ResidentsViewModel @Inject constructor(
     override fun onIntent(intent: ResidentsIntent) {
         when (intent) {
             is ResidentsIntent.ResidentClicked -> sendEffect(ResidentsEffect.OpenResident(intent.residentId))
+            ResidentsIntent.RetryClicked -> viewModelScope.launch { refreshResidents() }
         }
     }
 
