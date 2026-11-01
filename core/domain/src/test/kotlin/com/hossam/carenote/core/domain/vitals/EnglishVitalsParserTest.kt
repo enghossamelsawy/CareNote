@@ -54,6 +54,21 @@ class EnglishVitalsParserTest(private val transcript: String, private val expect
                 "Slept well. Blood pressure 140 over 90 and pulse 88.",
                 Vitals(systolic = 140, diastolic = 90, pulse = 88),
             ),
+            // Filler words people say between the keyword and the value
+            arrayOf("temperature is 36.8", Vitals(temperatureCelsius = 36.8)),
+            arrayOf("blood pressure was 120 over 80", Vitals(systolic = 120, diastolic = 80)),
+            arrayOf("pulse of 72", Vitals(pulse = 72)),
+            arrayOf("temp = 37", Vitals(temperatureCelsius = 37.0)),
+            arrayOf("temperature was about 36.8", Vitals(temperatureCelsius = 36.8)),
+            arrayOf("sats at 97%", Vitals(oxygenSaturation = 97)),
+            arrayOf(
+                "Pulse is 72 and temperature is 36,8",
+                Vitals(pulse = 72, temperatureCelsius = 36.8),
+            ),
+            // Only those words are skipped: anything else still means "not dictated"
+            arrayOf("temperature is not measured", Vitals.EMPTY),
+            arrayOf("temperature island 36", Vitals.EMPTY),
+            arrayOf("pulse was very high 120", Vitals.EMPTY),
             // Case doesn't matter
             arrayOf("PULSE 72", Vitals(pulse = 72)),
             arrayOf("Blood Pressure 130 OVER 85", Vitals(systolic = 130, diastolic = 85)),
