@@ -136,4 +136,30 @@ class CareNoteDaoTest {
             database.outboxDao().oldest(limit = 10),
         )
     }
+
+    @Test
+    fun `given a queued note, when the server accepts it, then it is synced and off the queue`() = runTest {
+        // Given
+        dao.insertAndQueue(careNote("1", "r1"), outboxEntry("1"))
+
+        // When
+        dao.markSynced("1")
+
+        // Then
+        assertEquals(SyncStatus.SYNCED, dao.getById("1")?.syncStatus)
+        assertTrue(database.outboxDao().oldest(limit = 10).isEmpty())
+    }
+
+    @Test
+    fun `given a queued note, when the server refuses it, then it is failed and off the queue`() = runTest {
+        // Given
+        dao.insertAndQueue(careNote("1", "r1"), outboxEntry("1"))
+
+        // When
+        dao.markFailed("1")
+
+        // Then
+        assertEquals(SyncStatus.FAILED, dao.getById("1")?.syncStatus)
+        assertTrue(database.outboxDao().oldest(limit = 10).isEmpty())
+    }
 }

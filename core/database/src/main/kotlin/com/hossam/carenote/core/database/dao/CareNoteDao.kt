@@ -38,8 +38,28 @@ interface CareNoteDao {
         insertOutboxEntry(entry)
     }
 
+    @Query("SELECT * FROM care_notes WHERE id = :id")
+    suspend fun getById(id: String): CareNoteEntity?
+
     @Query("UPDATE care_notes SET syncStatus = :status WHERE id = :id")
     suspend fun updateSyncStatus(id: String, status: SyncStatus)
+
+    @Query("DELETE FROM outbox WHERE noteId = :noteId")
+    suspend fun deleteOutboxEntry(noteId: String)
+
+    /** The server has the note: mark it and take it off the queue, in one transaction. */
+    @Transaction
+    suspend fun markSynced(id: String) {
+        updateSyncStatus(id, SyncStatus.SYNCED)
+        deleteOutboxEntry(id)
+    }
+
+    /** The server refused the note: it stays visible as FAILED until someone retries it. */
+    @Transaction
+    suspend fun markFailed(id: String) {
+        updateSyncStatus(id, SyncStatus.FAILED)
+        deleteOutboxEntry(id)
+    }
 
     /** Adds the entry, or replaces the note's existing one, e.g. to reset its attempts. */
     @Upsert
