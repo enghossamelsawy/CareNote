@@ -2,11 +2,14 @@ package com.hossam.carenote.core.domain.usecase
 
 import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.CurrentCareNote
+import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.testing.repository.FakeCareNoteRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 import java.util.UUID
@@ -87,6 +90,34 @@ class ObserveCareNotesUseCaseTest {
 
         // Then
         assertEquals(listOf(CurrentCareNote(note = edit, firstWrittenAt = edit.createdAt)), notes)
+    }
+
+    @Test
+    fun `given a refused original that was edited, when observing, then the edit is marked`() = runTest {
+        // Given
+        val original = note(id = 1, writtenAt = 10).copy(syncStatus = SyncStatus.FAILED)
+        careNoteRepository.save(original)
+        careNoteRepository.save(note(id = 2, writtenAt = 20, revisionOf = original.id))
+
+        // When
+        val notes = observeCareNotes("res-1").first()
+
+        // Then
+        assertTrue(notes.single().earlierNotSynced)
+    }
+
+    @Test
+    fun `given a refused original, when it syncs after a retry, then the edit is no longer marked`() = runTest {
+        // Given
+        val original = note(id = 1, writtenAt = 10).copy(syncStatus = SyncStatus.FAILED)
+        careNoteRepository.save(original)
+        careNoteRepository.save(note(id = 2, writtenAt = 20, revisionOf = original.id))
+
+        // When
+        careNoteRepository.setSyncStatus(original.id, SyncStatus.SYNCED)
+
+        // Then
+        assertFalse(observeCareNotes("res-1").first().single().earlierNotSynced)
     }
 
     private fun note(id: Long, writtenAt: Long, revisionOf: UUID? = null) = CareNote(

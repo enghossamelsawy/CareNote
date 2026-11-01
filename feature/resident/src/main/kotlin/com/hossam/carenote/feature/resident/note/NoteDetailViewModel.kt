@@ -42,6 +42,7 @@ class NoteDetailViewModel @AssistedInject constructor(
                                     id = version.id,
                                     writtenAt = version.createdAt,
                                     transcript = version.transcript,
+                                    status = version.syncStatus,
                                 )
                             },
                         )
@@ -55,9 +56,15 @@ class NoteDetailViewModel @AssistedInject constructor(
         when (intent) {
             NoteDetailIntent.BackClicked -> sendEffect(NoteDetailEffect.NavigateBack)
             NoteDetailIntent.EditClicked -> if (note != null) sendEffect(NoteDetailEffect.OpenEditor(note.id))
-            NoteDetailIntent.RetryClicked -> if (note != null) viewModelScope.launch { retryCareNoteSync(note.id) }
+            is NoteDetailIntent.RetryClicked -> if (isShown(intent.noteId)) {
+                viewModelScope.launch { retryCareNoteSync(intent.noteId) }
+            }
         }
     }
+
+    /** Only versions of the note on screen are retried, never an id from elsewhere. */
+    private fun isShown(noteId: UUID): Boolean =
+        currentState.note?.id == noteId || currentState.earlier.any { it.id == noteId }
 
     @AssistedFactory
     interface Factory {

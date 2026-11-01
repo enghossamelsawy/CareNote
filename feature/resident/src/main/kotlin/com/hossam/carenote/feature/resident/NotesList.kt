@@ -94,6 +94,13 @@ private fun NoteCard(note: NoteItem, onRetry: () -> Unit, onOpen: () -> Unit, mo
                 verticalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.sm),
             ) {
                 NoteHeader(note)
+                if (note.earlierNotSynced) {
+                    Text(
+                        text = stringResource(R.string.resident_note_earlier_not_synced),
+                        style = CareNoteTheme.typography.labelMedium,
+                        color = CareNoteTheme.statusColors.errorIndicator,
+                    )
+                }
                 VitalTiles(vitals = note.vitals, assessment = note.assessment)
                 if (note.transcript.isNotBlank()) {
                     Text(

@@ -674,22 +674,21 @@ class RecordViewModelTest {
     }
 
     @Test
-    fun `given a corrected note in review, when Android stops the app, then the note comes back as it was`() =
-        runTest {
-            // Given
-            val viewModel = reviewing("Pulse 72, slept well")
-            viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Pulse, "76"))
+    fun `given a corrected note in review, when Android stops the app, then the note comes back as it was`() = runTest {
+        // Given
+        val viewModel = reviewing("Pulse 72, slept well")
+        viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Pulse, "76"))
 
-            // When
-            val restored = createViewModel()
+        // When
+        val restored = createViewModel()
 
-            // Then
-            val state = restored.state.value
-            assertEquals(RecordPhase.Done, state.phase)
-            assertEquals("Pulse 72, slept well", state.transcript)
-            assertEquals("76", state.vitals[VitalField.Pulse])
-            assertTrue(state.hasUnsavedNote)
-        }
+        // Then
+        val state = restored.state.value
+        assertEquals(RecordPhase.Done, state.phase)
+        assertEquals("Pulse 72, slept well", state.transcript)
+        assertEquals("76", state.vitals[VitalField.Pulse])
+        assertTrue(state.hasUnsavedNote)
+    }
 
     @Test
     fun `given a recording in progress, when Android stops the app, then the words heard come back in review`() =

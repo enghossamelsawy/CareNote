@@ -3,6 +3,7 @@ package com.hossam.carenote.feature.resident.note
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,6 +31,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hossam.carenote.core.designsystem.component.EmptyState
 import com.hossam.carenote.core.designsystem.component.EmptyStateIcon
+import com.hossam.carenote.core.designsystem.component.StatusBadge
+import com.hossam.carenote.core.designsystem.component.StatusTone
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
 import com.hossam.carenote.core.domain.vitals.VitalsAssessor
@@ -131,7 +134,7 @@ private fun NoteContent(
     ) {
         NoteHeader(note)
         if (note.status == SyncStatus.FAILED) {
-            TextButton(onClick = { onIntent(NoteDetailIntent.RetryClicked) }) {
+            TextButton(onClick = { onIntent(NoteDetailIntent.RetryClicked(note.id)) }) {
                 Text(stringResource(R.string.resident_note_retry))
             }
         }
@@ -153,14 +156,19 @@ private fun NoteContent(
                 text = stringResource(R.string.note_earlier_versions, earlier.size),
                 style = CareNoteTheme.typography.titleSmall,
             )
-            earlier.forEach { version -> EarlierVersionCard(version) }
+            earlier.forEach { version ->
+                EarlierVersionCard(version, onRetry = { onIntent(NoteDetailIntent.RetryClicked(version.id)) })
+            }
         }
     }
 }
 
-/** Muted, so it reads as history next to the current version above. */
+/**
+ * Muted, so it reads as history next to the current version above. Only a refused version shows its status:
+ * it's the one that needs something done.
+ */
 @Composable
-private fun EarlierVersionCard(version: EarlierVersion, modifier: Modifier = Modifier) {
+private fun EarlierVersionCard(version: EarlierVersion, onRetry: () -> Unit, modifier: Modifier = Modifier) {
     val formatter = rememberNoteDateTimeFormatter()
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -175,6 +183,17 @@ private fun EarlierVersionCard(version: EarlierVersion, modifier: Modifier = Mod
                 style = CareNoteTheme.typography.labelMedium,
                 color = CareNoteTheme.colors.onSurfaceVariant,
             )
+            if (version.status == SyncStatus.FAILED) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.sm),
+                ) {
+                    StatusBadge(text = stringResource(R.string.resident_note_failed), tone = StatusTone.Error)
+                    TextButton(onClick = onRetry) {
+                        Text(stringResource(R.string.resident_note_retry))
+                    }
+                }
+            }
             SelectionContainer {
                 Text(
                     text = version.transcript.ifBlank { stringResource(R.string.note_no_words) },

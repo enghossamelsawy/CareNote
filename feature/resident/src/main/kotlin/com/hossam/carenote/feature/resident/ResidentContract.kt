@@ -34,6 +34,8 @@ data class NoteItem(
     val assessment: VitalsAssessment,
     val status: SyncStatus,
     val editedAt: Instant? = null,
+    /** A version this one replaced was refused by the server; the note screen offers to retry it. */
+    val earlierNotSynced: Boolean = false,
 )
 
 sealed interface ResidentIntent : UiIntent {

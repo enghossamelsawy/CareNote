@@ -18,6 +18,7 @@ import com.hossam.carenote.core.testing.repository.FakeResidentRepository
 import com.hossam.carenote.core.testing.repository.FakeSyncScheduler
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.time.Instant
@@ -149,6 +150,20 @@ class ResidentViewModelTest {
         assertEquals(UUID(0, 2), shown.id)
         assertEquals(Instant.ofEpochSecond(10), shown.createdAt)
         assertEquals(Instant.ofEpochSecond(20), shown.editedAt)
+    }
+
+    @Test
+    fun `given a refused note that was edited, when the view model starts, then the edit says so`() = runTest {
+        // Given
+        residentRepository.setResidents(listOf(anna))
+        careNoteRepository.save(note(id = 1, createdAt = 10, status = SyncStatus.FAILED))
+        careNoteRepository.save(note(id = 2, createdAt = 20).copy(revisionOf = UUID(0, 1)))
+
+        // When
+        val viewModel = createViewModel(anna.id)
+
+        // Then
+        assertTrue(viewModel.state.value.notes.single().earlierNotSynced)
     }
 
     @Test

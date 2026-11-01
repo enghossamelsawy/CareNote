@@ -33,19 +33,18 @@ class RetryCareNoteSyncUseCaseTest {
     }
 
     @Test
-    fun `given a note that synced meanwhile, when retrying, then it stays synced and no sync is requested`() =
-        runTest {
-            // Given
-            careNoteRepository.save(note(SyncStatus.SYNCED))
+    fun `given a note that synced meanwhile, when retrying, then it stays synced and no sync is requested`() = runTest {
+        // Given
+        careNoteRepository.save(note(SyncStatus.SYNCED))
 
-            // When
-            val queued = retryCareNoteSync(noteId)
+        // When
+        val queued = retryCareNoteSync(noteId)
 
-            // Then
-            assertFalse(queued)
-            assertEquals(SyncStatus.SYNCED, careNoteRepository.savedNotes.single().syncStatus)
-            assertEquals(0, syncScheduler.requestCount)
-        }
+        // Then
+        assertFalse(queued)
+        assertEquals(SyncStatus.SYNCED, careNoteRepository.savedNotes.single().syncStatus)
+        assertEquals(0, syncScheduler.requestCount)
+    }
 
     @Test
     fun `given a failed note, when retry is tapped twice, then only one sync is requested`() = runTest {

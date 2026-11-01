@@ -13,6 +13,7 @@
     <string name="resident_note_synced">Synced</string>
     <string name="resident_note_failed">Not synced</string>
     <string name="resident_note_retry">Try again</string>
+    <string name="resident_note_earlier_not_synced">An earlier version isn\'t synced</string>
     <string name="note_title">Note</string>
     <string name="note_back">Back</string>
     <string name="note_edit">Edit note</string>

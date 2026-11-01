@@ -1,5 +1,6 @@
 package com.hossam.carenote.feature.resident.note
 
+import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.ui.mvi.UiEffect
 import com.hossam.carenote.core.ui.mvi.UiIntent
 import com.hossam.carenote.core.ui.mvi.UiState
@@ -15,16 +16,24 @@ data class NoteDetailState(
     val earlier: List<EarlierVersion> = emptyList(),
 ) : UiState
 
-/** A replaced version, kept for the record: when it was written and what it said. */
-data class EarlierVersion(val id: UUID, val writtenAt: Instant, val transcript: String)
+/**
+ * A replaced version, kept for the record: when it was written and what it said. It still syncs on its own,
+ * so a version the server refused shows [status] and can be retried.
+ */
+data class EarlierVersion(
+    val id: UUID,
+    val writtenAt: Instant,
+    val transcript: String,
+    val status: SyncStatus = SyncStatus.SYNCED,
+)
 
 sealed interface NoteDetailIntent : UiIntent {
     data object BackClicked : NoteDetailIntent
 
     data object EditClicked : NoteDetailIntent
 
-    /** Only offered when the server refused the latest version. */
-    data object RetryClicked : NoteDetailIntent
+    /** Only offered for a version the server refused: the latest one or an earlier one. */
+    data class RetryClicked(val noteId: UUID) : NoteDetailIntent
 }
 
 sealed interface NoteDetailEffect : UiEffect {

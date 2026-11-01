@@ -139,7 +139,8 @@ class CareNoteDaoTest {
         dao.insertAndQueue(note, outboxEntry("1"))
 
         // Then
-        assertEquals(listOf(note), dao.observeForResident("r1").first())
+        // The first note saved is numbered 1.
+        assertEquals(listOf(note.copy(saveOrder = 1)), dao.observeForResident("r1").first())
         assertEquals(listOf(outboxEntry("1")), database.outboxDao().oldest(limit = 10))
     }
 

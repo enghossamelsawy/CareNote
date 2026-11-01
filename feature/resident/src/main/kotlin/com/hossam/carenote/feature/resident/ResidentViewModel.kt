@@ -37,7 +37,13 @@ class ResidentViewModel @AssistedInject constructor(
                     residentId = resident.id,
                     name = "${resident.firstName} ${resident.lastName}",
                     room = resident.room,
-                    notes = notes.map { it.note.asItem(it.firstWrittenAt, assessVitals(it.note.vitals)) },
+                    notes = notes.map { current ->
+                        current.note.asItem(
+                            firstWrittenAt = current.firstWrittenAt,
+                            assessment = assessVitals(current.note.vitals),
+                            earlierNotSynced = current.earlierNotSynced,
+                        )
+                    },
                 )
             }
         }.onEach { state -> setState { state } }

@@ -111,7 +111,8 @@ changed or deleted.
 
 - **Sync stays insert-only.** Edits travel through the same outbox and idempotency key as new notes. The
   queue follows save order, so the original is sent before its edit, retries included; if the server refuses
-  the original, the edit can still sync on its own (see [Known limitations](#known-limitations)).
+  the original, the edit still syncs on its own, and the note says "An earlier version isn't synced" with a
+  retry on that version.
 - **The record stays auditable**, which care documentation requires: every version is kept locally and on
   the server, and the note screen shows the earlier ones.
 - **Only the latest version can be edited**, so the history never splits in two.
@@ -185,8 +186,6 @@ Windows, and CI's Linux renders a few pixels differently.
 
 Found in review and planned next:
 
-- **A refused original with a synced edit.** If the server refuses a note and it's then edited, the edit
-  syncs while the refused original stays hidden behind it, still counted as waiting, with no retry.
 - **No typing without dictating.** A note starts with a recording, so a phone without speech recognition,
   or with the microphone refused, can't create one.
 - **Earlier versions show their text only**, not their vitals, so a corrected pulse doesn't show what changed.

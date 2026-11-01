@@ -68,6 +68,32 @@ class NoteDetailScreenScreenshotTest {
     }
 
     @Test
+    fun `given an edit whose earlier version was refused, when it is shown in full, then it matches the screenshots`() {
+        screenshots("note_detail_earlier_failed") {
+            NoteDetailScreen(
+                state = NoteDetailState(
+                    isLoading = false,
+                    note = note(
+                        transcript = "Pulse is 76. Slept well.",
+                        vitals = Vitals(pulse = 76),
+                        status = SyncStatus.PENDING,
+                        editedAt = Instant.parse("2026-11-01T10:15:00Z"),
+                    ).copy(earlierNotSynced = true),
+                    earlier = listOf(
+                        EarlierVersion(
+                            id = UUID(0, 1),
+                            writtenAt = Instant.parse("2026-11-01T05:29:00Z"),
+                            transcript = "Pulse is 72. Slept well.",
+                            status = SyncStatus.FAILED,
+                        ),
+                    ),
+                ),
+                onIntent = {},
+            )
+        }
+    }
+
+    @Test
     fun `given a refused note with a high value, when it is shown in full, then it matches the screenshots`() {
         screenshots("note_detail_failed") {
             NoteDetailScreen(

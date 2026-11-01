@@ -14,6 +14,7 @@ import com.hossam.carenote.core.testing.repository.FakeCareNoteRepository
 import com.hossam.carenote.core.testing.repository.FakeSyncScheduler
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -50,6 +51,7 @@ class NoteDetailViewModelTest {
             id = original.id,
             writtenAt = original.createdAt,
             transcript = "Temperature is 85.",
+            status = SyncStatus.PENDING,
         )
         assertEquals(listOf(earlier), state.earlier)
     }
@@ -91,12 +93,45 @@ class NoteDetailViewModelTest {
             val viewModel = createViewModel(noteId = original.id)
 
             // When
-            viewModel.onIntent(NoteDetailIntent.RetryClicked)
+            viewModel.onIntent(NoteDetailIntent.RetryClicked(original.id))
 
             // Then
             assertEquals(SyncStatus.PENDING, viewModel.state.value.note?.status)
             assertEquals(1, syncScheduler.requestCount)
         }
+
+    @Test
+    fun `given a refused earlier version, when retry is clicked on it, then it is pending and a sync is requested`() =
+        runTest {
+            // Given
+            careNoteRepository.save(original.copy(syncStatus = SyncStatus.FAILED))
+            careNoteRepository.save(edit)
+            val viewModel = createViewModel(noteId = edit.id)
+
+            // When
+            viewModel.onIntent(NoteDetailIntent.RetryClicked(original.id))
+
+            // Then
+            assertEquals(SyncStatus.PENDING, viewModel.state.value.earlier.single().status)
+            assertEquals(1, syncScheduler.requestCount)
+        }
+
+    @Test
+    fun `given an open note, when retry is clicked for a note not on screen, then nothing is retried`() = runTest {
+        // Given
+        val other = note(id = 3, writtenAt = 30, transcript = "Pulse 72").copy(syncStatus = SyncStatus.FAILED)
+        careNoteRepository.save(original)
+        careNoteRepository.save(other)
+        val viewModel = createViewModel(noteId = original.id)
+
+        // When
+        viewModel.onIntent(NoteDetailIntent.RetryClicked(other.id))
+
+        // Then
+        assertEquals(SyncStatus.FAILED, careNoteRepository.getNote(other.id)?.syncStatus)
+        assertEquals(0, syncScheduler.requestCount)
+        assertFalse(viewModel.state.value.notFound)
+    }
 
     @Test
     fun `given an unknown note, when it opens, then not found is shown`() = runTest {

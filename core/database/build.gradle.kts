@@ -7,6 +7,9 @@ plugins {
 
 android {
     namespace = "com.hossam.carenote.core.database"
+
+    // MigrationsTest builds old versions of the database from the exported schemas, read as test assets.
+    sourceSets.getByName("test").assets.directories.add("$projectDir/schemas")
 }
 
 dependencies {

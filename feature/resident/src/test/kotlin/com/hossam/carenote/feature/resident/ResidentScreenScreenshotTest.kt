@@ -65,6 +65,7 @@ class ResidentScreenScreenshotTest {
                         ),
                         note(id = 2, SyncStatus.PENDING, "Pulse 72, temperature 36.8").copy(
                             editedAt = Instant.parse("2026-11-01T10:30:00Z"),
+                            earlierNotSynced = true,
                         ),
                         note(id = 1, SyncStatus.SYNCED, "Slept well."),
                     ),
