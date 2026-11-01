@@ -35,12 +35,15 @@ import com.hossam.carenote.core.designsystem.component.StatusBadge
 import com.hossam.carenote.core.designsystem.component.StatusTone
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
+import com.hossam.carenote.core.domain.vitals.VitalKind
 import com.hossam.carenote.core.domain.vitals.VitalsAssessor
 import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.ui.mvi.ObserveEffects
 import com.hossam.carenote.feature.resident.NoteHeader
 import com.hossam.carenote.feature.resident.NoteItem
+import com.hossam.carenote.feature.resident.vitalLabel
+import com.hossam.carenote.feature.resident.vitalText
 import com.hossam.carenote.feature.resident.R
 import com.hossam.carenote.feature.resident.VitalTiles
 import com.hossam.carenote.feature.resident.rememberNoteDateTimeFormatter
@@ -165,7 +168,7 @@ private fun NoteContent(
 
 /**
  * Muted, so it reads as history next to the current version above. Only a refused version shows its status:
- * it's the one that needs something done.
+ * it's the one that needs something done. The vitals the next edit changed are listed with their old values.
  */
 @Composable
 private fun EarlierVersionCard(version: EarlierVersion, onRetry: () -> Unit, modifier: Modifier = Modifier) {
@@ -194,6 +197,13 @@ private fun EarlierVersionCard(version: EarlierVersion, onRetry: () -> Unit, mod
                     }
                 }
             }
+            VitalKind.entries.filter { it in version.changed }.forEach { kind ->
+                Text(
+                    text = vitalChange(kind, version),
+                    style = CareNoteTheme.typography.bodyMedium,
+                    color = CareNoteTheme.colors.onSurfaceVariant,
+                )
+            }
             SelectionContainer {
                 Text(
                     text = version.transcript.ifBlank { stringResource(R.string.note_no_words) },
@@ -202,6 +212,17 @@ private fun EarlierVersionCard(version: EarlierVersion, onRetry: () -> Unit, mod
                 )
             }
         }
+    }
+}
+
+/** "Pulse was 72 bpm", or "Temperature wasn't recorded" for a value only the edit added. */
+@Composable
+private fun vitalChange(kind: VitalKind, version: EarlierVersion): String {
+    val text = vitalText(kind, version.vitals)
+    return if (text == null) {
+        stringResource(R.string.note_vital_not_recorded, vitalLabel(kind))
+    } else {
+        stringResource(R.string.note_vital_was, text.label, text.value, text.unit)
     }
 }
 
@@ -227,7 +248,9 @@ private fun NoteDetailScreenPreview() {
                     EarlierVersion(
                         id = UUID(0, 1),
                         writtenAt = Instant.parse("2026-11-01T05:29:00Z"),
-                        transcript = "Temperature is 85.",
+                        transcript = "Temperature is 38.5 and pulse is 75.",
+                        vitals = Vitals(temperatureCelsius = 38.5, pulse = 75),
+                        changed = setOf(VitalKind.Temperature),
                     ),
                 ),
             ),

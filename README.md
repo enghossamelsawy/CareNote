@@ -114,7 +114,8 @@ changed or deleted.
   the original, the edit still syncs on its own, and the note says "An earlier version isn't synced" with a
   retry on that version.
 - **The record stays auditable**, which care documentation requires: every version is kept locally and on
-  the server, and the note screen shows the earlier ones.
+  the server, and the note screen shows the earlier ones with the vitals each edit changed, such as
+  "Pulse was 72 bpm".
 - **Only the latest version can be edited**, so the history never splits in two.
 - The list shows the latest version at the time the note was first written, marked "Edited".
 
@@ -188,7 +189,6 @@ Found in review and planned next:
 
 - **No typing without dictating.** A note starts with a recording, so a phone without speech recognition,
   or with the microphone refused, can't create one.
-- **Earlier versions show their text only**, not their vitals, so a corrected pulse doesn't show what changed.
 
 ## Decisions and trade-offs
 

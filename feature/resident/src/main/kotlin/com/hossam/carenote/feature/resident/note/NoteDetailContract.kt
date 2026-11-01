@@ -1,6 +1,8 @@
 package com.hossam.carenote.feature.resident.note
 
+import com.hossam.carenote.core.domain.vitals.VitalKind
 import com.hossam.carenote.core.model.SyncStatus
+import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.ui.mvi.UiEffect
 import com.hossam.carenote.core.ui.mvi.UiIntent
 import com.hossam.carenote.core.ui.mvi.UiState
@@ -19,12 +21,16 @@ data class NoteDetailState(
 /**
  * A replaced version, kept for the record: when it was written and what it said. It still syncs on its own,
  * so a version the server refused shows [status] and can be retried.
+ *
+ * [changed] are the vitals the edit after it changed, shown with this version's [vitals]: "Pulse was 72 bpm".
  */
 data class EarlierVersion(
     val id: UUID,
     val writtenAt: Instant,
     val transcript: String,
     val status: SyncStatus = SyncStatus.SYNCED,
+    val vitals: Vitals = Vitals(),
+    val changed: Set<VitalKind> = emptySet(),
 )
 
 sealed interface NoteDetailIntent : UiIntent {

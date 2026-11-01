@@ -2,6 +2,7 @@ package com.hossam.carenote.feature.resident.note
 
 import androidx.lifecycle.viewModelScope
 import com.hossam.carenote.core.domain.usecase.AssessVitalsUseCase
+import com.hossam.carenote.core.domain.usecase.CompareVitalsUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveNoteHistoryUseCase
 import com.hossam.carenote.core.domain.usecase.RetryCareNoteSyncUseCase
 import com.hossam.carenote.core.ui.mvi.MviViewModel
@@ -25,6 +26,7 @@ class NoteDetailViewModel @AssistedInject constructor(
     @Assisted noteId: UUID,
     observeNoteHistory: ObserveNoteHistoryUseCase,
     private val assessVitals: AssessVitalsUseCase,
+    private val compareVitals: CompareVitalsUseCase,
     private val retryCareNoteSync: RetryCareNoteSyncUseCase,
 ) : MviViewModel<NoteDetailState, NoteDetailIntent, NoteDetailEffect>(NoteDetailState()) {
     init {
@@ -37,12 +39,16 @@ class NoteDetailViewModel @AssistedInject constructor(
                         NoteDetailState(
                             isLoading = false,
                             note = history.current.asItem(history.firstWrittenAt, assessVitals(history.current.vitals)),
-                            earlier = history.earlier.map { version ->
+                            earlier = history.earlier.mapIndexed { index, version ->
+                                // Each version is compared with the one that replaced it: the next newer one.
+                                val replacedBy = history.earlier.getOrNull(index - 1) ?: history.current
                                 EarlierVersion(
                                     id = version.id,
                                     writtenAt = version.createdAt,
                                     transcript = version.transcript,
                                     status = version.syncStatus,
+                                    vitals = version.vitals,
+                                    changed = compareVitals(before = version.vitals, after = replacedBy.vitals),
                                 )
                             },
                         )

@@ -34,6 +34,7 @@ import com.hossam.carenote.core.designsystem.component.StatusTone
 import com.hossam.carenote.core.designsystem.component.VitalTile
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
+import com.hossam.carenote.core.domain.vitals.VitalKind
 import com.hossam.carenote.core.domain.vitals.VitalLevel
 import com.hossam.carenote.core.domain.vitals.VitalsAssessment
 import com.hossam.carenote.core.model.SyncStatus
@@ -197,60 +198,19 @@ internal fun VitalTiles(vitals: Vitals, assessment: VitalsAssessment, modifier: 
 
 private class VitalTileContent(val label: String, val value: String, val unit: String, val level: VitalLevel)
 
-/** Formatted for the reader's locale, e.g. "36,8" in German. */
 @Composable
-private fun vitalTiles(vitals: Vitals, assessment: VitalsAssessment): List<VitalTileContent> {
-    val systolic = vitals.systolic
-    val diastolic = vitals.diastolic
-    val bloodPressure = assessment.bloodPressure
-    val pulse = vitals.pulse
-    val pulseLevel = assessment.pulse
-    val temperature = vitals.temperatureCelsius
-    val temperatureLevel = assessment.temperature
-    val oxygenSaturation = vitals.oxygenSaturation
-    val oxygenSaturationLevel = assessment.oxygenSaturation
-    return buildList {
-        if (systolic != null && diastolic != null && bloodPressure != null) {
-            add(
-                VitalTileContent(
-                    label = stringResource(R.string.resident_vital_bp_label),
-                    value = stringResource(R.string.resident_vital_bp_value, systolic, diastolic),
-                    unit = stringResource(R.string.resident_vital_unit_mmhg),
-                    level = bloodPressure,
-                ),
-            )
-        }
-        if (pulse != null && pulseLevel != null) {
-            add(
-                VitalTileContent(
-                    label = stringResource(R.string.resident_vital_pulse_label),
-                    value = stringResource(R.string.resident_vital_whole_value, pulse),
-                    unit = stringResource(R.string.resident_vital_unit_bpm),
-                    level = pulseLevel,
-                ),
-            )
-        }
-        if (temperature != null && temperatureLevel != null) {
-            add(
-                VitalTileContent(
-                    label = stringResource(R.string.resident_vital_temperature_label),
-                    value = stringResource(R.string.resident_vital_temperature_value, temperature),
-                    unit = stringResource(R.string.resident_vital_unit_celsius),
-                    level = temperatureLevel,
-                ),
-            )
-        }
-        if (oxygenSaturation != null && oxygenSaturationLevel != null) {
-            add(
-                VitalTileContent(
-                    label = stringResource(R.string.resident_vital_spo2_label),
-                    value = stringResource(R.string.resident_vital_whole_value, oxygenSaturation),
-                    unit = stringResource(R.string.resident_vital_unit_percent),
-                    level = oxygenSaturationLevel,
-                ),
-            )
-        }
+private fun vitalTiles(vitals: Vitals, assessment: VitalsAssessment): List<VitalTileContent> =
+    VitalKind.entries.mapNotNull { kind ->
+        val text = vitalText(kind, vitals)
+        val level = assessment.levelOf(kind)
+        if (text == null || level == null) null else VitalTileContent(text.label, text.value, text.unit, level)
     }
+
+private fun VitalsAssessment.levelOf(kind: VitalKind): VitalLevel? = when (kind) {
+    VitalKind.BloodPressure -> bloodPressure
+    VitalKind.Pulse -> pulse
+    VitalKind.Temperature -> temperature
+    VitalKind.OxygenSaturation -> oxygenSaturation
 }
 
 @StringRes

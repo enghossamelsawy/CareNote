@@ -2,10 +2,13 @@ package com.hossam.carenote.feature.resident.note
 
 import app.cash.turbine.test
 import com.hossam.carenote.core.domain.usecase.AssessVitalsUseCase
+import com.hossam.carenote.core.domain.usecase.CompareVitalsUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveNoteHistoryUseCase
 import com.hossam.carenote.core.domain.usecase.RetryCareNoteSyncUseCase
+import com.hossam.carenote.core.domain.vitals.VitalKind
 import com.hossam.carenote.core.domain.vitals.VitalLevel
 import com.hossam.carenote.core.domain.vitals.VitalsAssessor
+import com.hossam.carenote.core.domain.vitals.VitalsComparer
 import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.model.Vitals
@@ -52,6 +55,7 @@ class NoteDetailViewModelTest {
             writtenAt = original.createdAt,
             transcript = "Temperature is 85.",
             status = SyncStatus.PENDING,
+            vitals = original.vitals,
         )
         assertEquals(listOf(earlier), state.earlier)
     }
@@ -134,6 +138,38 @@ class NoteDetailViewModelTest {
     }
 
     @Test
+    fun `given an edit that corrected the pulse, when it opens, then the original says the pulse changed`() = runTest {
+        // Given
+        careNoteRepository.save(original.copy(vitals = Vitals(pulse = 72, temperatureCelsius = 37.0)))
+        careNoteRepository.save(edit.copy(vitals = Vitals(pulse = 76, temperatureCelsius = 37.0)))
+
+        // When
+        val viewModel = createViewModel(noteId = original.id)
+
+        // Then
+        val earlier = viewModel.state.value.earlier.single()
+        assertEquals(setOf(VitalKind.Pulse), earlier.changed)
+        assertEquals(72, earlier.vitals.pulse)
+    }
+
+    @Test
+    fun `given a note edited twice, when it opens, then each earlier version shows only its own edit's change`() =
+        runTest {
+            // Given
+            careNoteRepository.save(original.copy(vitals = Vitals(pulse = 72, temperatureCelsius = 37.0)))
+            careNoteRepository.save(edit.copy(vitals = Vitals(pulse = 76, temperatureCelsius = 37.0)))
+            val secondEdit = note(id = 3, writtenAt = 30, transcript = "Pulse 76.", revisionOf = edit.id)
+            careNoteRepository.save(secondEdit.copy(vitals = Vitals(pulse = 76, temperatureCelsius = 37.4)))
+
+            // When
+            val viewModel = createViewModel(noteId = original.id)
+
+            // Then
+            val changes = viewModel.state.value.earlier.associate { it.id to it.changed }
+            assertEquals(mapOf(edit.id to setOf(VitalKind.Temperature), original.id to setOf(VitalKind.Pulse)), changes)
+        }
+
+    @Test
     fun `given an unknown note, when it opens, then not found is shown`() = runTest {
         // When
         val viewModel = createViewModel(noteId = UUID(0, 9))
@@ -162,6 +198,7 @@ class NoteDetailViewModelTest {
         noteId = noteId,
         observeNoteHistory = ObserveNoteHistoryUseCase(careNoteRepository),
         assessVitals = AssessVitalsUseCase(VitalsAssessor()),
+        compareVitals = CompareVitalsUseCase(VitalsComparer()),
         retryCareNoteSync = RetryCareNoteSyncUseCase(careNoteRepository, syncScheduler),
     )
 

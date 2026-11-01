@@ -19,6 +19,8 @@
     <string name="note_edit">Edit note</string>
     <string name="note_no_words">No words were dictated for this note.</string>
     <string name="note_earlier_versions">Earlier versions (%1$d)</string>
+    <string name="note_vital_was">%1$s was %2$s %3$s</string>
+    <string name="note_vital_not_recorded">%1$s wasn\'t recorded</string>
     <string name="note_not_found_title">Note not found</string>
     <string name="note_not_found_message">It may have been removed from this phone.</string>
     <string name="note_not_found_action">Back</string>
