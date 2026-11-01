@@ -52,7 +52,7 @@ import com.hossam.carenote.core.ui.mvi.ObserveEffects
 fun RecordRoute(
     residentId: String,
     onBack: () -> Unit,
-    onNoteSaved: () -> Unit,
+    onNoteSave: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecordViewModel = hiltViewModel<RecordViewModel, RecordViewModel.Factory>(
         creationCallback = { factory -> factory.create(residentId) },
@@ -95,7 +95,7 @@ fun RecordRoute(
             )
 
             RecordEffect.NavigateBack -> onBack()
-            RecordEffect.NoteSaved -> onNoteSaved()
+            RecordEffect.NoteSaved -> onNoteSave()
         }
     }
 

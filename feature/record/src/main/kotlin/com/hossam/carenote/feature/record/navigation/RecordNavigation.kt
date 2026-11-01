@@ -5,8 +5,8 @@ import androidx.navigation3.runtime.NavKey
 import com.hossam.carenote.feature.record.RecordRoute
 
 /** Adds the record screen to the app's nav graph; where back and a saved note lead is decided by the caller. */
-fun EntryProviderScope<NavKey>.recordEntry(onBack: () -> Unit, onNoteSaved: () -> Unit) {
+fun EntryProviderScope<NavKey>.recordEntry(onBack: () -> Unit, onNoteSave: () -> Unit) {
     entry<RecordKey> { key ->
-        RecordRoute(residentId = key.residentId, onBack = onBack, onNoteSaved = onNoteSaved)
+        RecordRoute(residentId = key.residentId, onBack = onBack, onNoteSave = onNoteSave)
     }
 }

@@ -273,7 +273,8 @@ class RecordViewModelTest {
             assertEquals(anna.id, saved.residentId)
             assertEquals(Vitals(pulse = 72, temperatureCelsius = 36.8), saved.vitals)
             viewModel.effects.test {
-                assertEquals(RecordEffect.NoteSaved, awaitItem())
+                // The start and stop haptics from recording come first.
+                assertEquals(RecordEffect.NoteSaved, expectMostRecentItem())
             }
         }
 
