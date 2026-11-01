@@ -56,7 +56,9 @@ flowchart TD
 - **`core:model` and `core:domain` are plain Kotlin (JVM) modules.** The domain owns the interfaces
   (`CareNoteRepository`, `SyncScheduler`, `SpeechTranscriber`, `NetworkMonitor`), the use cases and the vitals
   parser, so the business rules are tested without Android.
-- **ViewModels only call use cases**, never repositories.
+- **ViewModels only call use cases**, never repositories. This is a project rule for consistency, not a law of
+  Clean Architecture: some use cases are thin pass-throughs on purpose, so no screen ever depends on a
+  repository. The mock-only debug menu is the one documented exception; it drives the mock server directly.
 - **Features never depend on each other.** Each exposes a navigation key and an entry; only `app` connects
   them (Navigation 3), and it is also the only module with build flavors.
 - **MVI on every screen:** a `State`, `Intent`s in, one-off `Effect`s out. A stateless `Screen` composable
@@ -94,7 +96,8 @@ sequenceDiagram
   note reached the server before a crash or timeout, the server answers 409 and the app treats it as stored.
   A note is never stored twice.
 - **Oldest first, stop at the first "try later".** If the server is down for one note it's down for all,
-  so the worker stops instead of failing each one, and the order notes were written in is kept.
+  so the worker stops instead of failing each one, and the order notes were queued in is kept. A note the
+  server *refuses* is set aside as "not synced" and the queue moves on.
 - **One sync at a time.** Unique work (`note-sync`, `APPEND_OR_REPLACE`) only runs with a network and
   backs off exponentially from 30 seconds. A note saved during a sync is picked up right after it.
 
@@ -103,8 +106,9 @@ sequenceDiagram
 Editing a note saves a **new note** whose `revisionOf` points at the version it replaces; nothing is ever
 changed or deleted.
 
-- **Sync stays insert-only.** Edits travel through the same outbox and idempotency key as new notes, and
-  the queue's order means the server always gets the original before its edit.
+- **Sync stays insert-only.** Edits travel through the same outbox and idempotency key as new notes. The
+  queue is oldest first, so the original normally reaches the server before its edit; if the server refuses
+  the original, the edit can still sync on its own (see [Known limitations](#known-limitations)).
 - **The record stays auditable**, which care documentation requires: every version is kept locally and on
   the server, and the note screen shows the earlier ones.
 - **Only the latest version can be edited**, so the history never splits in two.
@@ -114,9 +118,14 @@ changed or deleted.
 
 `SpeechTranscriber` is a domain interface; `core:speech` picks the first engine that is ready on the phone:
 
-1. **ML Kit GenAI speech recognition** (Basic mode, on-device model, Android 12+).
-2. **Android's own `SpeechRecognizer`**, preferring on-device recognition where available.
+1. **ML Kit GenAI speech recognition** (Basic mode, Android 12+). The model runs on the phone, so audio never
+   leaves it.
+2. **Android's own `SpeechRecognizer`.** The app asks for on-device recognition, but that is only a request:
+   depending on the phone's speech service, audio may be sent over the network.
 3. **A demo engine** that "hears" a sample note. Mock build only, so the app can be demoed on an emulator.
+
+Care data stays on the phone and leaves it only through sync: the app is excluded from cloud backup and
+device-to-device transfer.
 
 The vitals parser is built from a per-language vocabulary, so adding German means adding a vocabulary, not
 changing the parser. minSdk is 26; newer speech features are checked at runtime.
@@ -144,8 +153,8 @@ Only `app` has flavors; libraries get what differs through Hilt.
 - **ktlint** with the Compose rules; import ordering is left to the IDE.
 
 ```bash
-# Everything CI runs, except lint
-./gradlew ktlintCheck test assembleMockDebug assembleProdDebug
+# What CI runs
+./gradlew ktlintCheck lintDebug lintMockDebug lintProdDebug test assembleMockDebug assembleProdDebug
 
 # Screenshots: compare with the recorded images, or record new ones after a UI change
 ./gradlew verifyRoborazziDebug
@@ -153,7 +162,8 @@ Only `app` has flavors; libraries get what differs through Hilt.
 ```
 
 CI (GitHub Actions) runs ktlint, Android Lint, all unit tests, both flavor builds and compiles the device
-tests on every push and pull request.
+tests on every push and pull request. Screenshots are checked locally for now: the images are recorded on
+Windows, and CI's Linux renders a few pixels differently.
 
 ## Tech stack
 
@@ -167,6 +177,18 @@ tests on every push and pull request.
 | Speech | ML Kit GenAI speech recognition |
 | Tests | JUnit 4, Turbine, Robolectric, Roborazzi |
 | Quality | ktlint with Compose rules, Android Lint |
+
+## Known limitations
+
+Found in review and planned next:
+
+- **A refused original with a synced edit.** If the server refuses a note and it's then edited, the edit
+  syncs while the refused original stays hidden behind it, still counted as waiting, with no retry.
+- **No typing without dictating.** A note starts with a recording, so a phone without speech recognition,
+  or with the microphone refused, can't create one.
+- **An unfinished note is lost if Android kills the app** in the background; it survives rotation, but not
+  process death.
+- **Earlier versions show their text only**, not their vitals, so a corrected pulse doesn't show what changed.
 
 ## Decisions and trade-offs
 
