@@ -38,4 +38,5 @@ include(":core:testing")
 include(":core:speech")
 include(":feature:residents")
 include(":feature:resident")
+include(":feature:record")
  
