@@ -1,7 +1,9 @@
 package com.hossam.carenote.feature.residents
 
 import app.cash.turbine.test
+import com.hossam.carenote.core.domain.repository.RefreshResult
 import com.hossam.carenote.core.domain.usecase.ObserveResidentsWithPendingCountUseCase
+import com.hossam.carenote.core.domain.usecase.RefreshResidentsUseCase
 import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.Resident
 import com.hossam.carenote.core.model.SyncStatus
@@ -77,8 +79,35 @@ class ResidentsViewModelTest {
         }
     }
 
-    private fun createViewModel() =
-        ResidentsViewModel(ObserveResidentsWithPendingCountUseCase(residentRepository, careNoteRepository))
+    @Test
+    fun `given the list, when the screen opens, then residents are refreshed from the server`() = runTest {
+        // When
+        createViewModel()
+
+        // Then
+        assertEquals(1, residentRepository.refreshCount)
+    }
+
+    @Test
+    fun `given the server is unreachable, when the screen opens, then the stored residents still show`() = runTest {
+        // Given
+        residentRepository.setResidents(listOf(anna))
+        residentRepository.refreshResult = RefreshResult.Unavailable
+
+        // When
+        val viewModel = createViewModel()
+
+        // Then
+        assertEquals(listOf("res-1"), viewModel.state.value.residents.map { it.id })
+    }
+
+    private fun createViewModel() = ResidentsViewModel(
+        observeResidentsWithPendingCount = ObserveResidentsWithPendingCountUseCase(
+            residentRepository = residentRepository,
+            careNoteRepository = careNoteRepository,
+        ),
+        refreshResidents = RefreshResidentsUseCase(residentRepository),
+    )
 
     private fun note(id: Int, residentId: String) = CareNote(
         id = UUID(0, id.toLong()),

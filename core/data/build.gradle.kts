@@ -23,6 +23,7 @@ dependencies {
     // Implements the domain's interfaces; Room stays an implementation detail.
     api(projects.core.domain)
     implementation(projects.core.database)
+    implementation(projects.core.network)
 
     testImplementation(libs.androidx.room.runtime)
     testImplementation(libs.robolectric)
