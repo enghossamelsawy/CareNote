@@ -5,7 +5,6 @@ import com.hossam.carenote.core.domain.usecase.AssessVitalsUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveCareNotesUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentUseCase
 import com.hossam.carenote.core.domain.usecase.RetryCareNoteSyncUseCase
-import com.hossam.carenote.core.model.CurrentCareNote
 import com.hossam.carenote.core.ui.mvi.MviViewModel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -38,7 +37,7 @@ class ResidentViewModel @AssistedInject constructor(
                     residentId = resident.id,
                     name = "${resident.firstName} ${resident.lastName}",
                     room = resident.room,
-                    notes = notes.map { it.asItem() },
+                    notes = notes.map { it.note.asItem(it.firstWrittenAt, assessVitals(it.note.vitals)) },
                 )
             }
         }.onEach { state -> setState { state } }
@@ -50,19 +49,9 @@ class ResidentViewModel @AssistedInject constructor(
             ResidentIntent.BackClicked -> sendEffect(ResidentEffect.NavigateBack)
             ResidentIntent.RecordClicked -> sendEffect(ResidentEffect.OpenRecord(residentId))
             is ResidentIntent.RetryClicked -> viewModelScope.launch { retryCareNoteSync(intent.noteId) }
-            is ResidentIntent.EditClicked -> sendEffect(ResidentEffect.OpenEditor(residentId, intent.noteId))
+            is ResidentIntent.NoteClicked -> sendEffect(ResidentEffect.OpenNote(residentId, intent.noteId))
         }
     }
-
-    private fun CurrentCareNote.asItem() = NoteItem(
-        id = note.id,
-        createdAt = firstWrittenAt,
-        transcript = note.transcript,
-        vitals = note.vitals,
-        assessment = assessVitals(note.vitals),
-        status = note.syncStatus,
-        editedAt = if (isEdited) note.createdAt else null,
-    )
 
     @AssistedFactory
     interface Factory {

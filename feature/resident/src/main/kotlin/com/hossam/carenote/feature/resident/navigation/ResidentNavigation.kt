@@ -6,15 +6,15 @@ import com.hossam.carenote.feature.resident.ResidentRoute
 import java.util.UUID
 
 /**
- * Adds the resident detail screen to the app's nav graph; where back, recording and editing lead
- * is decided by the caller.
+ * Adds the resident detail screen to the app's nav graph; where back, recording and opening a note
+ * lead is decided by the caller.
  */
 fun EntryProviderScope<NavKey>.residentEntry(
     onBack: () -> Unit,
     onRecord: (residentId: String) -> Unit,
-    onEditNote: (residentId: String, noteId: UUID) -> Unit,
+    onOpenNote: (residentId: String, noteId: UUID) -> Unit,
 ) {
     entry<ResidentKey> { key ->
-        ResidentRoute(residentId = key.residentId, onBack = onBack, onRecord = onRecord, onEditNote = onEditNote)
+        ResidentRoute(residentId = key.residentId, onBack = onBack, onRecord = onRecord, onOpenNote = onOpenNote)
     }
 }

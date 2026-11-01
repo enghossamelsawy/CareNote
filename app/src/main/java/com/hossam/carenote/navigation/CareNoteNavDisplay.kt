@@ -10,7 +10,9 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.hossam.carenote.feature.record.navigation.RecordKey
 import com.hossam.carenote.feature.record.navigation.recordEntry
+import com.hossam.carenote.feature.resident.navigation.NoteKey
 import com.hossam.carenote.feature.resident.navigation.ResidentKey
+import com.hossam.carenote.feature.resident.navigation.noteEntry
 import com.hossam.carenote.feature.resident.navigation.residentEntry
 import com.hossam.carenote.feature.residents.navigation.ResidentsKey
 import com.hossam.carenote.feature.residents.navigation.residentsEntry
@@ -48,8 +50,15 @@ fun CareNoteNavDisplay(modifier: Modifier = Modifier) {
                 onRecord = { residentId ->
                     navigator.navigate(from = ResidentKey(residentId), to = RecordKey(residentId))
                 },
-                onEditNote = { residentId, noteId ->
-                    navigator.navigate(from = ResidentKey(residentId), to = RecordKey(residentId, noteId.toString()))
+                onOpenNote = { residentId, noteId ->
+                    navigator.navigate(from = ResidentKey(residentId), to = NoteKey(residentId, noteId.toString()))
+                },
+            )
+            noteEntry(
+                onBack = navigator::goBack,
+                // Back from the editor lands on this note again, now showing the edit.
+                onEditNote = { from, noteId ->
+                    navigator.navigate(from = from, to = RecordKey(from.residentId, noteId.toString()))
                 },
             )
             recordEntry(

@@ -48,7 +48,7 @@ import java.util.UUID
 internal fun NotesList(
     notes: List<NoteItem>,
     onRetry: (noteId: UUID) -> Unit,
-    onEdit: (noteId: UUID) -> Unit,
+    onOpen: (noteId: UUID) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val spacing = CareNoteTheme.spacing
@@ -64,15 +64,19 @@ internal fun NotesList(
         verticalArrangement = Arrangement.spacedBy(spacing.sm),
     ) {
         items(notes, key = { it.id }) { note ->
-            NoteCard(note = note, onRetry = { onRetry(note.id) }, onEdit = { onEdit(note.id) })
+            NoteCard(note = note, onRetry = { onRetry(note.id) }, onOpen = { onOpen(note.id) })
         }
     }
 }
 
-/** A red edge on the left marks a note with a vital out of range, so it's found while scrolling. */
+/**
+ * A preview of one note; tapping it opens the note in full. A red edge on the left marks a note with
+ * a vital out of range, so it's found while scrolling.
+ */
 @Composable
-private fun NoteCard(note: NoteItem, onRetry: () -> Unit, onEdit: () -> Unit, modifier: Modifier = Modifier) {
+private fun NoteCard(note: NoteItem, onRetry: () -> Unit, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     Card(
+        onClick = onOpen,
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = CareNoteTheme.colors.surfaceContainerLow),
     ) {
@@ -100,30 +104,12 @@ private fun NoteCard(note: NoteItem, onRetry: () -> Unit, onEdit: () -> Unit, mo
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                NoteActions(isFailed = note.status == SyncStatus.FAILED, onRetry = onRetry, onEdit = onEdit)
+                if (note.status == SyncStatus.FAILED) {
+                    TextButton(onClick = onRetry) {
+                        Text(stringResource(R.string.resident_note_retry))
+                    }
+                }
             }
-        }
-    }
-}
-
-/** Retry on the left, only for a note the server refused; Edit on the right, always. */
-@Composable
-private fun NoteActions(isFailed: Boolean, onRetry: () -> Unit, onEdit: () -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        if (isFailed) {
-            TextButton(onClick = onRetry) {
-                Text(stringResource(R.string.resident_note_retry))
-            }
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        TextButton(onClick = onEdit) {
-            Icon(
-                imageVector = CareNoteIcons.Edit,
-                contentDescription = null,
-                modifier = Modifier.size(CareNoteTheme.dimens.iconSm),
-            )
-            Spacer(modifier = Modifier.width(CareNoteTheme.spacing.xs))
-            Text(stringResource(R.string.resident_note_edit))
         }
     }
 }
@@ -133,12 +119,9 @@ private fun NoteActions(isFailed: Boolean, onRetry: () -> Unit, onEdit: () -> Un
  * synced, a badge only while it still needs something.
  */
 @Composable
-private fun NoteHeader(note: NoteItem, modifier: Modifier = Modifier) {
-    // In the phone's own time zone and date format.
+internal fun NoteHeader(note: NoteItem, modifier: Modifier = Modifier) {
     val zone = remember { ZoneId.systemDefault() }
-    val dateTime = remember(zone) {
-        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withZone(zone)
-    }
+    val dateTime = rememberNoteDateTimeFormatter()
     val time = remember(zone) { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withZone(zone) }
     val written = dateTime.format(note.createdAt)
     val editedAt = note.editedAt
@@ -170,9 +153,15 @@ private fun NoteHeader(note: NoteItem, modifier: Modifier = Modifier) {
     }
 }
 
+/** Date and time in the phone's own time zone and format, such as "Nov 1, 2026, 5:29 AM". */
+@Composable
+internal fun rememberNoteDateTimeFormatter(): DateTimeFormatter = remember {
+    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withZone(ZoneId.systemDefault())
+}
+
 /** Two equal columns, so every tile has the same width; an odd last tile stays on the left. Nothing without vitals. */
 @Composable
-private fun VitalTiles(vitals: Vitals, assessment: VitalsAssessment, modifier: Modifier = Modifier) {
+internal fun VitalTiles(vitals: Vitals, assessment: VitalsAssessment, modifier: Modifier = Modifier) {
     val tiles = vitalTiles(vitals, assessment)
     if (tiles.isEmpty()) return
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.sm)) {

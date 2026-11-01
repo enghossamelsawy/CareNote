@@ -13,7 +13,14 @@
     <string name="resident_note_synced">Synced</string>
     <string name="resident_note_failed">Not synced</string>
     <string name="resident_note_retry">Try again</string>
-    <string name="resident_note_edit">Edit</string>
+    <string name="note_title">Note</string>
+    <string name="note_back">Back</string>
+    <string name="note_edit">Edit note</string>
+    <string name="note_no_words">No words were dictated for this note.</string>
+    <string name="note_earlier_versions">Earlier versions (%1$d)</string>
+    <string name="note_not_found_title">Note not found</string>
+    <string name="note_not_found_message">It may have been removed from this phone.</string>
+    <string name="note_not_found_action">Back</string>
     <string name="resident_note_written_edited">%1$s · Edited %2$s</string>
     <string name="resident_vital_bp_label">Blood pressure</string>
     <string name="resident_vital_pulse_label">Pulse</string>

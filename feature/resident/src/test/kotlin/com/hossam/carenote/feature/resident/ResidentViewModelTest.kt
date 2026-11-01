@@ -91,18 +91,18 @@ class ResidentViewModelTest {
     }
 
     @Test
-    fun `given a listed note, when edit is clicked, then the editor opens for that note`() = runTest {
+    fun `given a listed note, when it is clicked, then it opens in full`() = runTest {
         // Given
         residentRepository.setResidents(listOf(anna))
         careNoteRepository.save(note(id = 1, createdAt = 10))
         val viewModel = createViewModel(anna.id)
 
         // When
-        viewModel.onIntent(ResidentIntent.EditClicked(UUID(0, 1)))
+        viewModel.onIntent(ResidentIntent.NoteClicked(UUID(0, 1)))
 
         // Then
         viewModel.effects.test {
-            assertEquals(ResidentEffect.OpenEditor(anna.id, UUID(0, 1)), awaitItem())
+            assertEquals(ResidentEffect.OpenNote(anna.id, UUID(0, 1)), awaitItem())
         }
     }
 
