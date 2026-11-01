@@ -42,7 +42,16 @@ enum class MicPermission {
     PermanentlyDenied,
 }
 
-enum class RecordError { NoSpeech, Busy, Unavailable, Unknown, EmptyNote }
+enum class RecordError {
+    NoSpeech,
+    Busy,
+    Unavailable,
+    Unknown,
+    EmptyNote,
+
+    /** The note being edited was already edited, or no longer exists. */
+    CannotEdit,
+}
 
 enum class VitalField { Systolic, Diastolic, Pulse, Temperature, OxygenSaturation }
 

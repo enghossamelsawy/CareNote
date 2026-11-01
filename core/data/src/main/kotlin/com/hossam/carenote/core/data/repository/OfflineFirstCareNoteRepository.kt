@@ -27,6 +27,10 @@ internal class OfflineFirstCareNoteRepository @Inject constructor(
     override fun observePendingCounts(): Flow<Map<String, Int>> =
         careNoteDao.observePendingCounts().map { it.asPendingCountMap() }
 
+    override suspend fun getNote(noteId: UUID): CareNote? = careNoteDao.getById(noteId.toString())?.asExternalModel()
+
+    override suspend fun hasRevision(noteId: UUID): Boolean = careNoteDao.hasRevision(noteId.toString())
+
     override suspend fun save(note: CareNote) {
         careNoteDao.insertAndQueue(note.asEntity(), outboxEntry(note.id))
     }

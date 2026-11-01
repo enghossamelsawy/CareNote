@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -103,6 +105,23 @@ class OfflineFirstCareNoteRepositoryTest {
             listOf(OutboxEntity(noteId = note.id.toString(), enqueuedAt = now)),
             database.outboxDao().oldest(limit = 10),
         )
+    }
+
+    @Test
+    fun `given a note and an edit of it, when reading them back, then the edit points at the original`() = runTest {
+        // Given
+        val original = careNote(id = 1)
+        val edit = careNote(id = 2).copy(transcript = "Pulse 76", revisionOf = original.id)
+        repository.save(original)
+        repository.save(edit)
+
+        // When
+        val readBack = repository.getNote(edit.id)
+
+        // Then
+        assertEquals(edit, readBack)
+        assertTrue(repository.hasRevision(original.id))
+        assertFalse(repository.hasRevision(edit.id))
     }
 
     private fun uuid(id: Int): UUID = UUID(0, id.toLong())

@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -65,6 +66,21 @@ class CareNoteDaoTest {
 
         // Then
         assertEquals(listOf(PendingCount("r1", 3), PendingCount("r2", 1)), counts)
+    }
+
+    @Test
+    fun `given a note and an edit of it, when checking for revisions, then only the original has one`() = runTest {
+        // Given
+        dao.insert(careNote("original", "r1"))
+        dao.insert(careNote("edit", "r1", revisionOf = "original"))
+
+        // When
+        val originalHasRevision = dao.hasRevision("original")
+        val editHasRevision = dao.hasRevision("edit")
+
+        // Then
+        assertTrue(originalHasRevision)
+        assertFalse(editHasRevision)
     }
 
     @Test

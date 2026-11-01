@@ -28,6 +28,10 @@ class FakeCareNoteRepository : CareNoteRepository {
         list.filter { it.syncStatus != SyncStatus.SYNCED }.groupingBy { it.residentId }.eachCount()
     }
 
+    override suspend fun getNote(noteId: UUID): CareNote? = notes.value.find { it.id == noteId }
+
+    override suspend fun hasRevision(noteId: UUID): Boolean = notes.value.any { it.revisionOf == noteId }
+
     override suspend fun save(note: CareNote) {
         check(notes.value.none { it.id == note.id }) { "Notes are append-only; ${note.id} already exists" }
         notes.update { it + note }

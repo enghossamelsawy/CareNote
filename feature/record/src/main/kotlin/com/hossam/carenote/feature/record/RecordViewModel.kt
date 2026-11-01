@@ -208,6 +208,8 @@ class RecordViewModel @AssistedInject constructor(
                 }
 
                 SaveResult.Empty -> setState { copy(isSaving = false, error = RecordError.EmptyNote) }
+
+                SaveResult.CannotRevise -> setState { copy(isSaving = false, error = RecordError.CannotEdit) }
             }
         }
     }

@@ -24,6 +24,7 @@ fun careNote(
     residentId: String,
     createdAt: Instant = Instant.EPOCH,
     syncStatus: SyncStatus = SyncStatus.PENDING,
+    revisionOf: String? = null,
 ) = CareNoteEntity(
     id = id,
     residentId = residentId,
@@ -36,7 +37,7 @@ fun careNote(
         oxygenSaturation = null,
     ),
     createdAt = createdAt,
-    revisionOf = null,
+    revisionOf = revisionOf,
     syncStatus = syncStatus,
 )
 

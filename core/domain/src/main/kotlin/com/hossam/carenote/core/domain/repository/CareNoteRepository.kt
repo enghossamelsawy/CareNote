@@ -12,6 +12,12 @@ interface CareNoteRepository {
     /** Number of notes not yet synced, per resident id. Residents without such notes are left out. */
     fun observePendingCounts(): Flow<Map<String, Int>>
 
+    /** The note with [noteId], or null if there is none. */
+    suspend fun getNote(noteId: UUID): CareNote?
+
+    /** True when a newer note revises [noteId], so it is no longer the current version. */
+    suspend fun hasRevision(noteId: UUID): Boolean
+
     /** Stores the note and queues it for sync in one transaction. */
     suspend fun save(note: CareNote)
 

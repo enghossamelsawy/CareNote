@@ -41,6 +41,10 @@ interface CareNoteDao {
     @Query("SELECT * FROM care_notes WHERE id = :id")
     suspend fun getById(id: String): CareNoteEntity?
 
+    /** True when another note revises this one; edits never change a note, they add a new one. */
+    @Query("SELECT EXISTS(SELECT 1 FROM care_notes WHERE revisionOf = :id)")
+    suspend fun hasRevision(id: String): Boolean
+
     @Query("UPDATE care_notes SET syncStatus = :status WHERE id = :id")
     suspend fun updateSyncStatus(id: String, status: SyncStatus)
 

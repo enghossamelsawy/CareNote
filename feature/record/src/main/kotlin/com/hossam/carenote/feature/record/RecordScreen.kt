@@ -262,6 +262,7 @@ private fun RecordError.message(): Int = when (this) {
     RecordError.Unavailable -> R.string.record_error_unavailable
     RecordError.Unknown -> R.string.record_error_unknown
     RecordError.EmptyNote -> R.string.record_error_empty_note
+    RecordError.CannotEdit -> R.string.record_error_cannot_edit
 }
 
 @PreviewLightDark
