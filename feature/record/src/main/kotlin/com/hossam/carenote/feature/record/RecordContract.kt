@@ -17,6 +17,8 @@ data class RecordState(
     val showDiscardDialog: Boolean = false,
     /** The note as it was when editing started; null when writing a new note. */
     val editedFrom: EditedNote? = null,
+    /** The note to edit is gone or not this resident's: nothing can be recorded or saved, only gone back from. */
+    val cannotEdit: Boolean = false,
 ) : UiState {
     val isEditing: Boolean
         get() = editedFrom != null

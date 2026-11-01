@@ -63,7 +63,8 @@ class RecordViewModel @AssistedInject constructor(
     /** Opens the note in review, unless recording already started or the note isn't this resident's. */
     private fun startEditing(note: CareNote?) {
         if (note == null || note.residentId != residentId) {
-            setState { copy(error = RecordError.CannotEdit) }
+            // A dictation here could never be saved as an edit, so recording isn't offered at all.
+            setState { copy(cannotEdit = true) }
             return
         }
         if (currentState.phase != RecordPhase.Idle) return
@@ -114,7 +115,8 @@ class RecordViewModel @AssistedInject constructor(
 
     /** [append] keeps the note in review and adds the new words to it; otherwise the next recording starts over. */
     private fun requestRecording(append: Boolean) {
-        if (awaitingPermission || currentState.phase == RecordPhase.Recording || currentState.isSaving) return
+        val state = currentState
+        if (awaitingPermission || state.phase == RecordPhase.Recording || state.isSaving || state.cannotEdit) return
         awaitingPermission = true
         appendNext = append
         sendEffect(RecordEffect.RequestMicPermission)
@@ -131,7 +133,7 @@ class RecordViewModel @AssistedInject constructor(
 
     /** Only ever one recording: a second start is ignored, and no earlier listener is left holding the microphone. */
     private fun startRecording() {
-        if (currentState.phase == RecordPhase.Recording) return
+        if (currentState.phase == RecordPhase.Recording || currentState.cannotEdit) return
         recording?.cancel()
         val append = appendNext && currentState.phase == RecordPhase.Done
         keptTranscript = if (append) currentState.transcript else ""
@@ -230,7 +232,7 @@ class RecordViewModel @AssistedInject constructor(
 
     private fun save() {
         val state = currentState
-        if (state.phase != RecordPhase.Done || state.isSaving) return
+        if (state.phase != RecordPhase.Done || state.isSaving || state.cannotEdit) return
 
         val unreadable = state.vitals.unreadableFields()
         if (unreadable.isNotEmpty()) {

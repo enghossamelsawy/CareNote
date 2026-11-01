@@ -634,7 +634,38 @@ class RecordViewModelTest {
 
         // Then
         assertEquals(RecordPhase.Idle, viewModel.state.value.phase)
-        assertEquals(RecordError.CannotEdit, viewModel.state.value.error)
+        assertTrue(viewModel.state.value.cannotEdit)
+    }
+
+    @Test
+    fun `given a note that can't be edited, when record is tapped, then no recording starts`() = runTest {
+        // Given
+        val viewModel = createViewModel(noteId = savedNote.id)
+
+        // When
+        viewModel.onIntent(RecordIntent.RecordClicked)
+        viewModel.onIntent(granted)
+
+        // Then
+        assertEquals(0, speechTranscriber.listenerCount)
+        viewModel.effects.test {
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `given a note that can't be edited, when back is tapped, then the screen closes without asking`() = runTest {
+        // Given
+        val viewModel = createViewModel(noteId = savedNote.id)
+
+        // When
+        viewModel.onIntent(RecordIntent.BackClicked)
+
+        // Then
+        assertFalse(viewModel.state.value.showDiscardDialog)
+        viewModel.effects.test {
+            assertEquals(RecordEffect.NavigateBack, awaitItem())
+        }
     }
 
     private val savedNote = CareNote(

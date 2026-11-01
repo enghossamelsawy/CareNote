@@ -41,6 +41,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.hossam.carenote.core.designsystem.component.EmptyState
+import com.hossam.carenote.core.designsystem.component.EmptyStateIcon
 import com.hossam.carenote.core.designsystem.component.RecordButton
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
@@ -150,6 +152,17 @@ fun RecordScreen(state: RecordState, onIntent: (RecordIntent) -> Unit, modifier:
             )
         },
     ) { innerPadding ->
+        if (state.cannotEdit) {
+            EmptyState(
+                title = stringResource(R.string.record_cannot_edit_title),
+                message = stringResource(R.string.record_cannot_edit_message),
+                illustration = { EmptyStateIcon(CareNoteIcons.Notes) },
+                modifier = Modifier.fillMaxSize().padding(innerPadding),
+                actionLabel = stringResource(R.string.record_cannot_edit_action),
+                onAction = { onIntent(RecordIntent.BackClicked) },
+            )
+            return@Scaffold
+        }
         Column(
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(CareNoteTheme.spacing.lg),
             horizontalAlignment = Alignment.CenterHorizontally,
