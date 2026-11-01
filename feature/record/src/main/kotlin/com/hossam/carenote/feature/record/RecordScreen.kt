@@ -30,6 +30,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -69,21 +72,33 @@ fun RecordRoute(
     val activity = LocalActivity.current
     val haptics = LocalHapticFeedback.current
 
+    fun shouldShowRationale() =
+        activity?.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) ?: false
+
+    fun micGranted() =
+        context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+
+    // Saved, so a rotation while the dialog is open still reports the answer from before it.
+    var rationaleBefore by rememberSaveable { mutableStateOf(false) }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
     ) { granted ->
-        val canAskAgain = activity?.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) ?: false
-        viewModel.onIntent(RecordIntent.PermissionResult(granted = granted, canAskAgain = canAskAgain))
+        viewModel.onIntent(
+            RecordIntent.PermissionResult(
+                granted = granted,
+                rationaleBefore = rationaleBefore,
+                rationaleAfter = shouldShowRationale(),
+            ),
+        )
     }
 
     ObserveEffects(viewModel.effects) { effect ->
         when (effect) {
             RecordEffect.RequestMicPermission -> {
-                val granted = context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
-                    PackageManager.PERMISSION_GRANTED
-                if (granted) {
-                    viewModel.onIntent(RecordIntent.PermissionResult(granted = true, canAskAgain = true))
+                if (micGranted()) {
+                    viewModel.onIntent(RecordIntent.PermissionResult(granted = true))
                 } else {
+                    rationaleBefore = shouldShowRationale()
                     permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                 }
             }
@@ -103,6 +118,10 @@ fun RecordRoute(
             RecordEffect.NavigateBack -> onBack()
             RecordEffect.NoteSaved -> onNoteSave()
         }
+    }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.onIntent(RecordIntent.ScreenResumed(micGranted = micGranted()))
     }
 
     // Never keep the microphone open in the background: it's private, and Android cuts it off anyway.

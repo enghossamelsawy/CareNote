@@ -110,8 +110,18 @@ sealed interface RecordIntent : UiIntent {
 
     data object StopClicked : RecordIntent
 
-    /** [canAskAgain] is Android's "should show rationale" after a refusal. */
-    data class PermissionResult(val granted: Boolean, val canAskAgain: Boolean) : RecordIntent
+    /**
+     * The answer to a microphone request. [rationaleBefore] and [rationaleAfter] are Android's "should show
+     * rationale" right before and right after asking; together they tell a refusal from a dismissed dialog.
+     */
+    data class PermissionResult(
+        val granted: Boolean,
+        val rationaleBefore: Boolean = false,
+        val rationaleAfter: Boolean = false,
+    ) : RecordIntent
+
+    /** The screen is in the foreground again, e.g. back from the app settings; [micGranted] is the permission now. */
+    data class ScreenResumed(val micGranted: Boolean) : RecordIntent
 
     data object OpenSettingsClicked : RecordIntent
 

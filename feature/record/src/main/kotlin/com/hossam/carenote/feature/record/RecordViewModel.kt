@@ -49,6 +49,9 @@ class RecordViewModel @AssistedInject constructor(
     // A permission request is on its way; further taps wait for it, so the first tap decides.
     private var awaitingPermission = false
 
+    // Refusals in a row that Android gave no hint about: a dismissed dialog, or one it didn't show at all.
+    private var silentRefusals = 0
+
     // One recording's bookkeeping: what the note held before it started, and the words heard since.
     private var appendNext = false
     private var keptTranscript = ""
@@ -94,6 +97,7 @@ class RecordViewModel @AssistedInject constructor(
             RecordIntent.AllowMicrophoneClicked -> sendEffect(RecordEffect.RequestMicPermission)
             RecordIntent.StopClicked -> stopRecording()
             is RecordIntent.PermissionResult -> onPermissionResult(intent)
+            is RecordIntent.ScreenResumed -> onScreenResumed(intent.micGranted)
             RecordIntent.OpenSettingsClicked -> sendEffect(RecordEffect.OpenAppSettings)
             RecordIntent.BackClicked -> when {
                 // The local save takes a moment and then closes the screen itself; leaving now could cut it short.
@@ -136,12 +140,53 @@ class RecordViewModel @AssistedInject constructor(
         setState { copy(phase = RecordPhase.Done, transcript = "", vitals = VitalsForm(), error = null) }
     }
 
+    /**
+     * Android's "should show rationale" alone can't tell a dismissed dialog from "Don't ask again": both answer
+     * false. Comparing it before and after the request can:
+     * - true after: refused once, Android will ask again.
+     * - true before, false after: the carer chose not to be asked again; only the settings can help.
+     * - false both times: the dialog was dismissed, or Android refused without showing it. Asking once more is
+     *   worth it, but a second time in a row means asking doesn't work, so the settings are offered instead of
+     *   a button that would loop.
+     */
     private fun onPermissionResult(result: RecordIntent.PermissionResult) {
         awaitingPermission = false
         when {
-            result.granted -> startRecording()
-            result.canAskAgain -> setState { copy(permission = MicPermission.Denied) }
-            else -> setState { copy(permission = MicPermission.PermanentlyDenied) }
+            result.granted -> {
+                silentRefusals = 0
+                startRecording()
+            }
+
+            result.rationaleAfter -> {
+                silentRefusals = 0
+                setState { copy(permission = MicPermission.Denied) }
+            }
+
+            result.rationaleBefore -> setState { copy(permission = MicPermission.PermanentlyDenied) }
+
+            else -> {
+                silentRefusals++
+                val permission = if (silentRefusals >= SILENT_REFUSALS_BEFORE_SETTINGS) {
+                    MicPermission.PermanentlyDenied
+                } else {
+                    MicPermission.Denied
+                }
+                setState { copy(permission = permission) }
+            }
+        }
+    }
+
+    /**
+     * Android answers a permission request before the screen resumes, so a request still open here was lost;
+     * it must not keep blocking Record. Access granted in the settings hides the card, without recording.
+     */
+    private fun onScreenResumed(micGranted: Boolean) {
+        awaitingPermission = false
+        val refused = currentState.permission == MicPermission.Denied ||
+            currentState.permission == MicPermission.PermanentlyDenied
+        if (micGranted && refused) {
+            silentRefusals = 0
+            setState { copy(permission = MicPermission.Granted) }
         }
     }
 
@@ -286,5 +331,9 @@ class RecordViewModel @AssistedInject constructor(
     @AssistedFactory
     interface Factory {
         fun create(residentId: String, noteId: UUID?): RecordViewModel
+    }
+
+    private companion object {
+        const val SILENT_REFUSALS_BEFORE_SETTINGS = 2
     }
 }

@@ -150,7 +150,7 @@ class RecordViewModelTest {
             val viewModel = createViewModel()
 
             // When
-            viewModel.onIntent(RecordIntent.PermissionResult(granted = false, canAskAgain = true))
+            viewModel.onIntent(refusedOnce)
 
             // Then
             assertEquals(MicPermission.Denied, viewModel.state.value.permission)
@@ -163,10 +163,91 @@ class RecordViewModelTest {
         val viewModel = createViewModel()
 
         // When
-        viewModel.onIntent(RecordIntent.PermissionResult(granted = false, canAskAgain = false))
+        viewModel.onIntent(refusedForGood)
 
         // Then
         assertEquals(MicPermission.PermanentlyDenied, viewModel.state.value.permission)
+    }
+
+    @Test
+    fun `given record was clicked, when the dialog is dismissed, then allowing the microphone is offered`() = runTest {
+        // Given
+        val viewModel = createViewModel()
+        viewModel.onIntent(RecordIntent.RecordClicked)
+
+        // When
+        viewModel.onIntent(dismissed)
+
+        // Then
+        assertEquals(MicPermission.Denied, viewModel.state.value.permission)
+    }
+
+    @Test
+    fun `given a dismissed dialog, when asking is dismissed again, then the settings are offered`() = runTest {
+        // Given
+        val viewModel = createViewModel()
+        viewModel.onIntent(RecordIntent.RecordClicked)
+        viewModel.onIntent(dismissed)
+
+        // When
+        viewModel.onIntent(RecordIntent.AllowMicrophoneClicked)
+        viewModel.onIntent(dismissed)
+
+        // Then
+        assertEquals(MicPermission.PermanentlyDenied, viewModel.state.value.permission)
+    }
+
+    @Test
+    fun `given a dismissed dialog, when the microphone is then allowed, then recording starts and the count resets`() =
+        runTest {
+            // Given
+            val viewModel = createViewModel()
+            viewModel.onIntent(RecordIntent.RecordClicked)
+            viewModel.onIntent(dismissed)
+
+            // When
+            viewModel.onIntent(RecordIntent.AllowMicrophoneClicked)
+            viewModel.onIntent(granted)
+            viewModel.onIntent(RecordIntent.StopClicked)
+            viewModel.onIntent(RecordIntent.RecordClicked)
+            viewModel.onIntent(dismissed)
+
+            // Then
+            // One dismissal after a grant is a fresh start, not the second in a row.
+            assertEquals(MicPermission.Denied, viewModel.state.value.permission)
+        }
+
+    @Test
+    fun `given a permission answer that never came, when the screen resumes, then record works again`() = runTest {
+        // Given
+        val viewModel = createViewModel()
+        viewModel.onIntent(RecordIntent.RecordClicked)
+
+        // When
+        viewModel.onIntent(RecordIntent.ScreenResumed(micGranted = false))
+        viewModel.onIntent(RecordIntent.RecordClicked)
+
+        // Then
+        viewModel.effects.test {
+            assertEquals(RecordEffect.RequestMicPermission, awaitItem())
+            assertEquals(RecordEffect.RequestMicPermission, awaitItem())
+        }
+    }
+
+    @Test
+    fun `given the settings card, when access was granted in the settings, then the card goes away`() = runTest {
+        // Given
+        val viewModel = createViewModel()
+        viewModel.onIntent(RecordIntent.RecordClicked)
+        viewModel.onIntent(refusedForGood)
+
+        // When
+        viewModel.onIntent(RecordIntent.ScreenResumed(micGranted = true))
+
+        // Then
+        assertEquals(MicPermission.Granted, viewModel.state.value.permission)
+        assertEquals(RecordPhase.Idle, viewModel.state.value.phase)
+        assertEquals(0, speechTranscriber.listenerCount)
     }
 
     @Test
@@ -207,7 +288,7 @@ class RecordViewModelTest {
         // Given
         val viewModel = createViewModel()
         viewModel.onIntent(RecordIntent.RecordClicked)
-        viewModel.onIntent(RecordIntent.PermissionResult(granted = false, canAskAgain = false))
+        viewModel.onIntent(refusedForGood)
 
         // When
         viewModel.onIntent(RecordIntent.TypeInsteadClicked)
@@ -528,7 +609,16 @@ class RecordViewModelTest {
         assertEquals("Pulse 72", viewModel.state.value.transcript)
     }
 
-    private val granted = RecordIntent.PermissionResult(granted = true, canAskAgain = true)
+    private val granted = RecordIntent.PermissionResult(granted = true)
+
+    /** Refused, and Android will ask again. */
+    private val refusedOnce = RecordIntent.PermissionResult(granted = false, rationaleAfter = true)
+
+    /** "Don't ask again": Android had a reason to show before, and none after. */
+    private val refusedForGood = RecordIntent.PermissionResult(granted = false, rationaleBefore = true)
+
+    /** No hint either way: the dialog was dismissed, or Android refused without showing it. */
+    private val dismissed = RecordIntent.PermissionResult(granted = false)
 
     /** "Record more", the permission granted, then the engine hears [words]. */
     private suspend fun recordMore(viewModel: RecordViewModel, words: String) {
