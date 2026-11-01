@@ -5,4 +5,13 @@
     <string name="resident_no_notes">No notes yet</string>
     <string name="resident_not_found">Resident not found</string>
     <string name="resident_record_note">Record note</string>
+    <string name="resident_note_pending">Waiting to sync</string>
+    <string name="resident_note_syncing">Syncing</string>
+    <string name="resident_note_synced">Synced</string>
+    <string name="resident_note_failed">Not synced</string>
+    <string name="resident_note_retry">Try again</string>
+    <string name="resident_vital_bp">BP %1$d/%2$d</string>
+    <string name="resident_vital_pulse">Pulse %1$d</string>
+    <string name="resident_vital_temperature">%1$s °C</string>
+    <string name="resident_vital_spo2">SpO2 %1$d%%</string>
 </resources>

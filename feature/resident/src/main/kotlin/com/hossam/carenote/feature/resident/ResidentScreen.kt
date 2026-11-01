@@ -9,7 +9,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -23,7 +22,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
+import com.hossam.carenote.core.model.SyncStatus
+import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.ui.mvi.ObserveEffects
+import java.time.Instant
+import java.util.UUID
 
 /** Connects [ResidentScreen] to a ViewModel created for [residentId]; navigation is passed in. */
 @Composable
@@ -60,8 +63,8 @@ fun ResidentScreen(state: ResidentState, onIntent: (ResidentIntent) -> Unit, mod
                             Text(text = state.name)
                             Text(
                                 text = stringResource(R.string.resident_room, state.room),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = CareNoteTheme.typography.bodyMedium,
+                                color = CareNoteTheme.colors.onSurfaceVariant,
                             )
                         }
                     }
@@ -86,22 +89,30 @@ fun ResidentScreen(state: ResidentState, onIntent: (ResidentIntent) -> Unit, mod
             }
         },
     ) { innerPadding ->
-        Box(
-            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(CareNoteTheme.spacing.lg),
-            contentAlignment = Alignment.Center,
-        ) {
-            when {
-                state.isLoading -> CircularProgressIndicator()
+        val contentModifier = Modifier.fillMaxSize().padding(innerPadding)
+        when {
+            state.isLoading -> Box(modifier = contentModifier, contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
 
-                // TODO(4.7): replace with the notes list.
-                else -> Text(
+            state.notFound || state.notes.isEmpty() -> Box(
+                modifier = contentModifier.padding(CareNoteTheme.spacing.lg),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
                     text = stringResource(
                         if (state.notFound) R.string.resident_not_found else R.string.resident_no_notes,
                     ),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = CareNoteTheme.typography.bodyLarge,
+                    color = CareNoteTheme.colors.onSurfaceVariant,
                 )
             }
+
+            else -> NotesList(
+                notes = state.notes,
+                onRetry = { noteId -> onIntent(ResidentIntent.RetryClicked(noteId)) },
+                modifier = contentModifier,
+            )
         }
     }
 }
@@ -111,11 +122,39 @@ fun ResidentScreen(state: ResidentState, onIntent: (ResidentIntent) -> Unit, mod
 private fun ResidentScreenPreview() {
     CareNoteTheme {
         ResidentScreen(
+            state = ResidentState(
+                isLoading = false,
+                name = "Anna Becker",
+                room = "101",
+                notes = listOf(
+                    previewNote(id = 3, status = SyncStatus.FAILED, transcript = "Refused breakfast, drank tea."),
+                    previewNote(id = 2, status = SyncStatus.PENDING, transcript = "Pulse 72, temperature 36.8"),
+                    previewNote(id = 1, status = SyncStatus.SYNCED, transcript = "Blood pressure 120 over 80"),
+                ),
+            ),
+            onIntent = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun ResidentScreenNoNotesPreview() {
+    CareNoteTheme {
+        ResidentScreen(
             state = ResidentState(isLoading = false, name = "Anna Becker", room = "101"),
             onIntent = {},
         )
     }
 }
+
+private fun previewNote(id: Long, status: SyncStatus, transcript: String) = NoteItem(
+    id = UUID(0, id),
+    createdAt = Instant.parse("2026-11-01T08:30:00Z").plusSeconds(id * 3_600),
+    transcript = transcript,
+    vitals = Vitals(pulse = 72, temperatureCelsius = 36.8),
+    status = status,
+)
 
 @PreviewLightDark
 @Composable
