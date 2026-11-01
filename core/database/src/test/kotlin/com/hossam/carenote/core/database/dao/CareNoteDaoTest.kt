@@ -158,14 +158,46 @@ class CareNoteDaoTest {
         database.outboxDao().recordAttempt("1", at = Instant.ofEpochSecond(10), error = "HTTP 500")
 
         // When
-        dao.requeue(outboxEntry("1", enqueuedAt = Instant.ofEpochSecond(20)))
+        val queued = dao.requeue(outboxEntry("1", enqueuedAt = Instant.ofEpochSecond(20)))
 
         // Then
+        assertTrue(queued)
         assertEquals(SyncStatus.PENDING, dao.observeForResident("r1").first().single().syncStatus)
         assertEquals(
             listOf(outboxEntry("1", enqueuedAt = Instant.ofEpochSecond(20))),
             database.outboxDao().oldest(limit = 10),
         )
+    }
+
+    @Test
+    fun `given a synced note, when requeuing it, then it stays synced and off the queue`() = runTest {
+        // Given
+        dao.insertAndQueue(careNote("1", "r1"), outboxEntry("1"))
+        dao.markSynced("1")
+
+        // When
+        val queued = dao.requeue(outboxEntry("1", enqueuedAt = Instant.ofEpochSecond(20)))
+
+        // Then
+        assertFalse(queued)
+        assertEquals(SyncStatus.SYNCED, dao.getById("1")?.syncStatus)
+        assertTrue(database.outboxDao().oldest(limit = 10).isEmpty())
+    }
+
+    @Test
+    fun `given a waiting note, when requeuing it, then its queue entry is left as it was`() = runTest {
+        // Given
+        dao.insertAndQueue(careNote("1", "r1"), outboxEntry("1"))
+        database.outboxDao().recordAttempt("1", at = Instant.ofEpochSecond(10), error = "HTTP 500")
+        val entryBefore = database.outboxDao().oldest(limit = 10)
+
+        // When
+        val queued = dao.requeue(outboxEntry("1", enqueuedAt = Instant.ofEpochSecond(20)))
+
+        // Then
+        assertFalse(queued)
+        assertEquals(SyncStatus.PENDING, dao.getById("1")?.syncStatus)
+        assertEquals(entryBefore, database.outboxDao().oldest(limit = 10))
     }
 
     @Test

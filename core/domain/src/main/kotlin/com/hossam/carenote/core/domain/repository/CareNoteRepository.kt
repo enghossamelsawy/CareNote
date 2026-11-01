@@ -25,8 +25,8 @@ interface CareNoteRepository {
     /** Stores the note and queues it for sync in one transaction. */
     suspend fun save(note: CareNote)
 
-    /** Queues a FAILED note for another sync attempt. */
-    suspend fun retry(noteId: UUID)
+    /** Queues a FAILED note for another sync attempt; any other note is left as it is and false returned. */
+    suspend fun retry(noteId: UUID): Boolean
 
     /** Notes still marked as syncing from a sync that never finished go back to waiting. */
     suspend fun resetInterruptedSyncs()

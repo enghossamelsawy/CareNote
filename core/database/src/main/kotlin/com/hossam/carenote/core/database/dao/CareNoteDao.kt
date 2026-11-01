@@ -76,10 +76,20 @@ interface CareNoteDao {
     @Upsert
     suspend fun upsertOutboxEntry(entry: OutboxEntity)
 
-    /** Marks the note as waiting again and gives it a fresh queue entry, in one transaction. */
+    /** Sets a refused note back to waiting; returns how many rows changed, 0 if the note isn't FAILED. */
+    @Query("UPDATE care_notes SET syncStatus = 'PENDING' WHERE id = :id AND syncStatus = 'FAILED'")
+    suspend fun resetFailed(id: String): Int
+
+    /**
+     * Marks a refused note as waiting again and gives it a fresh queue entry, in one transaction. A note that
+     * isn't FAILED, e.g. one already synced by the time Retry is tapped, is left as it is.
+     *
+     * @return true when the note was queued again.
+     */
     @Transaction
-    suspend fun requeue(entry: OutboxEntity) {
-        updateSyncStatus(entry.noteId, SyncStatus.PENDING)
+    suspend fun requeue(entry: OutboxEntity): Boolean {
+        if (resetFailed(entry.noteId) == 0) return false
         upsertOutboxEntry(entry)
+        return true
     }
 }

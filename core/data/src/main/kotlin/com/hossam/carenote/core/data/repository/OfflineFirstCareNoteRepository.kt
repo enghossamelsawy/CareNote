@@ -39,9 +39,7 @@ internal class OfflineFirstCareNoteRepository @Inject constructor(
         storage { careNoteDao.insertAndQueue(note.asEntity(), outboxEntry(note.id)) }
     }
 
-    override suspend fun retry(noteId: UUID) {
-        careNoteDao.requeue(outboxEntry(noteId))
-    }
+    override suspend fun retry(noteId: UUID): Boolean = storage { careNoteDao.requeue(outboxEntry(noteId)) }
 
     override suspend fun resetInterruptedSyncs() {
         storage { careNoteDao.resetSyncing() }

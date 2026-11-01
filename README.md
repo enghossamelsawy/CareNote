@@ -97,7 +97,8 @@ sequenceDiagram
   A note is never stored twice.
 - **Oldest first, stop at the first "try later".** If the server is down for one note it's down for all,
   so the worker stops instead of failing each one, and the order notes were queued in is kept. A note the
-  server *refuses* is set aside as "not synced" and the queue moves on.
+  server *refuses* is set aside as "not synced" and the queue moves on. Retry only works on such a note, so
+  a double tap or a note that synced meanwhile changes nothing.
 - **One sync at a time.** Unique work (`note-sync`, `APPEND_OR_REPLACE`) only runs with a network and
   backs off exponentially from 30 seconds. A note saved during a sync is picked up right after it.
 
