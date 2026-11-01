@@ -4,7 +4,12 @@ import com.hossam.carenote.core.ui.mvi.UiEffect
 import com.hossam.carenote.core.ui.mvi.UiIntent
 import com.hossam.carenote.core.ui.mvi.UiState
 
-data class ResidentsState(val isLoading: Boolean = true, val residents: List<ResidentItem> = emptyList()) : UiState
+data class ResidentsState(
+    val isLoading: Boolean = true,
+    val residents: List<ResidentItem> = emptyList(),
+    /** Shown as a banner: recording still works, notes just wait to sync. */
+    val isOffline: Boolean = false,
+) : UiState
 
 /** One row of the residents list, already in the shape the screen shows. */
 data class ResidentItem(val id: String, val name: String, val room: String, val pendingCount: Int)

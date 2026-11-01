@@ -2,6 +2,7 @@ package com.hossam.carenote.feature.residents
 
 import app.cash.turbine.test
 import com.hossam.carenote.core.domain.repository.RefreshResult
+import com.hossam.carenote.core.domain.usecase.ObserveNetworkStatusUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentsWithPendingCountUseCase
 import com.hossam.carenote.core.domain.usecase.RefreshResidentsUseCase
 import com.hossam.carenote.core.model.CareNote
@@ -10,6 +11,7 @@ import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.testing.MainDispatcherRule
 import com.hossam.carenote.core.testing.repository.FakeCareNoteRepository
+import com.hossam.carenote.core.testing.repository.FakeNetworkMonitor
 import com.hossam.carenote.core.testing.repository.FakeResidentRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -24,6 +26,7 @@ class ResidentsViewModelTest {
 
     private val residentRepository = FakeResidentRepository()
     private val careNoteRepository = FakeCareNoteRepository()
+    private val networkMonitor = FakeNetworkMonitor()
 
     private val anna = Resident(id = "res-1", firstName = "Anna", lastName = "Becker", room = "101")
     private val max = Resident(id = "res-2", firstName = "Max", lastName = "Weber", room = "102")
@@ -107,7 +110,20 @@ class ResidentsViewModelTest {
             careNoteRepository = careNoteRepository,
         ),
         refreshResidents = RefreshResidentsUseCase(residentRepository),
+        observeNetworkStatus = ObserveNetworkStatusUseCase(networkMonitor),
     )
+
+    @Test
+    fun `given the list, when the device goes offline, then the offline banner shows`() = runTest {
+        // Given
+        val viewModel = createViewModel()
+
+        // When
+        networkMonitor.setOnline(false)
+
+        // Then
+        assertEquals(true, viewModel.state.value.isOffline)
+    }
 
     private fun note(id: Int, residentId: String) = CareNote(
         id = UUID(0, id.toLong()),

@@ -1,6 +1,7 @@
 package com.hossam.carenote.feature.residents
 
 import androidx.lifecycle.viewModelScope
+import com.hossam.carenote.core.domain.usecase.ObserveNetworkStatusUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentsWithPendingCountUseCase
 import com.hossam.carenote.core.domain.usecase.RefreshResidentsUseCase
 import com.hossam.carenote.core.model.ResidentSummary
@@ -15,10 +16,14 @@ import javax.inject.Inject
 class ResidentsViewModel @Inject constructor(
     observeResidentsWithPendingCount: ObserveResidentsWithPendingCountUseCase,
     refreshResidents: RefreshResidentsUseCase,
+    observeNetworkStatus: ObserveNetworkStatusUseCase,
 ) : MviViewModel<ResidentsState, ResidentsIntent, ResidentsEffect>(ResidentsState()) {
     init {
         observeResidentsWithPendingCount()
             .onEach { summaries -> setState { copy(isLoading = false, residents = summaries.map { it.asItem() }) } }
+            .launchIn(viewModelScope)
+        observeNetworkStatus()
+            .onEach { online -> setState { copy(isOffline = !online) } }
             .launchIn(viewModelScope)
         // Offline-first: the stored list shows right away; fresh data, if the server answers, arrives through
         // the observed flow above. A failed refresh changes nothing on screen.

@@ -3,6 +3,7 @@
     <string name="residents_title">Residents</string>
     <string name="residents_room">Room %1$s</string>
     <string name="residents_empty">No residents yet</string>
+    <string name="residents_offline">Offline. New notes are saved on this phone and sync when you\'re back online.</string>
     <plurals name="residents_pending">
         <item quantity="one">%d pending</item>
         <item quantity="other">%d pending</item>
