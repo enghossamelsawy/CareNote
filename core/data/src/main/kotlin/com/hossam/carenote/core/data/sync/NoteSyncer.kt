@@ -24,6 +24,17 @@ internal enum class SyncOutcome {
  * Sends queued notes to the server, oldest first, until the queue is empty or the server can't be reached.
  * Every send can be repeated safely: the note id is the idempotency key, so a note that reached the server
  * before a crash or timeout is answered with "already stored" and marked synced.
+ *
+ * Queue policy, and what it costs:
+ * - "Oldest" is the order notes were saved in, so an original always reaches the server before its edit.
+ * - A refused note (4xx) is set aside as FAILED and the queue moves on: retrying won't change the answer.
+ * - "Try later" (offline, 408, 429, 5xx) stops the whole run instead of skipping to the next note. An outage
+ *   usually hits every note, so trying each one would only multiply failed requests, and skipping would send
+ *   an edit before its original.
+ * - The cost is head-of-line blocking: if the server kept answering 5xx for one note only, every note behind
+ *   it would wait, with WorkManager retrying with backoff. Each outbox entry records its attempts and last
+ *   error, so a cap that sets such a note aside could be added; it isn't, because a server failing one note
+ *   but not others is a server bug to fix there, not something to hide on the phone.
  */
 internal class NoteSyncer @Inject constructor(
     private val careNoteDao: CareNoteDao,
