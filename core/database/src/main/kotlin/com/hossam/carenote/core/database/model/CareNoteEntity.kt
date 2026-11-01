@@ -13,7 +13,7 @@ import java.time.Instant
  * A saved note. Rows are only inserted, never edited, apart from [syncStatus]: a correction is a
  * new row whose [revisionOf] points at the previous one. Ids are UUID strings, mapped in core:data.
  *
- * [saveOrder] numbers the notes 1, 2, 3… in the order they were saved on this phone, set by
+ * [saveOrder] numbers the notes 1, 2, 3â€¦ in the order they were saved on this phone, set by
  * [com.hossam.carenote.core.database.dao.CareNoteDao.insertAndQueue]. The sync queue follows it instead of a
  * clock time: an edit can only be saved after its original, so it always comes after it, even if the phone's
  * clock was moved back in between. It stays in the database; the app's model doesn't need it.
