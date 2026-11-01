@@ -21,7 +21,10 @@ data class ResidentState(
     val notes: List<NoteItem> = emptyList(),
 ) : UiState
 
-/** One note in the list; the screen formats the time and vitals for the reader's locale. */
+/**
+ * The latest version of one note; the screen formats the times and vitals for the reader's locale.
+ * [createdAt] is when it was first written, [editedAt] when it was last edited, or null if never.
+ */
 data class NoteItem(
     val id: UUID,
     val createdAt: Instant,
@@ -30,6 +33,7 @@ data class NoteItem(
     /** Which [vitals] are outside the usual range; decided by the domain, not the screen. */
     val assessment: VitalsAssessment,
     val status: SyncStatus,
+    val editedAt: Instant? = null,
 )
 
 sealed interface ResidentIntent : UiIntent {

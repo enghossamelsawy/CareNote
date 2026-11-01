@@ -119,6 +119,23 @@ class ResidentViewModelTest {
     }
 
     @Test
+    fun `given an edited note, when the view model starts, then it shows once with both times`() = runTest {
+        // Given
+        residentRepository.setResidents(listOf(anna))
+        careNoteRepository.save(note(id = 1, createdAt = 10))
+        careNoteRepository.save(note(id = 2, createdAt = 20).copy(transcript = "Pulse 76", revisionOf = UUID(0, 1)))
+
+        // When
+        val viewModel = createViewModel(anna.id)
+
+        // Then
+        val shown = viewModel.state.value.notes.single()
+        assertEquals(UUID(0, 2), shown.id)
+        assertEquals(Instant.ofEpochSecond(10), shown.createdAt)
+        assertEquals(Instant.ofEpochSecond(20), shown.editedAt)
+    }
+
+    @Test
     fun `given a note with high blood pressure, when the view model starts, then it is marked as high`() = runTest {
         // Given
         residentRepository.setResidents(listOf(anna))

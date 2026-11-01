@@ -5,7 +5,7 @@ import com.hossam.carenote.core.domain.usecase.AssessVitalsUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveCareNotesUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentUseCase
 import com.hossam.carenote.core.domain.usecase.RetryCareNoteSyncUseCase
-import com.hossam.carenote.core.model.CareNote
+import com.hossam.carenote.core.model.CurrentCareNote
 import com.hossam.carenote.core.ui.mvi.MviViewModel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -53,13 +53,14 @@ class ResidentViewModel @AssistedInject constructor(
         }
     }
 
-    private fun CareNote.asItem() = NoteItem(
-        id = id,
-        createdAt = createdAt,
-        transcript = transcript,
-        vitals = vitals,
-        assessment = assessVitals(vitals),
-        status = syncStatus,
+    private fun CurrentCareNote.asItem() = NoteItem(
+        id = note.id,
+        createdAt = firstWrittenAt,
+        transcript = note.transcript,
+        vitals = note.vitals,
+        assessment = assessVitals(note.vitals),
+        status = note.syncStatus,
+        editedAt = if (isEdited) note.createdAt else null,
     )
 
     @AssistedFactory

@@ -105,16 +105,31 @@ private fun NoteCard(note: NoteItem, onRetry: () -> Unit, modifier: Modifier = M
     }
 }
 
-/** The time, and the sync status: a quiet check once synced, a badge only while it still needs something. */
+/**
+ * When the note was written, and when it was last edited; then the sync status: a quiet check once
+ * synced, a badge only while it still needs something.
+ */
 @Composable
 private fun NoteHeader(note: NoteItem, modifier: Modifier = Modifier) {
     // In the phone's own time zone and date format.
-    val formatter = remember {
-        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withZone(ZoneId.systemDefault())
+    val zone = remember { ZoneId.systemDefault() }
+    val dateTime = remember(zone) {
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withZone(zone)
+    }
+    val time = remember(zone) { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withZone(zone) }
+    val written = dateTime.format(note.createdAt)
+    val editedAt = note.editedAt
+    val header = if (editedAt == null) {
+        written
+    } else {
+        // Only the time when edited the same day, so the header stays short.
+        val sameDay = editedAt.atZone(zone).toLocalDate() == note.createdAt.atZone(zone).toLocalDate()
+        val edited = if (sameDay) time.format(editedAt) else dateTime.format(editedAt)
+        stringResource(R.string.resident_note_written_edited, written, edited)
     }
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text = formatter.format(note.createdAt),
+            text = header,
             modifier = Modifier.weight(1f),
             style = CareNoteTheme.typography.labelLarge,
             color = CareNoteTheme.colors.onSurfaceVariant,

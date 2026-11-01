@@ -13,6 +13,7 @@
     <string name="resident_note_synced">Synced</string>
     <string name="resident_note_failed">Not synced</string>
     <string name="resident_note_retry">Try again</string>
+    <string name="resident_note_written_edited">%1$s · Edited %2$s</string>
     <string name="resident_vital_bp_label">Blood pressure</string>
     <string name="resident_vital_pulse_label">Pulse</string>
     <string name="resident_vital_temperature_label">Temperature</string>
