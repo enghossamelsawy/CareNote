@@ -162,16 +162,17 @@ Only `app` has flavors; libraries get what differs through Hilt.
 
 ```bash
 # What CI runs
-./gradlew ktlintCheck lintDebug lintMockDebug lintProdDebug test assembleMockDebug assembleProdDebug
+./gradlew ktlintCheck lintDebug lintMockDebug lintProdDebug test verifyRoborazziDebug assembleMockDebug assembleProdDebug
 
 # Screenshots: compare with the recorded images, or record new ones after a UI change
 ./gradlew verifyRoborazziDebug
 ./gradlew recordRoborazziDebug
 ```
 
-CI (GitHub Actions) runs ktlint, Android Lint, all unit tests, both flavor builds and compiles the device
-tests on every push and pull request. Screenshots are checked locally for now: the images are recorded on
-Windows, and CI's Linux renders a few pixels differently.
+CI (GitHub Actions) runs ktlint, Android Lint, all unit tests, the screenshot comparison, both flavor builds
+and compiles the device tests on every push and pull request. The images are recorded on Windows and Linux
+smooths text a little differently, so a comparison passes with up to 1% changed pixels; a failed one uploads
+the old, new and difference images.
 
 ## Tech stack
 

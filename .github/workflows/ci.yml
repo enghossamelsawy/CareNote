@@ -1,4 +1,4 @@
-# Runs the same checks as locally: formatting, Android Lint, unit tests and the debug build.
+# Runs the same checks as locally: formatting, Android Lint, unit tests, screenshots and the debug builds.
 name: CI
 
 on:
@@ -43,6 +43,10 @@ jobs:
       - name: Build
         run: ./gradlew assembleMockDebug assembleProdDebug
 
+      # Compares every screen with its recorded image in src/test/screenshots, light and dark.
+      - name: Verify screenshots
+        run: ./gradlew verifyRoborazziDebug
+
       # Device tests need a phone, but they must at least compile.
       - name: Compile device tests
         run: ./gradlew assembleMockDebugAndroidTest
@@ -52,5 +56,8 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: reports
-          path: '**/build/reports/'
+          # Reports, plus Roborazzi's comparison images (old, new and the difference) for failed screenshots.
+          path: |
+            **/build/reports/
+            **/build/outputs/roborazzi/
           retention-days: 7

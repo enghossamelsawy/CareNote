@@ -2,6 +2,7 @@ package com.hossam.carenote.feature.residents
 
 import androidx.compose.runtime.Composable
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
+import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
 import org.junit.Test
@@ -9,6 +10,15 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+
+/**
+ * The images are recorded on Windows and checked on CI's Linux, which smooths text a little differently.
+ * Up to 1% changed pixels passes. A changed layout or colour is far above that, but a small text change can
+ * stay below it, so the recorded images are still worth a look.
+ */
+private val screenshotOptions = RoborazziOptions(
+    compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.01f),
+)
 
 /** Record with `recordRoborazziDebug`, check with `verifyRoborazziDebug`; images live in src/test/screenshots. */
 @RunWith(RobolectricTestRunner::class)
@@ -65,7 +75,7 @@ class ResidentsScreenScreenshotTest {
     private fun screenshots(name: String, content: @Composable () -> Unit) {
         for (darkTheme in listOf(false, true)) {
             val theme = if (darkTheme) "dark" else "light"
-            captureRoboImage("src/test/screenshots/${name}_$theme.png") {
+            captureRoboImage("src/test/screenshots/${name}_$theme.png", roborazziOptions = screenshotOptions) {
                 CareNoteTheme(darkTheme = darkTheme) { content() }
             }
         }
