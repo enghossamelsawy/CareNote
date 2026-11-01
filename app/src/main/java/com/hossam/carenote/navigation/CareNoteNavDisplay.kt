@@ -7,6 +7,8 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.hossam.carenote.feature.resident.navigation.ResidentKey
+import com.hossam.carenote.feature.resident.navigation.residentEntry
 import com.hossam.carenote.feature.residents.navigation.ResidentsKey
 import com.hossam.carenote.feature.residents.navigation.residentsEntry
 
@@ -28,8 +30,8 @@ fun CareNoteNavDisplay(modifier: Modifier = Modifier) {
             rememberViewModelStoreNavEntryDecorator(),
         ),
         entryProvider = entryProvider {
-            // TODO(2.3): open the resident detail screen.
-            residentsEntry(onOpenResident = {})
+            residentsEntry(onOpenResident = { residentId -> backStack.add(ResidentKey(residentId)) })
+            residentEntry(onBack = { backStack.removeLastOrNull() })
         },
     )
 }

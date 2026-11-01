@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="resident_room">Room %1$s</string>
+    <string name="resident_back">Back</string>
+    <string name="resident_no_notes">No notes yet</string>
+    <string name="resident_not_found">Resident not found</string>
+</resources>

@@ -33,6 +33,7 @@ dependencies {
     // For Hilt only: the app wires the data layer, features never see it.
     implementation(projects.core.data)
     implementation(projects.feature.residents)
+    implementation(projects.feature.resident)
 
     implementation(libs.timber)
     implementation(libs.androidx.activity.compose)
