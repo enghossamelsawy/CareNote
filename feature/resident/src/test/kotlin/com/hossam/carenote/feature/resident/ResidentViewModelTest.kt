@@ -91,6 +91,22 @@ class ResidentViewModelTest {
     }
 
     @Test
+    fun `given a listed note, when edit is clicked, then the editor opens for that note`() = runTest {
+        // Given
+        residentRepository.setResidents(listOf(anna))
+        careNoteRepository.save(note(id = 1, createdAt = 10))
+        val viewModel = createViewModel(anna.id)
+
+        // When
+        viewModel.onIntent(ResidentIntent.EditClicked(UUID(0, 1)))
+
+        // Then
+        viewModel.effects.test {
+            assertEquals(ResidentEffect.OpenEditor(anna.id, UUID(0, 1)), awaitItem())
+        }
+    }
+
+    @Test
     fun `given notes for the resident, when the view model starts, then they are listed newest first`() = runTest {
         // Given
         residentRepository.setResidents(listOf(anna))

@@ -41,6 +41,7 @@ fun ResidentRoute(
     residentId: String,
     onBack: () -> Unit,
     onRecord: (residentId: String) -> Unit,
+    onEditNote: (residentId: String, noteId: UUID) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ResidentViewModel = hiltViewModel<ResidentViewModel, ResidentViewModel.Factory>(
         creationCallback = { factory -> factory.create(residentId) },
@@ -51,6 +52,7 @@ fun ResidentRoute(
         when (effect) {
             ResidentEffect.NavigateBack -> onBack()
             is ResidentEffect.OpenRecord -> onRecord(effect.residentId)
+            is ResidentEffect.OpenEditor -> onEditNote(effect.residentId, effect.noteId)
         }
     }
     ResidentScreen(state = state, onIntent = viewModel::onIntent, modifier = modifier)
@@ -127,6 +129,7 @@ fun ResidentScreen(state: ResidentState, onIntent: (ResidentIntent) -> Unit, mod
             else -> NotesList(
                 notes = state.notes,
                 onRetry = { noteId -> onIntent(ResidentIntent.RetryClicked(noteId)) },
+                onEdit = { noteId -> onIntent(ResidentIntent.EditClicked(noteId)) },
                 modifier = contentModifier,
             )
         }

@@ -43,10 +43,14 @@ sealed interface ResidentIntent : UiIntent {
 
     /** Only offered for notes the server refused. */
     data class RetryClicked(val noteId: UUID) : ResidentIntent
+
+    data class EditClicked(val noteId: UUID) : ResidentIntent
 }
 
 sealed interface ResidentEffect : UiEffect {
     data object NavigateBack : ResidentEffect
 
     data class OpenRecord(val residentId: String) : ResidentEffect
+
+    data class OpenEditor(val residentId: String, val noteId: UUID) : ResidentEffect
 }

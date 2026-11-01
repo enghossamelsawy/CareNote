@@ -15,12 +15,27 @@ data class RecordState(
     val isSaving: Boolean = false,
     /** Leaving would lose a recording or an unsaved note, so the screen asks first. */
     val showDiscardDialog: Boolean = false,
+    /** The note as it was when editing started; null when writing a new note. */
+    val editedFrom: EditedNote? = null,
 ) : UiState {
+    val isEditing: Boolean
+        get() = editedFrom != null
+that
     /** Whether going back now would throw away something the user dictated or typed. */
     val hasUnsavedNote: Boolean
-        get() = phase == RecordPhase.Recording ||
-            (phase == RecordPhase.Done && (transcript.isNotBlank() || vitals.values.values.any { it.isNotBlank() }))
+        get() = phase == RecordPhase.Recording || (phase == RecordPhase.Done && hasChanges)
+
+    /** An edit counts once it differs from the note it started from; a new note once it has anything in it. */
+    private val hasChanges: Boolean
+        get() = if (editedFrom != null) {
+            transcript != editedFrom.transcript || vitals.values != editedFrom.vitals.values
+        } else {
+            transcript.isNotBlank() || vitals.values.values.any { it.isNotBlank() }
+        }
 }
+
+/** What an edited note held when it was opened. */
+data class EditedNote(val transcript: String, val vitals: VitalsForm)
 
 enum class RecordPhase {
     Idle,

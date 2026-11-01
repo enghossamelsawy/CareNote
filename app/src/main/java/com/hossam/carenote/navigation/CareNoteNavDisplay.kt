@@ -48,6 +48,9 @@ fun CareNoteNavDisplay(modifier: Modifier = Modifier) {
                 onRecord = { residentId ->
                     navigator.navigate(from = ResidentKey(residentId), to = RecordKey(residentId))
                 },
+                onEditNote = { residentId, noteId ->
+                    navigator.navigate(from = ResidentKey(residentId), to = RecordKey(residentId, noteId.toString()))
+                },
             )
             recordEntry(
                 onBack = navigator::goBack,

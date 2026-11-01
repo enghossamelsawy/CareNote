@@ -45,7 +45,12 @@ import java.util.UUID
 
 /** Newest first; leaves room at the bottom so the record button never covers the last note. */
 @Composable
-internal fun NotesList(notes: List<NoteItem>, onRetry: (noteId: UUID) -> Unit, modifier: Modifier = Modifier) {
+internal fun NotesList(
+    notes: List<NoteItem>,
+    onRetry: (noteId: UUID) -> Unit,
+    onEdit: (noteId: UUID) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val spacing = CareNoteTheme.spacing
     LazyColumn(
         modifier = modifier,
@@ -59,14 +64,14 @@ internal fun NotesList(notes: List<NoteItem>, onRetry: (noteId: UUID) -> Unit, m
         verticalArrangement = Arrangement.spacedBy(spacing.sm),
     ) {
         items(notes, key = { it.id }) { note ->
-            NoteCard(note = note, onRetry = { onRetry(note.id) })
+            NoteCard(note = note, onRetry = { onRetry(note.id) }, onEdit = { onEdit(note.id) })
         }
     }
 }
 
 /** A red edge on the left marks a note with a vital out of range, so it's found while scrolling. */
 @Composable
-private fun NoteCard(note: NoteItem, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+private fun NoteCard(note: NoteItem, onRetry: () -> Unit, onEdit: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = CareNoteTheme.colors.surfaceContainerLow),
@@ -95,12 +100,30 @@ private fun NoteCard(note: NoteItem, onRetry: () -> Unit, modifier: Modifier = M
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                if (note.status == SyncStatus.FAILED) {
-                    TextButton(onClick = onRetry) {
-                        Text(stringResource(R.string.resident_note_retry))
-                    }
-                }
+                NoteActions(isFailed = note.status == SyncStatus.FAILED, onRetry = onRetry, onEdit = onEdit)
             }
+        }
+    }
+}
+
+/** Retry on the left, only for a note the server refused; Edit on the right, always. */
+@Composable
+private fun NoteActions(isFailed: Boolean, onRetry: () -> Unit, onEdit: () -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        if (isFailed) {
+            TextButton(onClick = onRetry) {
+                Text(stringResource(R.string.resident_note_retry))
+            }
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        TextButton(onClick = onEdit) {
+            Icon(
+                imageVector = CareNoteIcons.Edit,
+                contentDescription = null,
+                modifier = Modifier.size(CareNoteTheme.dimens.iconSm),
+            )
+            Spacer(modifier = Modifier.width(CareNoteTheme.spacing.xs))
+            Text(stringResource(R.string.resident_note_edit))
         }
     }
 }

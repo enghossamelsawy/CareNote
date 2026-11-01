@@ -3,12 +3,14 @@ package com.hossam.carenote.feature.record
 import app.cash.turbine.test
 import com.hossam.carenote.core.domain.speech.TranscriptionError
 import com.hossam.carenote.core.domain.speech.TranscriptionEvent
+import com.hossam.carenote.core.domain.usecase.GetCareNoteUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentUseCase
 import com.hossam.carenote.core.domain.usecase.ParseVitalsUseCase
 import com.hossam.carenote.core.domain.usecase.SaveCareNoteUseCase
 import com.hossam.carenote.core.domain.usecase.TranscribeSpeechUseCase
 import com.hossam.carenote.core.domain.vitals.VitalsParser
 import com.hossam.carenote.core.domain.vitals.VitalsValidator
+import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.Resident
 import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.testing.MainDispatcherRule
@@ -25,6 +27,7 @@ import org.junit.Test
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.UUID
 
 class RecordViewModelTest {
     @get:Rule
@@ -461,9 +464,97 @@ class RecordViewModelTest {
         return viewModel
     }
 
-    private fun createViewModel() = RecordViewModel(
+    @Test
+    fun `given a saved note, when editing it, then it opens in review with the note filled in`() = runTest {
+        // Given
+        careNoteRepository.save(savedNote)
+
+        // When
+        val viewModel = createViewModel(noteId = savedNote.id)
+
+        // Then
+        val state = viewModel.state.value
+        assertEquals(RecordPhase.Done, state.phase)
+        assertEquals("Pulse 72", state.transcript)
+        assertEquals("72", state.vitals[VitalField.Pulse])
+        assertTrue(state.isEditing)
+    }
+
+    @Test
+    fun `given an opened edit, when it is saved, then a new version of the note is stored`() = runTest {
+        // Given
+        careNoteRepository.save(savedNote)
+        val viewModel = createViewModel(noteId = savedNote.id)
+        viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Pulse, "76"))
+
+        // When
+        viewModel.onIntent(RecordIntent.SaveClicked)
+
+        // Then
+        val edit = careNoteRepository.savedNotes.last()
+        assertEquals(savedNote.id, edit.revisionOf)
+        assertEquals(Vitals(pulse = 76), edit.vitals)
+        viewModel.effects.test {
+            assertEquals(RecordEffect.NoteSaved, awaitItem())
+        }
+    }
+
+    @Test
+    fun `given an edit with no changes, when back is clicked, then the screen closes without asking`() = runTest {
+        // Given
+        careNoteRepository.save(savedNote)
+        val viewModel = createViewModel(noteId = savedNote.id)
+
+        // When
+        viewModel.onIntent(RecordIntent.BackClicked)
+
+        // Then
+        assertFalse(viewModel.state.value.showDiscardDialog)
+        viewModel.effects.test {
+            assertEquals(RecordEffect.NavigateBack, awaitItem())
+        }
+    }
+
+    @Test
+    fun `given a changed edit, when back is clicked, then it asks before discarding`() = runTest {
+        // Given
+        careNoteRepository.save(savedNote)
+        val viewModel = createViewModel(noteId = savedNote.id)
+        viewModel.onIntent(RecordIntent.TranscriptChanged("Pulse 72, slept well"))
+
+        // When
+        viewModel.onIntent(RecordIntent.BackClicked)
+
+        // Then
+        assertTrue(viewModel.state.value.showDiscardDialog)
+    }
+
+    @Test
+    fun `given another resident's note, when editing it, then it doesn't open and says so`() = runTest {
+        // Given
+        careNoteRepository.save(savedNote.copy(residentId = "res-2"))
+
+        // When
+        val viewModel = createViewModel(noteId = savedNote.id)
+
+        // Then
+        assertEquals(RecordPhase.Idle, viewModel.state.value.phase)
+        assertEquals(RecordError.CannotEdit, viewModel.state.value.error)
+    }
+
+    private val savedNote = CareNote(
+        id = UUID(0, 1),
+        residentId = "res-1",
+        transcript = "Pulse 72",
+        vitals = Vitals(pulse = 72),
+        createdAt = Instant.EPOCH,
+    )
+
+    private fun createViewModel(noteId: UUID? = null) = RecordViewModel(
         residentId = anna.id,
+        noteId = noteId,
         observeResident = ObserveResidentUseCase(residentRepository),
+        getCareNote = GetCareNoteUseCase(careNoteRepository),
         transcribeSpeech = TranscribeSpeechUseCase(speechTranscriber),
         parseVitals = ParseVitalsUseCase(VitalsParser()),
         saveCareNote = SaveCareNoteUseCase(

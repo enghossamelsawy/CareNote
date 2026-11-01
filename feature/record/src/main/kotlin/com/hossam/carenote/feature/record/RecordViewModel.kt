@@ -3,11 +3,13 @@ package com.hossam.carenote.feature.record
 import androidx.lifecycle.viewModelScope
 import com.hossam.carenote.core.domain.speech.TranscriptionError
 import com.hossam.carenote.core.domain.speech.TranscriptionEvent
+import com.hossam.carenote.core.domain.usecase.GetCareNoteUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentUseCase
 import com.hossam.carenote.core.domain.usecase.ParseVitalsUseCase
 import com.hossam.carenote.core.domain.usecase.SaveCareNoteUseCase
 import com.hossam.carenote.core.domain.usecase.SaveResult
 import com.hossam.carenote.core.domain.usecase.TranscribeSpeechUseCase
+import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.ui.mvi.MviViewModel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -17,16 +19,22 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 /**
  * Decides everything about recording and reviewing a note; the route only runs the Android parts
  * (permission dialog, settings, haptics). Recording lives in [viewModelScope], so leaving the screen
  * always releases the microphone.
+ *
+ * With [noteId] set it edits that note: the screen opens in review with the note filled in, "Record
+ * more" adds to it, and saving stores the result as a new version of it.
  */
 @HiltViewModel(assistedFactory = RecordViewModel.Factory::class)
 class RecordViewModel @AssistedInject constructor(
     @Assisted private val residentId: String,
+    @Assisted private val noteId: UUID?,
     observeResident: ObserveResidentUseCase,
+    getCareNote: GetCareNoteUseCase,
     private val transcribeSpeech: TranscribeSpeechUseCase,
     private val parseVitals: ParseVitalsUseCase,
     private val saveCareNote: SaveCareNoteUseCase,
@@ -44,6 +52,27 @@ class RecordViewModel @AssistedInject constructor(
             .onEach { resident ->
                 setState { copy(residentName = resident?.let { "${it.firstName} ${it.lastName}" }.orEmpty()) }
             }.launchIn(viewModelScope)
+        if (noteId != null) {
+            viewModelScope.launch { startEditing(getCareNote(noteId)) }
+        }
+    }
+
+    /** Opens the note in review, unless recording already started or the note isn't this resident's. */
+    private fun startEditing(note: CareNote?) {
+        if (note == null || note.residentId != residentId) {
+            setState { copy(error = RecordError.CannotEdit) }
+            return
+        }
+        if (currentState.phase != RecordPhase.Idle) return
+        val vitals = note.vitals.asForm()
+        setState {
+            copy(
+                phase = RecordPhase.Done,
+                transcript = note.transcript,
+                vitals = vitals,
+                editedFrom = EditedNote(transcript = note.transcript, vitals = vitals),
+            )
+        }
     }
 
     override fun onIntent(intent: RecordIntent) {
@@ -199,7 +228,13 @@ class RecordViewModel @AssistedInject constructor(
 
         setState { copy(isSaving = true, error = null) }
         viewModelScope.launch {
-            when (val result = saveCareNote(residentId, state.transcript, state.vitals.toVitals())) {
+            val result = saveCareNote(
+                residentId = residentId,
+                transcript = state.transcript,
+                vitals = state.vitals.toVitals(),
+                revisionOf = noteId,
+            )
+            when (result) {
                 // Stays "saving" until the screen closes, so a second tap can't save the note twice.
                 is SaveResult.Saved -> sendEffect(RecordEffect.NoteSaved)
 
@@ -216,6 +251,6 @@ class RecordViewModel @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(residentId: String): RecordViewModel
+        fun create(residentId: String, noteId: UUID?): RecordViewModel
     }
 }

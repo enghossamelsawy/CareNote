@@ -50,6 +50,7 @@ class ResidentViewModel @AssistedInject constructor(
             ResidentIntent.BackClicked -> sendEffect(ResidentEffect.NavigateBack)
             ResidentIntent.RecordClicked -> sendEffect(ResidentEffect.OpenRecord(residentId))
             is ResidentIntent.RetryClicked -> viewModelScope.launch { retryCareNoteSync(intent.noteId) }
+            is ResidentIntent.EditClicked -> sendEffect(ResidentEffect.OpenEditor(residentId, intent.noteId))
         }
     }
 

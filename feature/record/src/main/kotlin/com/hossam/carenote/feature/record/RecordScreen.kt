@@ -45,6 +45,7 @@ import com.hossam.carenote.core.designsystem.component.RecordButton
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
 import com.hossam.carenote.core.ui.mvi.ObserveEffects
+import java.util.UUID
 
 /**
  * Runs the Android side of recording for [RecordViewModel]: the permission dialog, the app settings and haptics.
@@ -53,11 +54,12 @@ import com.hossam.carenote.core.ui.mvi.ObserveEffects
 @Composable
 fun RecordRoute(
     residentId: String,
+    noteId: UUID?,
     onBack: () -> Unit,
     onNoteSave: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecordViewModel = hiltViewModel<RecordViewModel, RecordViewModel.Factory>(
-        creationCallback = { factory -> factory.create(residentId) },
+        creationCallback = { factory -> factory.create(residentId, noteId) },
     ),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -127,11 +129,13 @@ fun RecordScreen(state: RecordState, onIntent: (RecordIntent) -> Unit, modifier:
         topBar = {
             TopAppBar(
                 title = {
+                    val named = state.residentName.isNotBlank()
                     Text(
-                        if (state.residentName.isBlank()) {
-                            stringResource(R.string.record_title_fallback)
-                        } else {
-                            stringResource(R.string.record_title, state.residentName)
+                        when {
+                            state.isEditing && named -> stringResource(R.string.record_edit_title, state.residentName)
+                            state.isEditing -> stringResource(R.string.record_edit_title_fallback)
+                            named -> stringResource(R.string.record_title, state.residentName)
+                            else -> stringResource(R.string.record_title_fallback)
                         },
                     )
                 },

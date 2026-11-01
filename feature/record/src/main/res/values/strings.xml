@@ -2,6 +2,8 @@
 <resources>
     <string name="record_title">Note for %1$s</string>
     <string name="record_title_fallback">New note</string>
+    <string name="record_edit_title">Edit note for %1$s</string>
+    <string name="record_edit_title_fallback">Edit note</string>
     <string name="record_back">Back</string>
     <string name="record_start">Start recording</string>
     <string name="record_stop">Stop recording</string>
