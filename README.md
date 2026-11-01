@@ -127,7 +127,7 @@ changed or deleted.
 `SpeechTranscriber` is a domain interface; `core:speech` picks the first engine that is ready on the phone:
 
 1. **ML Kit GenAI speech recognition** (Basic mode, Android 12+). The model runs on the phone, so audio never
-   leaves it.
+   leaves it. It's downloaded once, on Wi-Fi only, since phones may be on limited mobile data.
 2. **Android's own `SpeechRecognizer`.** The app asks for on-device recognition, but that is only a request:
    depending on the phone's speech service, audio may be sent over the network.
 3. **A demo engine** that "hears" a sample note. Mock build only, so the app can be demoed on an emulator.

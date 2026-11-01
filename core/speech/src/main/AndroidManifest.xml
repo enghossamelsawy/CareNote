@@ -4,6 +4,9 @@
     <!-- Requested at runtime by the record screen. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!-- To wait for Wi-Fi before downloading the ML Kit model. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <!-- Android 11+ hides other apps' services; without this the speech engine looks unavailable. -->
     <queries>
         <intent>
