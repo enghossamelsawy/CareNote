@@ -10,7 +10,8 @@ import javax.inject.Inject
  *
  * Each value must follow its keyword, with at most a colon or a couple of filler words in between
  * ("pulse 72", "pulse: 72", "pulse is 72"); the parser never guesses which number belongs to which
- * vital. If a value is mentioned twice, the first one wins.
+ * vital. If a value is mentioned twice, the first one wins. A number counts only as a whole: "pulse 72.5"
+ * gives no pulse rather than 72, since a plausible wrong value is worse than a missing one.
  */
 class VitalsParser(vocabularies: List<VitalsVocabulary>) {
     @Inject
@@ -47,11 +48,14 @@ class VitalsParser(vocabularies: List<VitalsVocabulary>) {
     private fun Regex?.firstGroup(transcript: String): String? = this?.find(transcript)?.groupValues?.get(1)
 
     private companion object {
-        /** Up to three digits, not followed by another digit. */
-        const val INTEGER = """\d{1,3}(?!\d)"""
+        /** The number ends here: no more digits, and no decimal part ("72.5" isn't read as 72). */
+        const val END_OF_NUMBER = """(?![.,]?\d)"""
 
-        /** "37", "37.2" or "37,2". */
-        const val DECIMAL = """\d{1,2}(?:[.,]\d{1,2})?(?!\d)"""
+        /** Up to three digits, as a whole number. */
+        const val INTEGER = """\d{1,3}$END_OF_NUMBER"""
+
+        /** "37", "37.2" or "37,2", as a whole number. */
+        const val DECIMAL = """\d{1,2}(?:[.,]\d{1,2})?$END_OF_NUMBER"""
 
         /** At most this many filler words between a keyword and its value: "temperature was about 36.8". */
         const val MAX_FILLERS = 2

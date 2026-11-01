@@ -82,6 +82,16 @@ class EnglishVitalsParserTest(private val transcript: String, private val expect
             arrayOf("repulse 72", Vitals.EMPTY),
             // No range check in the parser; validation happens when saving
             arrayOf("pulse 300", Vitals(pulse = 300)),
+            // Only whole numbers count: part of a longer number is never taken
+            arrayOf("pulse 72.5", Vitals.EMPTY),
+            arrayOf("temperature 36.888", Vitals.EMPTY),
+            arrayOf("blood pressure 120 over 80.5", Vitals.EMPTY),
+            arrayOf("sats 97,5", Vitals.EMPTY),
+            // while punctuation after a number is still fine
+            arrayOf("pulse 72, temperature 36.8", Vitals(pulse = 72, temperatureCelsius = 36.8)),
+            arrayOf("Slept well, pulse 72.", Vitals(pulse = 72)),
+            arrayOf("temperature 37,2.", Vitals(temperatureCelsius = 37.2)),
+            arrayOf("BP 120/80.", Vitals(systolic = 120, diastolic = 80)),
         )
     }
 }
