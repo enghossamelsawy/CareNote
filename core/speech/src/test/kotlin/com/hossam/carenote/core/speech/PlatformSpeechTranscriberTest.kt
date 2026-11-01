@@ -13,6 +13,8 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -23,8 +25,16 @@ class PlatformSpeechTranscriberTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private lateinit var recognizer: SpeechRecognizer
 
-    private val androidFactory = SpeechRecognizerFactory {
-        SpeechRecognizer.createSpeechRecognizer(context).also { recognizer = it }
+    private val androidFactory = object : SpeechRecognizerFactory {
+        override fun isAvailable() = true
+
+        override fun create() = SpeechRecognizer.createSpeechRecognizer(context).also { recognizer = it }
+    }
+
+    private val noEngine = object : SpeechRecognizerFactory {
+        override fun isAvailable() = false
+
+        override fun create(): SpeechRecognizer? = null
     }
 
     @Test
@@ -67,15 +77,30 @@ class PlatformSpeechTranscriberTest {
 
     @Test
     fun `given no speech engine, when transcribing, then it is unavailable`() = runTest {
-        // Given
-        val noEngine = SpeechRecognizerFactory { null }
-
         // When
         transcriber(noEngine).transcribe().test {
             // Then
             assertEquals(TranscriptionEvent.Error(TranscriptionError.Unavailable), awaitItem())
             awaitComplete()
         }
+    }
+
+    @Test
+    fun `given a device with a speech engine, when asked if ready, then it is`() = runTest {
+        // When
+        val ready = transcriber(androidFactory).isReady()
+
+        // Then
+        assertTrue(ready)
+    }
+
+    @Test
+    fun `given no speech engine, when asked if ready, then it is not`() = runTest {
+        // When
+        val ready = transcriber(noEngine).isReady()
+
+        // Then
+        assertFalse(ready)
     }
 
     // Unconfined: the recognizer is created as soon as collection starts, like on the real main thread.

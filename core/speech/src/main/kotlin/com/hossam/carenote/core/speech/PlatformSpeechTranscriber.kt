@@ -8,7 +8,6 @@ import android.speech.SpeechRecognizer
 import com.hossam.carenote.core.common.coroutines.CareNoteDispatchers
 import com.hossam.carenote.core.common.coroutines.Dispatcher
 import com.hossam.carenote.core.common.logging.Logger
-import com.hossam.carenote.core.domain.speech.SpeechTranscriber
 import com.hossam.carenote.core.domain.speech.TranscriptionError
 import com.hossam.carenote.core.domain.speech.TranscriptionEvent
 import kotlinx.coroutines.CoroutineDispatcher
@@ -19,12 +18,16 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import javax.inject.Inject
 
-/** Android's [SpeechRecognizer] as a [SpeechTranscriber]. Runs on the main thread, as the recognizer requires. */
+/** Android's [SpeechRecognizer] as a [SpeechEngine]. Runs on the main thread, as the recognizer requires. */
 internal class PlatformSpeechTranscriber @Inject constructor(
     private val recognizerFactory: SpeechRecognizerFactory,
     private val logger: Logger,
     @Dispatcher(CareNoteDispatchers.Main) private val mainDispatcher: CoroutineDispatcher,
-) : SpeechTranscriber {
+) : SpeechEngine {
+    override val name = "Android"
+
+    override suspend fun isReady(): Boolean = recognizerFactory.isAvailable()
+
     override fun transcribe(): Flow<TranscriptionEvent> = callbackFlow {
         val recognizer = recognizerFactory.create()
         if (recognizer == null) {
