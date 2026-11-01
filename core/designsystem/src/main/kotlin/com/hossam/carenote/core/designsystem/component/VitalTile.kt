@@ -24,8 +24,8 @@ import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
 
 /**
  * One measured value, such as "Pulse 72 bpm". A normal value stays calm: a neutral tile with a small
- * green dot. Only a value that [needsAttention] gets color, with its [level] ("High") written out,
- * so red is the one thing that stands out on a screen of notes.
+ * green dot. A value that [needsAttention] keeps the same size and layout, with a soft red tint, the
+ * value in red and its [level] ("High") written where the dot would be, so every tile lines up.
  * Screen readers read the tile as one item and always hear the level, also when it isn't shown.
  */
 @Composable
@@ -40,16 +40,15 @@ fun VitalTile(
 ) {
     val status = CareNoteTheme.statusColors
     val colors = CareNoteTheme.colors
-    val container = if (needsAttention) status.error else colors.surfaceContainerHighest
-    val content = if (needsAttention) status.onError else colors.onSurface
-    val secondary = if (needsAttention) status.onError else colors.onSurfaceVariant
+    val container = if (needsAttention) status.errorSubtle else colors.surfaceContainerHighest
+    val valueColor = if (needsAttention) status.errorIndicator else colors.onSurface
     Surface(
         modifier = modifier.semantics(mergeDescendants = true) {
             if (!needsAttention) stateDescription = level
         },
         shape = CareNoteTheme.shapes.medium,
         color = container,
-        contentColor = content,
+        contentColor = colors.onSurface,
     ) {
         Column(
             modifier = Modifier.padding(horizontal = CareNoteTheme.spacing.md, vertical = CareNoteTheme.spacing.sm),
@@ -60,13 +59,28 @@ fun VitalTile(
                     text = label,
                     modifier = Modifier.weight(1f),
                     style = CareNoteTheme.typography.labelMedium,
-                    color = secondary,
+                    color = colors.onSurfaceVariant,
                 )
-                if (!needsAttention) {
+                if (needsAttention) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.xxs),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (levelIcon != null) {
+                            Icon(
+                                imageVector = levelIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(CareNoteTheme.dimens.iconSm),
+                                tint = status.errorIndicator,
+                            )
+                        }
+                        Text(text = level, style = CareNoteTheme.typography.labelMedium, color = status.errorIndicator)
+                    }
+                } else {
                     Box(
                         modifier = Modifier
                             .size(CareNoteTheme.dimens.indicatorDot)
-                            .background(CareNoteTheme.statusColors.successIndicator, CircleShape),
+                            .background(status.successIndicator, CircleShape),
                     )
                 }
             }
@@ -75,28 +89,14 @@ fun VitalTile(
                     text = value,
                     modifier = Modifier.alignByBaseline(),
                     style = CareNoteTheme.typography.titleMedium,
+                    color = valueColor,
                 )
                 Text(
                     text = unit,
                     modifier = Modifier.alignByBaseline(),
                     style = CareNoteTheme.typography.labelMedium,
-                    color = secondary,
+                    color = colors.onSurfaceVariant,
                 )
-            }
-            if (needsAttention) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.xxs),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (levelIcon != null) {
-                        Icon(
-                            imageVector = levelIcon,
-                            contentDescription = null,
-                            modifier = Modifier.size(CareNoteTheme.dimens.iconSm),
-                        )
-                    }
-                    Text(text = level, style = CareNoteTheme.typography.labelMedium)
-                }
             }
         }
     }

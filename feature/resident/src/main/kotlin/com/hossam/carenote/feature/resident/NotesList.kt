@@ -86,7 +86,7 @@ private fun NoteCard(note: NoteItem, onRetry: () -> Unit, onOpen: () -> Unit, mo
                     modifier = Modifier
                         .width(CareNoteTheme.dimens.accentStrip)
                         .fillMaxHeight()
-                        .background(CareNoteTheme.colors.error),
+                        .background(CareNoteTheme.statusColors.errorIndicator),
                 )
             }
             Column(
