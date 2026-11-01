@@ -1,9 +1,13 @@
 package com.hossam.carenote.feature.resident
 
 import app.cash.turbine.test
+import com.hossam.carenote.core.domain.usecase.AssessVitalsUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveCareNotesUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentUseCase
 import com.hossam.carenote.core.domain.usecase.RetryCareNoteSyncUseCase
+import com.hossam.carenote.core.domain.vitals.VitalLevel
+import com.hossam.carenote.core.domain.vitals.VitalsAssessment
+import com.hossam.carenote.core.domain.vitals.VitalsAssessor
 import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.Resident
 import com.hossam.carenote.core.model.SyncStatus
@@ -115,6 +119,23 @@ class ResidentViewModelTest {
     }
 
     @Test
+    fun `given a note with high blood pressure, when the view model starts, then it is marked as high`() = runTest {
+        // Given
+        residentRepository.setResidents(listOf(anna))
+        val vitals = Vitals(systolic = 160, diastolic = 95, pulse = 72)
+        careNoteRepository.save(note(id = 1, createdAt = 10, vitals = vitals))
+
+        // When
+        val viewModel = createViewModel(anna.id)
+
+        // Then
+        assertEquals(
+            VitalsAssessment(bloodPressure = VitalLevel.High, pulse = VitalLevel.Normal),
+            viewModel.state.value.notes.single().assessment,
+        )
+    }
+
+    @Test
     fun `given a note the server refused, when retry is clicked, then it is pending and a sync is requested`() =
         runTest {
             // Given
@@ -135,13 +156,19 @@ class ResidentViewModelTest {
         observeResident = ObserveResidentUseCase(residentRepository),
         observeCareNotes = ObserveCareNotesUseCase(careNoteRepository),
         retryCareNoteSync = RetryCareNoteSyncUseCase(careNoteRepository, syncScheduler),
+        assessVitals = AssessVitalsUseCase(VitalsAssessor()),
     )
 
-    private fun note(id: Long, createdAt: Long, status: SyncStatus = SyncStatus.PENDING) = CareNote(
+    private fun note(
+        id: Long,
+        createdAt: Long,
+        status: SyncStatus = SyncStatus.PENDING,
+        vitals: Vitals = Vitals(pulse = 72),
+    ) = CareNote(
         id = UUID(0, id),
         residentId = anna.id,
         transcript = "Pulse 72",
-        vitals = Vitals(pulse = 72),
+        vitals = vitals,
         createdAt = Instant.ofEpochSecond(createdAt),
         syncStatus = status,
     )

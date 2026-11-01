@@ -37,6 +37,21 @@ object CareNoteIcons {
         }.build()
     }
 
+    /** A value above its usual range. */
+    val ArrowUp: ImageVector by lazy {
+        icon(name = "ArrowUp", pathData = "M4,12l1.41,1.41L11,7.83V20h2V7.83l5.58,5.59L20,12l-8,-8 -8,8z")
+    }
+
+    /** A value below its usual range. */
+    val ArrowDown: ImageVector by lazy {
+        icon(name = "ArrowDown", pathData = "M20,12l-1.41,-1.41L13,16.17V4h-2v12.17l-5.58,-5.59L4,12l8,8 8,-8z")
+    }
+
+    /** Done or fine, such as a note that reached the server. */
+    val Check: ImageVector by lazy {
+        icon(name = "Check", pathData = "M9,16.17L4.83,12l-1.42,1.41L9,19 21,7l-1.41,-1.41z")
+    }
+
     val Mic: ImageVector by lazy {
         icon(
             name = "Mic",

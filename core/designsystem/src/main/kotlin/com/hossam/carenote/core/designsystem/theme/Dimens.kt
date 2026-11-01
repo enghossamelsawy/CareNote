@@ -17,6 +17,10 @@ data class Dimens(
     val avatarSm: Dp = 40.dp,
     val avatarLg: Dp = 72.dp,
     val borderThin: Dp = 1.dp,
+    /** The colored edge that marks a card needing attention. */
+    val accentStrip: Dp = 4.dp,
+    /** A small status dot, such as "this value is normal". */
+    val indicatorDot: Dp = 8.dp,
     val elevationLow: Dp = 1.dp,
     val elevationMid: Dp = 3.dp,
 )

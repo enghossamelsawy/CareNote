@@ -18,6 +18,8 @@ data class StatusColors(
     val onError: Color,
     val success: Color,
     val onSuccess: Color,
+    /** A small mark meaning "all fine", such as a dot or a check, drawn straight on a surface. */
+    val successIndicator: Color,
 )
 
 internal val LightStatusColors = StatusColors(
@@ -29,6 +31,7 @@ internal val LightStatusColors = StatusColors(
     onError = Color(0xFF410002),
     success = Color(0xFFB7F1B9),
     onSuccess = Color(0xFF002107),
+    successIndicator = Color(0xFF006E1C),
 )
 
 internal val DarkStatusColors = StatusColors(
@@ -40,6 +43,7 @@ internal val DarkStatusColors = StatusColors(
     onError = Color(0xFFFFDAD6),
     success = Color(0xFF005316),
     onSuccess = Color(0xFFB7F1B9),
+    successIndicator = Color(0xFF7BDA82),
 )
 
 internal val LocalStatusColors = staticCompositionLocalOf { LightStatusColors }

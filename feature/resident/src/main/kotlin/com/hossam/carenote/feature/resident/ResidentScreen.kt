@@ -25,6 +25,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
+import com.hossam.carenote.core.domain.vitals.VitalsAssessor
 import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.ui.mvi.ObserveEffects
@@ -137,7 +138,12 @@ private fun ResidentScreenPreview() {
                 name = "Anna Becker",
                 room = "101",
                 notes = listOf(
-                    previewNote(id = 3, status = SyncStatus.FAILED, transcript = "Refused breakfast, drank tea."),
+                    previewNote(
+                        id = 3,
+                        status = SyncStatus.FAILED,
+                        transcript = "Blood pressure 160 over 95, temperature 38.4",
+                        vitals = Vitals(systolic = 160, diastolic = 95, temperatureCelsius = 38.4),
+                    ),
                     previewNote(id = 2, status = SyncStatus.PENDING, transcript = "Pulse 72, temperature 36.8"),
                     previewNote(id = 1, status = SyncStatus.SYNCED, transcript = "Blood pressure 120 over 80"),
                 ),
@@ -158,11 +164,17 @@ private fun ResidentScreenNoNotesPreview() {
     }
 }
 
-private fun previewNote(id: Long, status: SyncStatus, transcript: String) = NoteItem(
+private fun previewNote(
+    id: Long,
+    status: SyncStatus,
+    transcript: String,
+    vitals: Vitals = Vitals(pulse = 72, temperatureCelsius = 36.8),
+) = NoteItem(
     id = UUID(0, id),
     createdAt = Instant.parse("2026-11-01T08:30:00Z").plusSeconds(id * 3_600),
     transcript = transcript,
-    vitals = Vitals(pulse = 72, temperatureCelsius = 36.8),
+    vitals = vitals,
+    assessment = VitalsAssessor().assess(vitals),
     status = status,
 )
 

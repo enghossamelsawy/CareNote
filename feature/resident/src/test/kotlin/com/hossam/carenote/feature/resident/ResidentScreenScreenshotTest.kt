@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
+import com.hossam.carenote.core.domain.vitals.VitalsAssessor
 import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.model.Vitals
 import org.junit.After
@@ -49,8 +50,19 @@ class ResidentScreenScreenshotTest {
                     name = "Anna Becker",
                     room = "101",
                     notes = listOf(
-                        note(id = 4, SyncStatus.FAILED, "Refused breakfast, drank tea."),
-                        note(id = 3, SyncStatus.SYNCING, "Blood pressure 120 over 80"),
+                        note(id = 4, SyncStatus.FAILED, "Refused breakfast, drank tea.", Vitals()),
+                        note(
+                            id = 3,
+                            SyncStatus.SYNCING,
+                            "Blood pressure 160 over 95, pulse 72, temperature 38.4, SpO2 93",
+                            Vitals(
+                                systolic = 160,
+                                diastolic = 95,
+                                pulse = 72,
+                                temperatureCelsius = 38.4,
+                                oxygenSaturation = 93,
+                            ),
+                        ),
                         note(id = 2, SyncStatus.PENDING, "Pulse 72, temperature 36.8"),
                         note(id = 1, SyncStatus.SYNCED, "Slept well."),
                     ),
@@ -70,11 +82,17 @@ class ResidentScreenScreenshotTest {
         }
     }
 
-    private fun note(id: Long, status: SyncStatus, transcript: String) = NoteItem(
+    private fun note(
+        id: Long,
+        status: SyncStatus,
+        transcript: String,
+        vitals: Vitals = Vitals(pulse = 72, temperatureCelsius = 36.8),
+    ) = NoteItem(
         id = UUID(0, id),
         createdAt = Instant.parse("2026-11-01T08:00:00Z").plusSeconds(id * 3_600),
         transcript = transcript,
-        vitals = Vitals(pulse = 72, temperatureCelsius = 36.8),
+        vitals = vitals,
+        assessment = VitalsAssessor().assess(vitals),
         status = status,
     )
 

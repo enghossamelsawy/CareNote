@@ -10,8 +10,18 @@
     <string name="resident_note_synced">Synced</string>
     <string name="resident_note_failed">Not synced</string>
     <string name="resident_note_retry">Try again</string>
-    <string name="resident_vital_bp">BP %1$d/%2$d</string>
-    <string name="resident_vital_pulse">Pulse %1$d</string>
-    <string name="resident_vital_temperature">%1$s °C</string>
-    <string name="resident_vital_spo2">SpO2 %1$d%%</string>
+    <string name="resident_vital_bp_label">Blood pressure</string>
+    <string name="resident_vital_pulse_label">Pulse</string>
+    <string name="resident_vital_temperature_label">Temperature</string>
+    <string name="resident_vital_spo2_label">SpO₂</string>
+    <string name="resident_vital_bp_value">%1$d/%2$d</string>
+    <string name="resident_vital_whole_value">%1$d</string>
+    <string name="resident_vital_temperature_value">%1$.1f</string>
+    <string name="resident_vital_unit_mmhg">mmHg</string>
+    <string name="resident_vital_unit_bpm">bpm</string>
+    <string name="resident_vital_unit_celsius">°C</string>
+    <string name="resident_vital_unit_percent" formatted="false">%</string>
+    <string name="resident_vital_normal">Normal</string>
+    <string name="resident_vital_high">High</string>
+    <string name="resident_vital_low">Low</string>
 </resources>

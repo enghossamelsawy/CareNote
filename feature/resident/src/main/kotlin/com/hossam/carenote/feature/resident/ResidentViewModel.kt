@@ -1,6 +1,7 @@
 package com.hossam.carenote.feature.resident
 
 import androidx.lifecycle.viewModelScope
+import com.hossam.carenote.core.domain.usecase.AssessVitalsUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveCareNotesUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentUseCase
 import com.hossam.carenote.core.domain.usecase.RetryCareNoteSyncUseCase
@@ -25,6 +26,7 @@ class ResidentViewModel @AssistedInject constructor(
     observeResident: ObserveResidentUseCase,
     observeCareNotes: ObserveCareNotesUseCase,
     private val retryCareNoteSync: RetryCareNoteSyncUseCase,
+    private val assessVitals: AssessVitalsUseCase,
 ) : MviViewModel<ResidentState, ResidentIntent, ResidentEffect>(ResidentState()) {
     init {
         combine(observeResident(residentId), observeCareNotes(residentId)) { resident, notes ->
@@ -56,6 +58,7 @@ class ResidentViewModel @AssistedInject constructor(
         createdAt = createdAt,
         transcript = transcript,
         vitals = vitals,
+        assessment = assessVitals(vitals),
         status = syncStatus,
     )
 

@@ -1,5 +1,6 @@
 package com.hossam.carenote.feature.resident
 
+import com.hossam.carenote.core.domain.vitals.VitalsAssessment
 import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.ui.mvi.UiEffect
@@ -26,6 +27,8 @@ data class NoteItem(
     val createdAt: Instant,
     val transcript: String,
     val vitals: Vitals,
+    /** Which [vitals] are outside the usual range; decided by the domain, not the screen. */
+    val assessment: VitalsAssessment,
     val status: SyncStatus,
 )
 
