@@ -107,12 +107,20 @@ private fun ResidentsContent(
             CircularProgressIndicator()
         }
 
+        // While downloading there's no button, so a second download can't be started; a problem says why.
         state.residents.isEmpty() -> EmptyState(
             title = stringResource(R.string.residents_empty_title),
-            message = stringResource(R.string.residents_empty_message),
+            message = stringResource(
+                when {
+                    state.isRefreshing -> R.string.residents_downloading
+                    state.refreshProblem == RefreshProblem.Unavailable -> R.string.residents_unreachable
+                    state.refreshProblem == RefreshProblem.Failed -> R.string.residents_download_failed
+                    else -> R.string.residents_empty_message
+                },
+            ),
             illustration = { EmptyStateIcon(CareNoteIcons.Group) },
             modifier = modifier,
-            actionLabel = stringResource(R.string.residents_empty_action),
+            actionLabel = if (state.isRefreshing) null else stringResource(R.string.residents_empty_action),
             onAction = { onIntent(ResidentsIntent.RetryClicked) },
         )
 

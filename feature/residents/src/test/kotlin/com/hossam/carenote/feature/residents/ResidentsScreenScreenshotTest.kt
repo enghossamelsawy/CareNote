@@ -45,6 +45,23 @@ class ResidentsScreenScreenshotTest {
         }
     }
 
+    @Test
+    fun `given the first download is running, when the list is empty, then it matches the screenshots`() {
+        screenshots("residents_downloading") {
+            ResidentsScreen(state = ResidentsState(isLoading = false, isRefreshing = true), onIntent = {})
+        }
+    }
+
+    @Test
+    fun `given the server is unreachable, when the list is empty, then it matches the screenshots`() {
+        screenshots("residents_unreachable") {
+            ResidentsScreen(
+                state = ResidentsState(isLoading = false, refreshProblem = RefreshProblem.Unavailable),
+                onIntent = {},
+            )
+        }
+    }
+
     private fun screenshots(name: String, content: @Composable () -> Unit) {
         for (darkTheme in listOf(false, true)) {
             val theme = if (darkTheme) "dark" else "light"

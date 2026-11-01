@@ -13,8 +13,11 @@ import com.hossam.carenote.core.testing.MainDispatcherRule
 import com.hossam.carenote.core.testing.repository.FakeCareNoteRepository
 import com.hossam.carenote.core.testing.repository.FakeNetworkMonitor
 import com.hossam.carenote.core.testing.repository.FakeResidentRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.time.Instant
@@ -115,6 +118,74 @@ class ResidentsViewModelTest {
 
         // Then
         assertEquals(2, residentRepository.refreshCount)
+    }
+
+    @Test
+    fun `given the first download is running, when the screen shows, then it says it is downloading`() = runTest {
+        // Given
+        residentRepository.refreshGate = CompletableDeferred()
+
+        // When
+        val viewModel = createViewModel()
+
+        // Then
+        assertTrue(viewModel.state.value.isRefreshing)
+    }
+
+    @Test
+    fun `given a download is running, when try again is clicked, then no second download starts`() = runTest {
+        // Given
+        val gate = CompletableDeferred<Unit>()
+        residentRepository.refreshGate = gate
+        val viewModel = createViewModel()
+
+        // When
+        viewModel.onIntent(ResidentsIntent.RetryClicked)
+        gate.complete(Unit)
+
+        // Then
+        assertEquals(1, residentRepository.refreshCount)
+        assertFalse(viewModel.state.value.isRefreshing)
+    }
+
+    @Test
+    fun `given the server is unreachable, when the download ends, then that problem is shown`() = runTest {
+        // Given
+        residentRepository.refreshResult = RefreshResult.Unavailable
+
+        // When
+        val viewModel = createViewModel()
+
+        // Then
+        assertEquals(RefreshProblem.Unavailable, viewModel.state.value.refreshProblem)
+        assertFalse(viewModel.state.value.isRefreshing)
+    }
+
+    @Test
+    fun `given the server answers with something unusable, when the download ends, then that problem is shown`() =
+        runTest {
+            // Given
+            residentRepository.refreshResult = RefreshResult.Failed
+
+            // When
+            val viewModel = createViewModel()
+
+            // Then
+            assertEquals(RefreshProblem.Failed, viewModel.state.value.refreshProblem)
+        }
+
+    @Test
+    fun `given a failed download, when try again works, then the problem is cleared`() = runTest {
+        // Given
+        residentRepository.refreshResult = RefreshResult.Unavailable
+        val viewModel = createViewModel()
+        residentRepository.refreshResult = RefreshResult.Updated
+
+        // When
+        viewModel.onIntent(ResidentsIntent.RetryClicked)
+
+        // Then
+        assertEquals(null, viewModel.state.value.refreshProblem)
     }
 
     private fun createViewModel() = ResidentsViewModel(

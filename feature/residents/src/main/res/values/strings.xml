@@ -5,6 +5,9 @@
     <string name="residents_empty_title">No residents yet</string>
     <string name="residents_empty_message">The list downloads when the phone is online.</string>
     <string name="residents_empty_action">Try again</string>
+    <string name="residents_downloading">Downloading the residents…</string>
+    <string name="residents_unreachable">Couldn\'t reach the server. Check the connection and try again.</string>
+    <string name="residents_download_failed">Something went wrong on the server. Try again later.</string>
     <string name="residents_debug_menu">Debug menu</string>
     <string name="residents_offline">Offline. New notes are saved on this phone and sync when you\'re back online.</string>
     <plurals name="residents_pending">

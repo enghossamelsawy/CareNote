@@ -1,6 +1,7 @@
 package com.hossam.carenote.feature.residents
 
 import androidx.lifecycle.viewModelScope
+import com.hossam.carenote.core.domain.repository.RefreshResult
 import com.hossam.carenote.core.domain.usecase.ObserveNetworkStatusUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentsWithPendingCountUseCase
 import com.hossam.carenote.core.domain.usecase.RefreshResidentsUseCase
@@ -26,14 +27,28 @@ class ResidentsViewModel @Inject constructor(
             .onEach { online -> setState { copy(isOffline = !online) } }
             .launchIn(viewModelScope)
         // Offline-first: the stored list shows right away; fresh data, if the server answers, arrives through
-        // the observed flow above. A failed refresh changes nothing on screen.
-        viewModelScope.launch { refreshResidents() }
+        // the observed flow above. A failed refresh only shows while there is no stored list to show instead.
+        refresh()
     }
 
     override fun onIntent(intent: ResidentsIntent) {
         when (intent) {
             is ResidentsIntent.ResidentClicked -> sendEffect(ResidentsEffect.OpenResident(intent.residentId))
-            ResidentsIntent.RetryClicked -> viewModelScope.launch { refreshResidents() }
+            ResidentsIntent.RetryClicked -> refresh()
+        }
+    }
+
+    /** One download at a time; repeated taps while it runs are ignored. */
+    private fun refresh() {
+        if (currentState.isRefreshing) return
+        setState { copy(isRefreshing = true, refreshProblem = null) }
+        viewModelScope.launch {
+            val problem = when (refreshResidents()) {
+                RefreshResult.Updated -> null
+                RefreshResult.Unavailable -> RefreshProblem.Unavailable
+                RefreshResult.Failed -> RefreshProblem.Failed
+            }
+            setState { copy(isRefreshing = false, refreshProblem = problem) }
         }
     }
 
