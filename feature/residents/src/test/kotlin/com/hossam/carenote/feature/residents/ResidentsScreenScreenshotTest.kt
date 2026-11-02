@@ -42,7 +42,7 @@ class ResidentsScreenScreenshotTest {
         ResidentItem(id = "3", name = "Greta Hoffmann", room = "103", pendingCount = 1),
     )
 
-    // Alert times are shown in the phone's zone and format; fix both so the images match on every machine.
+    // Alert and overdue times are shown in the phone's zone and format; fix both so the images match on every machine.
     @Before
     fun setUp() {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
@@ -63,7 +63,7 @@ class ResidentsScreenScreenshotTest {
     }
 
     @Test
-    fun `given residents whose vitals need attention, when the list is shown, then it matches the screenshots`() {
+    fun `given residents to check first, when the list is shown, then it matches the screenshots`() {
         val alerted = listOf(
             residents[0].copy(
                 alert = VitalsAlert(
@@ -71,12 +71,13 @@ class ResidentsScreenScreenshotTest {
                     takenAt = Instant.parse("2026-11-01T05:29:00Z"),
                 ),
             ),
-            residents[1],
+            residents[1].copy(overdueSince = Instant.parse("2026-10-31T20:40:00Z")),
             residents[2].copy(
                 alert = VitalsAlert(
                     assessment = VitalsAssessment(oxygenSaturation = VitalLevel.Low),
                     takenAt = Instant.parse("2026-10-31T21:05:00Z"),
                 ),
+                overdueSince = Instant.parse("2026-10-31T21:05:00Z"),
             ),
         )
         screenshots("residents_attention") {

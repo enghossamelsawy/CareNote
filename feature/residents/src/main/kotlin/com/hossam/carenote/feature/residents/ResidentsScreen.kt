@@ -4,8 +4,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
@@ -155,6 +157,7 @@ private fun ResidentRow(resident: ResidentItem, onClick: () -> Unit, modifier: M
             Column(verticalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.xs)) {
                 Text(stringResource(R.string.residents_room, resident.room))
                 resident.alert?.let { VitalsAlertLine(it) }
+                resident.overdueSince?.let { OverdueLine(it) }
             }
         },
         trailingContent = {
@@ -173,9 +176,7 @@ private fun ResidentRow(resident: ResidentItem, onClick: () -> Unit, modifier: M
 /** Which vitals are out of range, in red, and when they were measured, so an old reading reads as old. */
 @Composable
 private fun VitalsAlertLine(alert: VitalsAlert, modifier: Modifier = Modifier) {
-    val formatter = remember {
-        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withZone(ZoneId.systemDefault())
-    }
+    val formatter = rememberTimeFormatter()
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.xxs)) {
         StatusBadge(text = alertText(alert.assessment), tone = StatusTone.Error)
         Text(
@@ -184,6 +185,38 @@ private fun VitalsAlertLine(alert: VitalsAlert, modifier: Modifier = Modifier) {
             color = CareNoteTheme.colors.onSurfaceVariant,
         )
     }
+}
+
+/**
+ * "No note since 6:10 AM", muted instead of red: a reminder that a check is due, not a sign that something is
+ * wrong, so it doesn't compete with a vitals alert.
+ */
+@Composable
+private fun OverdueLine(since: Instant, modifier: Modifier = Modifier) {
+    val formatter = rememberTimeFormatter()
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = CareNoteIcons.Schedule,
+            contentDescription = null,
+            modifier = Modifier.size(CareNoteTheme.dimens.iconSm),
+            tint = CareNoteTheme.colors.onSurfaceVariant,
+        )
+        Text(
+            text = stringResource(R.string.residents_overdue, formatter.format(since)),
+            style = CareNoteTheme.typography.labelMedium,
+            color = CareNoteTheme.colors.onSurfaceVariant,
+        )
+    }
+}
+
+/** Date and time in the phone's zone and format, such as "Nov 1, 2026, 6:10 AM". */
+@Composable
+private fun rememberTimeFormatter(): DateTimeFormatter = remember {
+    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withZone(ZoneId.systemDefault())
 }
 
 /** "Temperature high, Pulse high": every vital out of range, in the order the note screen shows them. */
@@ -222,7 +255,13 @@ private fun ResidentsScreenPreview() {
                             takenAt = Instant.parse("2026-11-01T05:29:00Z"),
                         ),
                     ),
-                    ResidentItem(id = "2", name = "Karl Fischer", room = "102", pendingCount = 0),
+                    ResidentItem(
+                        id = "2",
+                        name = "Karl Fischer",
+                        room = "102",
+                        pendingCount = 0,
+                        overdueSince = Instant.parse("2026-10-31T20:40:00Z"),
+                    ),
                     ResidentItem(id = "3", name = "Greta Hoffmann", room = "103", pendingCount = 1),
                 ),
             ),

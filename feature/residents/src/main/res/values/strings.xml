@@ -19,6 +19,7 @@
     <string name="residents_alert_spo2_low">Oxygen low</string>
     <string name="residents_alert_separator">", "</string>
     <string name="residents_alert_taken">Measured %1$s</string>
+    <string name="residents_overdue">No note since %1$s</string>
     <plurals name="residents_pending">
         <item quantity="one">%d pending</item>
         <item quantity="other">%d pending</item>

@@ -4,6 +4,7 @@ import com.hossam.carenote.core.domain.vitals.VitalsAlert
 import com.hossam.carenote.core.ui.mvi.UiEffect
 import com.hossam.carenote.core.ui.mvi.UiIntent
 import com.hossam.carenote.core.ui.mvi.UiState
+import java.time.Instant
 
 data class ResidentsState(
     val isLoading: Boolean = true,
@@ -27,6 +28,7 @@ enum class RefreshProblem {
 /**
  * One row of the residents list, already in the shape the screen shows. [alert] is set when the resident's
  * latest vitals are outside the usual range, so the row stands out and they are checked first.
+ * [overdueSince] is when their last note was written, set only once that is long enough ago to be overdue.
  */
 data class ResidentItem(
     val id: String,
@@ -34,6 +36,7 @@ data class ResidentItem(
     val room: String,
     val pendingCount: Int,
     val alert: VitalsAlert? = null,
+    val overdueSince: Instant? = null,
 )
 
 sealed interface ResidentsIntent : UiIntent {

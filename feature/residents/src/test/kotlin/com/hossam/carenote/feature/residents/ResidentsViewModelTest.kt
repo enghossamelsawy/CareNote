@@ -3,6 +3,7 @@ package com.hossam.carenote.feature.residents
 import app.cash.turbine.test
 import com.hossam.carenote.core.domain.repository.RefreshResult
 import com.hossam.carenote.core.domain.usecase.ObserveNetworkStatusUseCase
+import com.hossam.carenote.core.domain.usecase.ObserveOverdueResidentsUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentsWithPendingCountUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveVitalsAlertsUseCase
 import com.hossam.carenote.core.domain.usecase.RefreshResidentsUseCase
@@ -16,6 +17,7 @@ import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.testing.MainDispatcherRule
 import com.hossam.carenote.core.testing.repository.FakeCareNoteRepository
+import com.hossam.carenote.core.testing.repository.FakeCurrentTime
 import com.hossam.carenote.core.testing.repository.FakeNetworkMonitor
 import com.hossam.carenote.core.testing.repository.FakeResidentRepository
 import kotlinx.coroutines.CompletableDeferred
@@ -35,6 +37,7 @@ class ResidentsViewModelTest {
     private val residentRepository = FakeResidentRepository()
     private val careNoteRepository = FakeCareNoteRepository()
     private val networkMonitor = FakeNetworkMonitor()
+    private val currentTime = FakeCurrentTime()
 
     private val anna = Resident(id = "res-1", firstName = "Anna", lastName = "Becker", room = "101")
     private val max = Resident(id = "res-2", firstName = "Max", lastName = "Weber", room = "102")
@@ -95,6 +98,36 @@ class ResidentsViewModelTest {
 
         // Then
         assertEquals(null, viewModel.state.value.residents.single().alert)
+    }
+
+    @Test
+    fun `given a note 8 hours ago, when the view model starts, then the resident is overdue since it`() = runTest {
+        // Given
+        residentRepository.setResidents(listOf(anna))
+        careNoteRepository.save(note(id = 1, residentId = anna.id))
+        currentTime.set(Instant.EPOCH.plus(ObserveOverdueResidentsUseCase.OVERDUE_AFTER))
+
+        // When
+        val viewModel = createViewModel()
+
+        // Then
+        assertEquals(Instant.EPOCH, viewModel.state.value.residents.single().overdueSince)
+    }
+
+    @Test
+    fun `given an overdue resident, when a new note is saved, then they are no longer overdue`() = runTest {
+        // Given
+        val now = Instant.EPOCH.plus(ObserveOverdueResidentsUseCase.OVERDUE_AFTER)
+        residentRepository.setResidents(listOf(anna))
+        careNoteRepository.save(note(id = 1, residentId = anna.id))
+        currentTime.set(now)
+        val viewModel = createViewModel()
+
+        // When
+        careNoteRepository.save(note(id = 2, residentId = anna.id, createdAt = now))
+
+        // Then
+        assertEquals(null, viewModel.state.value.residents.single().overdueSince)
     }
 
     @Test
@@ -236,6 +269,7 @@ class ResidentsViewModelTest {
         ),
         refreshResidents = RefreshResidentsUseCase(residentRepository),
         observeVitalsAlerts = ObserveVitalsAlertsUseCase(careNoteRepository, VitalsAssessor()),
+        observeOverdueResidents = ObserveOverdueResidentsUseCase(careNoteRepository, currentTime),
         observeNetworkStatus = ObserveNetworkStatusUseCase(networkMonitor),
     )
 

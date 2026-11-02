@@ -3,6 +3,7 @@ package com.hossam.carenote.feature.residents
 import androidx.lifecycle.viewModelScope
 import com.hossam.carenote.core.domain.repository.RefreshResult
 import com.hossam.carenote.core.domain.usecase.ObserveNetworkStatusUseCase
+import com.hossam.carenote.core.domain.usecase.ObserveOverdueResidentsUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentsWithPendingCountUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveVitalsAlertsUseCase
 import com.hossam.carenote.core.domain.usecase.RefreshResidentsUseCase
@@ -14,18 +15,24 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import java.time.Instant
 import javax.inject.Inject
 
 @HiltViewModel
 class ResidentsViewModel @Inject constructor(
     observeResidentsWithPendingCount: ObserveResidentsWithPendingCountUseCase,
     observeVitalsAlerts: ObserveVitalsAlertsUseCase,
+    observeOverdueResidents: ObserveOverdueResidentsUseCase,
     private val refreshResidents: RefreshResidentsUseCase,
     observeNetworkStatus: ObserveNetworkStatusUseCase,
 ) : MviViewModel<ResidentsState, ResidentsIntent, ResidentsEffect>(ResidentsState()) {
     init {
-        val residentItems = combine(observeResidentsWithPendingCount(), observeVitalsAlerts()) { summaries, alerts ->
-            summaries.map { it.asItem(alert = alerts[it.resident.id]) }
+        val residentItems = combine(
+            observeResidentsWithPendingCount(),
+            observeVitalsAlerts(),
+            observeOverdueResidents(),
+        ) { summaries, alerts, overdue ->
+            summaries.map { it.asItem(alert = alerts[it.resident.id], overdueSince = overdue[it.resident.id]) }
         }
         residentItems
             .onEach { items -> setState { copy(isLoading = false, residents = items) } }
@@ -59,11 +66,12 @@ class ResidentsViewModel @Inject constructor(
         }
     }
 
-    private fun ResidentSummary.asItem(alert: VitalsAlert?) = ResidentItem(
+    private fun ResidentSummary.asItem(alert: VitalsAlert?, overdueSince: Instant?) = ResidentItem(
         id = resident.id,
         name = "${resident.firstName} ${resident.lastName}",
         room = resident.room,
         pendingCount = pendingCount,
         alert = alert,
+        overdueSince = overdueSince,
     )
 }
