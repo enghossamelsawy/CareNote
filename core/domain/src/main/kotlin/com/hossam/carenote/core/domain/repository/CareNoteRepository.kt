@@ -13,6 +13,9 @@ interface CareNoteRepository {
     /** Notes for one resident, newest first. */
     fun observeNotes(residentId: String): Flow<List<CareNote>>
 
+    /** Every resident's notes, newest first. */
+    fun observeAllNotes(): Flow<List<CareNote>>
+
     /** Number of notes not yet synced, per resident id. Residents without such notes are left out. */
     fun observePendingCounts(): Flow<Map<String, Int>>
 

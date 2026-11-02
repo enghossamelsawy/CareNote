@@ -17,6 +17,10 @@ interface CareNoteDao {
     @Query("SELECT * FROM care_notes WHERE residentId = :residentId ORDER BY createdAt DESC")
     fun observeForResident(residentId: String): Flow<List<CareNoteEntity>>
 
+    /** Every resident's notes in one query, newest first, so the residents list doesn't run one per resident. */
+    @Query("SELECT * FROM care_notes ORDER BY createdAt DESC")
+    fun observeAll(): Flow<List<CareNoteEntity>>
+
     /** Notes not yet on the server, per resident. Residents without any are left out. */
     @Query(
         "SELECT residentId, COUNT(*) AS count FROM care_notes WHERE syncStatus != 'SYNCED' " +

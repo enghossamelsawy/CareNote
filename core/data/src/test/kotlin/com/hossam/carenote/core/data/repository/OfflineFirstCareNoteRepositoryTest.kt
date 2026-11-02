@@ -77,6 +77,19 @@ class OfflineFirstCareNoteRepositoryTest {
     }
 
     @Test
+    fun `given notes for two residents, when observing all notes, then both come newest first`() = runTest {
+        // Given
+        repository.save(careNote(id = 1, residentId = "res-1", createdAt = Instant.ofEpochSecond(1)))
+        repository.save(careNote(id = 2, residentId = "res-2", createdAt = Instant.ofEpochSecond(2)))
+
+        // When
+        val notes = repository.observeAllNotes().first()
+
+        // Then
+        assertEquals(listOf(uuid(2), uuid(1)), notes.map { it.id })
+    }
+
+    @Test
     fun `given unsynced notes, when observing pending counts, then each resident maps to their count`() = runTest {
         // Given
         repository.save(careNote(id = 1, residentId = "res-1"))

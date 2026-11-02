@@ -28,6 +28,9 @@ internal class OfflineFirstCareNoteRepository @Inject constructor(
     override fun observeNotes(residentId: String): Flow<List<CareNote>> =
         careNoteDao.observeForResident(residentId).map { notes -> notes.map { it.asExternalModel() } }
 
+    override fun observeAllNotes(): Flow<List<CareNote>> =
+        careNoteDao.observeAll().map { notes -> notes.map { it.asExternalModel() } }
+
     override fun observePendingCounts(): Flow<Map<String, Int>> =
         careNoteDao.observePendingCounts().map { it.asPendingCountMap() }
 

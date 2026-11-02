@@ -62,6 +62,20 @@ class CareNoteDaoTest {
     }
 
     @Test
+    fun `given notes for two residents, when observing all, then both residents' notes come newest first`() = runTest {
+        // Given
+        dao.insert(careNote("old", "r1", createdAt = Instant.ofEpochSecond(1)))
+        dao.insert(careNote("other", "r2", createdAt = Instant.ofEpochSecond(2)))
+        dao.insert(careNote("new", "r1", createdAt = Instant.ofEpochSecond(3)))
+
+        // When
+        val notes = dao.observeAll().first()
+
+        // Then
+        assertEquals(listOf("new", "other", "old"), notes.map { it.id })
+    }
+
+    @Test
     fun `given notes in every status, when counting pending, then all but synced count per resident`() = runTest {
         // Given
         dao.insert(careNote("1", "r1", syncStatus = SyncStatus.PENDING))

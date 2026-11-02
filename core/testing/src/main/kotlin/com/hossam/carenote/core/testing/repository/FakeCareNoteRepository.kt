@@ -32,6 +32,9 @@ class FakeCareNoteRepository : CareNoteRepository {
     override fun observeNotes(residentId: String): Flow<List<CareNote>> =
         notes.map { list -> list.filter { it.residentId == residentId }.sortedByDescending { it.createdAt } }
 
+    override fun observeAllNotes(): Flow<List<CareNote>> =
+        notes.map { list -> list.sortedByDescending { it.createdAt } }
+
     override fun observePendingCounts(): Flow<Map<String, Int>> = notes.map { list ->
         list.filter { it.syncStatus != SyncStatus.SYNCED }.groupingBy { it.residentId }.eachCount()
     }
