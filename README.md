@@ -7,7 +7,7 @@ vital signs read from it, and save it. The note is stored on the phone straight 
 whenever there is a connection, so a dead spot in the building never loses a word.
 
 <p>
-  <img src="feature/residents/src/test/screenshots/residents_attention_light.png" width="200" alt="Residents list, with residents whose latest vitals need attention flagged red">
+  <img src="feature/residents/src/test/screenshots/residents_attention_light.png" width="200" alt="Residents list, with vitals that need attention flagged red and residents without a recent note marked">
   <img src="feature/resident/src/test/screenshots/resident_notes_light.png" width="200" alt="A resident's notes, with vitals out of range marked red">
   <img src="feature/resident/src/test/screenshots/note_detail_edited_light.png" width="200" alt="A note in full, with its earlier version">
   <img src="feature/record/src/test/screenshots/record_review_light.png" width="200" alt="Reviewing a dictated note">
@@ -28,6 +28,9 @@ whenever there is a connection, so a dead spot in the building never loses a wor
 - **Residents to check first are flagged.** When a resident's latest reading is out of range, the residents
   list shows it in red, such as "Temperature high", with when it was measured. A newer reading in range
   clears it by itself; a note without vitals, such as "ate well", doesn't.
+- **No one is forgotten.** A resident with no note for 8 hours gets a grey "No note since 8:40 PM" with a
+  clock, and it updates as time passes. Any new note clears it; editing an old one doesn't. It's grey, not
+  red: a check is due, but nothing is known to be wrong. Residents with no notes yet aren't flagged.
 - **Edits keep the history.** Editing a note saves a new version; the note shows "Edited 10:15 AM" and its
   earlier versions stay readable.
 - **Works offline.** Notes save locally and sync later, with a clear status on each one: waiting, syncing,
@@ -221,7 +224,8 @@ isn't real.
   the note screen, so the two never disagree. The cost: the residents list reads every note when one changes,
   which is fine for a care home's few thousand notes. With far more, a query for only each resident's
   latest note with vitals would replace it. The ranges are a demo baseline, not clinical advice: a real care
-  home would set them per resident or follow a score such as NEWS2.
+  home would set them per resident or follow a score such as NEWS2. The same goes for the 8 hours before a
+  resident is overdue: one constant here, where a real home would set it per resident, shorter at night.
 - **A mock flavor instead of a fake backend.** The whole app, including failure cases, runs on any phone
   with no setup, and the debug menu makes "the server is down" a switch.
 - **Next steps** with a real backend: authentication, resolving edits of the same note made on two phones,
