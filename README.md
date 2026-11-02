@@ -7,7 +7,7 @@ vital signs read from it, and save it. The note is stored on the phone straight 
 whenever there is a connection, so a dead spot in the building never loses a word.
 
 <p>
-  <img src="feature/residents/src/test/screenshots/residents_list_light.png" width="200" alt="Residents list">
+  <img src="feature/residents/src/test/screenshots/residents_attention_light.png" width="200" alt="Residents list, with residents whose latest vitals need attention flagged red">
   <img src="feature/resident/src/test/screenshots/resident_notes_light.png" width="200" alt="A resident's notes, with vitals out of range marked red">
   <img src="feature/resident/src/test/screenshots/note_detail_edited_light.png" width="200" alt="A note in full, with its earlier version">
   <img src="feature/record/src/test/screenshots/record_review_light.png" width="200" alt="Reviewing a dictated note">
@@ -25,6 +25,9 @@ whenever there is a connection, so a dead spot in the building never loses a wor
   replacing it.
 - **Values that need attention stand out.** Normal readings stay calm; a value outside the usual adult range
   gets a red tile with "▲ High" or "▼ Low", and its note a red edge in the list.
+- **Residents to check first are flagged.** When a resident's latest reading is out of range, the residents
+  list shows it in red, such as "Temperature high", with when it was measured. A newer reading in range
+  clears it by itself; a note without vitals, such as "ate well", doesn't.
 - **Edits keep the history.** Editing a note saves a new version; the note shows "Edited 10:15 AM" and its
   earlier versions stay readable.
 - **Works offline.** Notes save locally and sync later, with a clear status on each one: waiting, syncing,
@@ -214,6 +217,11 @@ isn't real.
   wouldn't work offline.
 - **Revisions instead of updates.** No update conflicts to resolve in sync, and an audit trail for free. The
   cost is more rows and a little work to find the latest version.
+- **Alerts worked out on the phone, from the stored notes.** They work offline and use the same ranges as
+  the note screen, so the two never disagree. The cost: the residents list reads every note when one changes,
+  which is fine for a care home's few thousand notes. With far more, a query for only each resident's
+  latest note with vitals would replace it. The ranges are a demo baseline, not clinical advice: a real care
+  home would set them per resident or follow a score such as NEWS2.
 - **A mock flavor instead of a fake backend.** The whole app, including failure cases, runs on any phone
   with no setup, and the debug menu makes "the server is down" a switch.
 - **Next steps** with a real backend: authentication, resolving edits of the same note made on two phones,
