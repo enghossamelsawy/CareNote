@@ -24,7 +24,7 @@ class ObserveCareNotesUseCase @Inject constructor(private val careNoteRepository
                     val earlier = versions.earlier(note)
                     CurrentCareNote(
                         note = note,
-                        firstWrittenAt = (earlier.lastOrNull() ?: note).createdAt,
+                        firstWrittenAt = versions.firstWrittenAt(note),
                         earlierNotSynced = earlier.any { it.syncStatus == SyncStatus.FAILED },
                     )
                 }

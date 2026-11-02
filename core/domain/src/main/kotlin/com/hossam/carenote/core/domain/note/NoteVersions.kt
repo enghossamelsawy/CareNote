@@ -1,6 +1,7 @@
 package com.hossam.carenote.core.domain.note
 
 import com.hossam.carenote.core.model.CareNote
+import java.time.Instant
 import java.util.UUID
 
 /**
@@ -25,6 +26,9 @@ internal class NoteVersions(notes: List<CareNote>) {
             note = next
         }
     }
+
+    /** When the first version of [note] was written; an edit corrects that note, so it keeps this time. */
+    fun firstWrittenAt(note: CareNote): Instant = (earlier(note).lastOrNull() ?: note).createdAt
 
     /** The versions [note] replaced, newest first. */
     fun earlier(note: CareNote): List<CareNote> = buildList {
