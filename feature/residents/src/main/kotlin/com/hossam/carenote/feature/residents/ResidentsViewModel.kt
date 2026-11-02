@@ -4,10 +4,13 @@ import androidx.lifecycle.viewModelScope
 import com.hossam.carenote.core.domain.repository.RefreshResult
 import com.hossam.carenote.core.domain.usecase.ObserveNetworkStatusUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentsWithPendingCountUseCase
+import com.hossam.carenote.core.domain.usecase.ObserveVitalsAlertsUseCase
 import com.hossam.carenote.core.domain.usecase.RefreshResidentsUseCase
+import com.hossam.carenote.core.domain.vitals.VitalsAlert
 import com.hossam.carenote.core.model.ResidentSummary
 import com.hossam.carenote.core.ui.mvi.MviViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -16,12 +19,16 @@ import javax.inject.Inject
 @HiltViewModel
 class ResidentsViewModel @Inject constructor(
     observeResidentsWithPendingCount: ObserveResidentsWithPendingCountUseCase,
+    observeVitalsAlerts: ObserveVitalsAlertsUseCase,
     private val refreshResidents: RefreshResidentsUseCase,
     observeNetworkStatus: ObserveNetworkStatusUseCase,
 ) : MviViewModel<ResidentsState, ResidentsIntent, ResidentsEffect>(ResidentsState()) {
     init {
-        observeResidentsWithPendingCount()
-            .onEach { summaries -> setState { copy(isLoading = false, residents = summaries.map { it.asItem() }) } }
+        val residentItems = combine(observeResidentsWithPendingCount(), observeVitalsAlerts()) { summaries, alerts ->
+            summaries.map { it.asItem(alert = alerts[it.resident.id]) }
+        }
+        residentItems
+            .onEach { items -> setState { copy(isLoading = false, residents = items) } }
             .launchIn(viewModelScope)
         observeNetworkStatus()
             .onEach { online -> setState { copy(isOffline = !online) } }
@@ -52,10 +59,11 @@ class ResidentsViewModel @Inject constructor(
         }
     }
 
-    private fun ResidentSummary.asItem() = ResidentItem(
+    private fun ResidentSummary.asItem(alert: VitalsAlert?) = ResidentItem(
         id = resident.id,
         name = "${resident.firstName} ${resident.lastName}",
         room = resident.room,
         pendingCount = pendingCount,
+        alert = alert,
     )
 }

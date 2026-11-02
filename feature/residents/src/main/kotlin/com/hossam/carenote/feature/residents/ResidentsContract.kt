@@ -1,5 +1,6 @@
 package com.hossam.carenote.feature.residents
 
+import com.hossam.carenote.core.domain.vitals.VitalsAlert
 import com.hossam.carenote.core.ui.mvi.UiEffect
 import com.hossam.carenote.core.ui.mvi.UiIntent
 import com.hossam.carenote.core.ui.mvi.UiState
@@ -23,8 +24,17 @@ enum class RefreshProblem {
     Failed,
 }
 
-/** One row of the residents list, already in the shape the screen shows. */
-data class ResidentItem(val id: String, val name: String, val room: String, val pendingCount: Int)
+/**
+ * One row of the residents list, already in the shape the screen shows. [alert] is set when the resident's
+ * latest vitals are outside the usual range, so the row stands out and they are checked first.
+ */
+data class ResidentItem(
+    val id: String,
+    val name: String,
+    val room: String,
+    val pendingCount: Int,
+    val alert: VitalsAlert? = null,
+)
 
 sealed interface ResidentsIntent : UiIntent {
     data class ResidentClicked(val residentId: String) : ResidentsIntent

@@ -4,7 +4,12 @@ import app.cash.turbine.test
 import com.hossam.carenote.core.domain.repository.RefreshResult
 import com.hossam.carenote.core.domain.usecase.ObserveNetworkStatusUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentsWithPendingCountUseCase
+import com.hossam.carenote.core.domain.usecase.ObserveVitalsAlertsUseCase
 import com.hossam.carenote.core.domain.usecase.RefreshResidentsUseCase
+import com.hossam.carenote.core.domain.vitals.VitalLevel
+import com.hossam.carenote.core.domain.vitals.VitalsAlert
+import com.hossam.carenote.core.domain.vitals.VitalsAssessment
+import com.hossam.carenote.core.domain.vitals.VitalsAssessor
 import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.Resident
 import com.hossam.carenote.core.model.SyncStatus
@@ -54,6 +59,42 @@ class ResidentsViewModelTest {
             ),
             viewModel.state.value,
         )
+    }
+
+    @Test
+    fun `given a resident with a fever, when the view model starts, then only their item has the alert`() = runTest {
+        // Given
+        residentRepository.setResidents(listOf(anna, max))
+        careNoteRepository.save(note(id = 1, residentId = anna.id, vitals = Vitals(temperatureCelsius = 38.5)))
+        careNoteRepository.save(note(id = 2, residentId = max.id))
+
+        // When
+        val viewModel = createViewModel()
+
+        // Then
+        assertEquals(
+            listOf(
+                VitalsAlert(VitalsAssessment(temperature = VitalLevel.High), takenAt = Instant.EPOCH),
+                null,
+            ),
+            viewModel.state.value.residents.map { it.alert },
+        )
+    }
+
+    @Test
+    fun `given a resident with a fever, when a newer reading is in range, then the alert goes away`() = runTest {
+        // Given
+        residentRepository.setResidents(listOf(anna))
+        careNoteRepository.save(note(id = 1, residentId = anna.id, vitals = Vitals(temperatureCelsius = 38.5)))
+        val viewModel = createViewModel()
+
+        // When
+        val inRange = Vitals(temperatureCelsius = 36.8)
+        val later = Instant.ofEpochSecond(60)
+        careNoteRepository.save(note(id = 2, residentId = anna.id, vitals = inRange, createdAt = later))
+
+        // Then
+        assertEquals(null, viewModel.state.value.residents.single().alert)
     }
 
     @Test
@@ -194,6 +235,7 @@ class ResidentsViewModelTest {
             careNoteRepository = careNoteRepository,
         ),
         refreshResidents = RefreshResidentsUseCase(residentRepository),
+        observeVitalsAlerts = ObserveVitalsAlertsUseCase(careNoteRepository, VitalsAssessor()),
         observeNetworkStatus = ObserveNetworkStatusUseCase(networkMonitor),
     )
 
@@ -209,11 +251,16 @@ class ResidentsViewModelTest {
         assertEquals(true, viewModel.state.value.isOffline)
     }
 
-    private fun note(id: Int, residentId: String) = CareNote(
+    private fun note(
+        id: Int,
+        residentId: String,
+        vitals: Vitals = Vitals(pulse = 72),
+        createdAt: Instant = Instant.EPOCH,
+    ) = CareNote(
         id = UUID(0, id.toLong()),
         residentId = residentId,
         transcript = "Pulse 72",
-        vitals = Vitals(pulse = 72),
-        createdAt = Instant.EPOCH,
+        vitals = vitals,
+        createdAt = createdAt,
     )
 }

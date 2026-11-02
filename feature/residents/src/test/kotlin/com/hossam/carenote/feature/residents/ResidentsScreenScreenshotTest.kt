@@ -5,11 +5,19 @@ import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
+import com.hossam.carenote.core.domain.vitals.VitalLevel
+import com.hossam.carenote.core.domain.vitals.VitalsAlert
+import com.hossam.carenote.core.domain.vitals.VitalsAssessment
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import java.time.Instant
+import java.util.Locale
+import java.util.TimeZone
 
 /**
  * The images are recorded on Windows and checked on CI's Linux, which smooths text a little differently.
@@ -25,16 +33,54 @@ private val screenshotOptions = RoborazziOptions(
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(qualifiers = RobolectricDeviceQualifiers.Pixel7)
 class ResidentsScreenScreenshotTest {
+    private val originalTimeZone = TimeZone.getDefault()
+    private val originalLocale = Locale.getDefault()
+
     private val residents = listOf(
         ResidentItem(id = "1", name = "Anna Becker", room = "101", pendingCount = 2),
         ResidentItem(id = "2", name = "Karl Fischer", room = "102", pendingCount = 0),
         ResidentItem(id = "3", name = "Greta Hoffmann", room = "103", pendingCount = 1),
     )
 
+    // Alert times are shown in the phone's zone and format; fix both so the images match on every machine.
+    @Before
+    fun setUp() {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+        Locale.setDefault(Locale.US)
+    }
+
+    @After
+    fun tearDown() {
+        TimeZone.setDefault(originalTimeZone)
+        Locale.setDefault(originalLocale)
+    }
+
     @Test
     fun `given residents, when the list is shown, then it matches the screenshots`() {
         screenshots("residents_list") {
             ResidentsScreen(state = ResidentsState(isLoading = false, residents = residents), onIntent = {})
+        }
+    }
+
+    @Test
+    fun `given residents whose vitals need attention, when the list is shown, then it matches the screenshots`() {
+        val alerted = listOf(
+            residents[0].copy(
+                alert = VitalsAlert(
+                    assessment = VitalsAssessment(temperature = VitalLevel.High, pulse = VitalLevel.High),
+                    takenAt = Instant.parse("2026-11-01T05:29:00Z"),
+                ),
+            ),
+            residents[1],
+            residents[2].copy(
+                alert = VitalsAlert(
+                    assessment = VitalsAssessment(oxygenSaturation = VitalLevel.Low),
+                    takenAt = Instant.parse("2026-10-31T21:05:00Z"),
+                ),
+            ),
+        )
+        screenshots("residents_attention") {
+            ResidentsScreen(state = ResidentsState(isLoading = false, residents = alerted), onIntent = {})
         }
     }
 

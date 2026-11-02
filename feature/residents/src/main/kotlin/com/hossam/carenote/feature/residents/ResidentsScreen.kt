@@ -1,6 +1,7 @@
 package com.hossam.carenote.feature.residents
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -33,7 +35,14 @@ import com.hossam.carenote.core.designsystem.component.StatusBanner
 import com.hossam.carenote.core.designsystem.component.StatusTone
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
+import com.hossam.carenote.core.domain.vitals.VitalLevel
+import com.hossam.carenote.core.domain.vitals.VitalsAlert
+import com.hossam.carenote.core.domain.vitals.VitalsAssessment
 import com.hossam.carenote.core.ui.mvi.ObserveEffects
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 /**
  * Connects [ResidentsScreen] to its ViewModel; navigation is passed in, so this module doesn't know other screens.
@@ -142,7 +151,12 @@ private fun ResidentRow(resident: ResidentItem, onClick: () -> Unit, modifier: M
     ListItem(
         leadingContent = { Avatar(name = resident.name, colorKey = resident.id) },
         headlineContent = { Text(resident.name) },
-        supportingContent = { Text(stringResource(R.string.residents_room, resident.room)) },
+        supportingContent = {
+            Column(verticalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.xs)) {
+                Text(stringResource(R.string.residents_room, resident.room))
+                resident.alert?.let { VitalsAlertLine(it) }
+            }
+        },
         trailingContent = {
             val pendingCount = resident.pendingCount
             if (pendingCount > 0) {
@@ -156,6 +170,40 @@ private fun ResidentRow(resident: ResidentItem, onClick: () -> Unit, modifier: M
     )
 }
 
+/** Which vitals are out of range, in red, and when they were measured, so an old reading reads as old. */
+@Composable
+private fun VitalsAlertLine(alert: VitalsAlert, modifier: Modifier = Modifier) {
+    val formatter = remember {
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withZone(ZoneId.systemDefault())
+    }
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.xxs)) {
+        StatusBadge(text = alertText(alert.assessment), tone = StatusTone.Error)
+        Text(
+            text = stringResource(R.string.residents_alert_taken, formatter.format(alert.takenAt)),
+            style = CareNoteTheme.typography.labelMedium,
+            color = CareNoteTheme.colors.onSurfaceVariant,
+        )
+    }
+}
+
+/** "Temperature high, Pulse high": every vital out of range, in the order the note screen shows them. */
+@Composable
+private fun alertText(assessment: VitalsAssessment): String = listOfNotNull(
+    assessment.bloodPressure.flag(high = R.string.residents_alert_bp_high, low = R.string.residents_alert_bp_low),
+    assessment.pulse.flag(high = R.string.residents_alert_pulse_high, low = R.string.residents_alert_pulse_low),
+    assessment.temperature.flag(
+        high = R.string.residents_alert_temperature_high,
+        low = R.string.residents_alert_temperature_low,
+    ),
+    R.string.residents_alert_spo2_low.takeIf { assessment.oxygenSaturation == VitalLevel.Low },
+).map { stringResource(it) }.joinToString(stringResource(R.string.residents_alert_separator))
+
+private fun VitalLevel?.flag(high: Int, low: Int): Int? = when (this) {
+    VitalLevel.High -> high
+    VitalLevel.Low -> low
+    VitalLevel.Normal, null -> null
+}
+
 @PreviewLightDark
 @Composable
 private fun ResidentsScreenPreview() {
@@ -164,7 +212,16 @@ private fun ResidentsScreenPreview() {
             state = ResidentsState(
                 isLoading = false,
                 residents = listOf(
-                    ResidentItem(id = "1", name = "Anna Becker", room = "101", pendingCount = 2),
+                    ResidentItem(
+                        id = "1",
+                        name = "Anna Becker",
+                        room = "101",
+                        pendingCount = 2,
+                        alert = VitalsAlert(
+                            assessment = VitalsAssessment(temperature = VitalLevel.High),
+                            takenAt = Instant.parse("2026-11-01T05:29:00Z"),
+                        ),
+                    ),
                     ResidentItem(id = "2", name = "Karl Fischer", room = "102", pendingCount = 0),
                     ResidentItem(id = "3", name = "Greta Hoffmann", room = "103", pendingCount = 1),
                 ),

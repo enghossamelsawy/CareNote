@@ -10,6 +10,15 @@
     <string name="residents_download_failed">Something went wrong on the server. Try again later.</string>
     <string name="residents_debug_menu">Debug menu</string>
     <string name="residents_offline">Offline. New notes are saved on this phone and sync when you\'re back online.</string>
+    <string name="residents_alert_bp_high">Blood pressure high</string>
+    <string name="residents_alert_bp_low">Blood pressure low</string>
+    <string name="residents_alert_pulse_high">Pulse high</string>
+    <string name="residents_alert_pulse_low">Pulse low</string>
+    <string name="residents_alert_temperature_high">Temperature high</string>
+    <string name="residents_alert_temperature_low">Temperature low</string>
+    <string name="residents_alert_spo2_low">Oxygen low</string>
+    <string name="residents_alert_separator">", "</string>
+    <string name="residents_alert_taken">Measured %1$s</string>
     <plurals name="residents_pending">
         <item quantity="one">%d pending</item>
         <item quantity="other">%d pending</item>
