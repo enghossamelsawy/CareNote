@@ -37,6 +37,7 @@ import com.hossam.carenote.core.designsystem.component.StatusBanner
 import com.hossam.carenote.core.designsystem.component.StatusTone
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
+import com.hossam.carenote.core.domain.sync.Freshness
 import com.hossam.carenote.core.domain.vitals.VitalLevel
 import com.hossam.carenote.core.domain.vitals.VitalsAlert
 import com.hossam.carenote.core.domain.vitals.VitalsAssessment
@@ -101,6 +102,10 @@ fun ResidentsScreen(
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             if (state.isOffline) {
                 StatusBanner(text = stringResource(R.string.residents_offline), tone = StatusTone.Warning)
+            }
+            // With no residents, the empty state already says what is missing.
+            if (state.residents.isNotEmpty()) {
+                state.freshness?.let { FreshnessLine(it, onUpdateNow = { onIntent(ResidentsIntent.UpdateNowClicked) }) }
             }
             ResidentsContent(state = state, onIntent = onIntent, modifier = Modifier.weight(1f))
         }
@@ -213,6 +218,44 @@ private fun OverdueLine(since: Instant, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Whether colleagues' notes are here. "Updated 10:42 AM" stays quiet, since that is the normal case; a warning
+ * with "Update now" when they haven't arrived yet or are out of date, because the overdue and attention flags
+ * may then be wrong.
+ */
+@Composable
+private fun FreshnessLine(freshness: Freshness, onUpdateNow: () -> Unit, modifier: Modifier = Modifier) {
+    when (freshness) {
+        is Freshness.Updated -> {
+            val formatter = remember {
+                DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withZone(ZoneId.systemDefault())
+            }
+            Text(
+                text = stringResource(R.string.residents_updated, formatter.format(freshness.at)),
+                modifier = modifier.padding(horizontal = CareNoteTheme.spacing.md, vertical = CareNoteTheme.spacing.xs),
+                style = CareNoteTheme.typography.labelMedium,
+                color = CareNoteTheme.colors.onSurfaceVariant,
+            )
+        }
+
+        Freshness.NeverUpdated -> StatusBanner(
+            text = stringResource(R.string.residents_never_updated),
+            tone = StatusTone.Warning,
+            modifier = modifier,
+            actionLabel = stringResource(R.string.residents_update_now),
+            onAction = onUpdateNow,
+        )
+
+        is Freshness.OutOfDate -> StatusBanner(
+            text = stringResource(R.string.residents_out_of_date, rememberTimeFormatter().format(freshness.since)),
+            tone = StatusTone.Warning,
+            modifier = modifier,
+            actionLabel = stringResource(R.string.residents_update_now),
+            onAction = onUpdateNow,
+        )
+    }
+}
+
 /** Date and time in the phone's zone and format, such as "Nov 1, 2026, 6:10 AM". */
 @Composable
 private fun rememberTimeFormatter(): DateTimeFormatter = remember {
@@ -279,6 +322,21 @@ private fun ResidentsScreenOfflinePreview() {
                 isLoading = false,
                 residents = listOf(ResidentItem(id = "1", name = "Anna Becker", room = "101", pendingCount = 2)),
                 isOffline = true,
+            ),
+            onIntent = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun ResidentsScreenOutOfDatePreview() {
+    CareNoteTheme {
+        ResidentsScreen(
+            state = ResidentsState(
+                isLoading = false,
+                residents = listOf(ResidentItem(id = "1", name = "Anna Becker", room = "101", pendingCount = 0)),
+                freshness = Freshness.OutOfDate(since = Instant.parse("2026-11-01T07:15:00Z")),
             ),
             onIntent = {},
         )

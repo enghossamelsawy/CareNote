@@ -2,11 +2,14 @@ package com.hossam.carenote.feature.residents
 
 import app.cash.turbine.test
 import com.hossam.carenote.core.domain.repository.RefreshResult
+import com.hossam.carenote.core.domain.sync.Freshness
+import com.hossam.carenote.core.domain.usecase.ObserveFreshnessUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveNetworkStatusUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveOverdueResidentsUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentsWithPendingCountUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveVitalsAlertsUseCase
 import com.hossam.carenote.core.domain.usecase.RefreshResidentsUseCase
+import com.hossam.carenote.core.domain.usecase.RequestSyncUseCase
 import com.hossam.carenote.core.domain.vitals.VitalLevel
 import com.hossam.carenote.core.domain.vitals.VitalsAlert
 import com.hossam.carenote.core.domain.vitals.VitalsAssessment
@@ -19,7 +22,9 @@ import com.hossam.carenote.core.testing.MainDispatcherRule
 import com.hossam.carenote.core.testing.repository.FakeCareNoteRepository
 import com.hossam.carenote.core.testing.repository.FakeCurrentTime
 import com.hossam.carenote.core.testing.repository.FakeNetworkMonitor
+import com.hossam.carenote.core.testing.repository.FakeNoteFeedRepository
 import com.hossam.carenote.core.testing.repository.FakeResidentRepository
+import com.hossam.carenote.core.testing.repository.FakeSyncScheduler
 import com.hossam.carenote.core.ui.mvi.MviViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -46,6 +51,8 @@ class ResidentsViewModelTest {
     private val careNoteRepository = FakeCareNoteRepository()
     private val networkMonitor = FakeNetworkMonitor()
     private val currentTime = FakeCurrentTime()
+    private val noteFeedRepository = FakeNoteFeedRepository()
+    private val syncScheduler = FakeSyncScheduler()
 
     private val anna = Resident(id = "res-1", firstName = "Anna", lastName = "Becker", room = "101")
     private val max = Resident(id = "res-2", firstName = "Max", lastName = "Weber", room = "102")
@@ -67,6 +74,7 @@ class ResidentsViewModelTest {
                     ResidentItem(id = "res-1", name = "Anna Becker", room = "101", pendingCount = 1),
                     ResidentItem(id = "res-2", name = "Max Weber", room = "102", pendingCount = 0),
                 ),
+                freshness = Freshness.NeverUpdated,
             ),
             viewModel.state.value,
         )
@@ -305,7 +313,50 @@ class ResidentsViewModelTest {
         observeVitalsAlerts = ObserveVitalsAlertsUseCase(careNoteRepository, VitalsAssessor()),
         observeOverdueResidents = ObserveOverdueResidentsUseCase(careNoteRepository, currentTime),
         observeNetworkStatus = ObserveNetworkStatusUseCase(networkMonitor),
+        observeFreshness = ObserveFreshnessUseCase(noteFeedRepository, currentTime),
+        requestSync = RequestSyncUseCase(syncScheduler),
     )
+
+    @Test
+    fun `given colleagues' notes arrived 10 minutes ago, when the list is shown, then it says when`() = runTest {
+        // Given
+        val caughtUpAt = Instant.ofEpochSecond(1_000)
+        noteFeedRepository.caughtUpAt.value = caughtUpAt
+        currentTime.set(caughtUpAt.plusSeconds(600))
+
+        // When
+        val viewModel = createViewModel()
+
+        // Then
+        assertEquals(Freshness.Updated(at = caughtUpAt), viewModel.state.value.freshness)
+    }
+
+    @Test
+    fun `given an updated list, when 30 minutes pass without a pull, then it turns out of date`() = runTest {
+        // Given
+        val caughtUpAt = Instant.ofEpochSecond(1_000)
+        noteFeedRepository.caughtUpAt.value = caughtUpAt
+        currentTime.set(caughtUpAt)
+        val viewModel = createViewModel()
+
+        // When
+        currentTime.set(caughtUpAt.plus(ObserveFreshnessUseCase.OUT_OF_DATE_AFTER))
+
+        // Then
+        assertEquals(Freshness.OutOfDate(since = caughtUpAt), viewModel.state.value.freshness)
+    }
+
+    @Test
+    fun `given notes haven't arrived, when update now is clicked, then a sync is requested`() = runTest {
+        // Given
+        val viewModel = createViewModel()
+
+        // When
+        viewModel.onIntent(ResidentsIntent.UpdateNowClicked)
+
+        // Then
+        assertEquals(1, syncScheduler.requestCount)
+    }
 
     @Test
     fun `given the list, when the device goes offline, then the offline banner shows`() = runTest {

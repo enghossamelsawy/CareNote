@@ -36,7 +36,9 @@ whenever there is a connection, so a dead spot in the building never loses a wor
 - **Works offline.** Notes save locally and sync later, with a clear status on each one: waiting, syncing,
   synced or not synced (with retry).
 - **Colleagues' notes arrive.** Notes written on other phones are pulled from the server and show up in the
-  lists by themselves, so the overdue and attention flags count everyone's notes.
+  lists by themselves, so the overdue and attention flags count everyone's notes. The residents list says
+  "Updated 10:42 AM", and warns with **Update now** when colleagues' notes haven't arrived yet or are more than
+  30 minutes old. A resident with no notes yet says theirs haven't arrived, instead of "no notes".
 - **Debug menu** (mock build only): take the server offline, make requests fail or slow them down, add a
   note "from another phone" to watch it arrive, and see which speech engine was used.
 
@@ -134,6 +136,9 @@ it is caught up.
 - **Sending comes first,** so the phone's own notes are on the server before it reads; if sending can't
   reach the server, pulling isn't tried. A pull runs whenever a sync does: at app start, on reconnect and
   after each save.
+- **Freshness instead of a spinner.** The screens never wait for a pull, so there's nothing to show a
+  spinner for. What staff need to know is whether to trust the flags, so the list shows when the phone last
+  caught up, from the time stored with the cursor. That stays true offline, while waiting or mid-sync.
 
 ## Edits are revisions, not updates
 

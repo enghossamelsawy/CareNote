@@ -19,6 +19,11 @@ data class ResidentState(
     val notFound: Boolean = false,
     /** Newest first. */
     val notes: List<NoteItem> = emptyList(),
+    /**
+     * No pull has reached the end yet, so colleagues' notes may be missing: with no notes here, the screen says
+     * they haven't arrived instead of "no notes yet", which might not be true.
+     */
+    val colleagueNotesNotArrived: Boolean = false,
 ) : UiState
 
 /**

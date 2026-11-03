@@ -2,11 +2,13 @@ package com.hossam.carenote.feature.residents
 
 import androidx.lifecycle.viewModelScope
 import com.hossam.carenote.core.domain.repository.RefreshResult
+import com.hossam.carenote.core.domain.usecase.ObserveFreshnessUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveNetworkStatusUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveOverdueResidentsUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentsWithPendingCountUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveVitalsAlertsUseCase
 import com.hossam.carenote.core.domain.usecase.RefreshResidentsUseCase
+import com.hossam.carenote.core.domain.usecase.RequestSyncUseCase
 import com.hossam.carenote.core.domain.vitals.VitalsAlert
 import com.hossam.carenote.core.model.ResidentSummary
 import com.hossam.carenote.core.ui.mvi.MviViewModel
@@ -25,6 +27,8 @@ class ResidentsViewModel @Inject constructor(
     observeOverdueResidents: ObserveOverdueResidentsUseCase,
     private val refreshResidents: RefreshResidentsUseCase,
     observeNetworkStatus: ObserveNetworkStatusUseCase,
+    observeFreshness: ObserveFreshnessUseCase,
+    private val requestSync: RequestSyncUseCase,
 ) : MviViewModel<ResidentsState, ResidentsIntent, ResidentsEffect>(ResidentsState()) {
     init {
         val residentItems = combine(
@@ -37,6 +41,8 @@ class ResidentsViewModel @Inject constructor(
         // Only while shown: this is the first screen, so its ViewModel lives as long as the app, and the overdue
         // check ticks every minute.
         residentItems.collectWhileShown { items -> setState { copy(isLoading = false, residents = items) } }
+        // Also ticks, to turn "updated" into "out of date" as time passes.
+        observeFreshness().collectWhileShown { freshness -> setState { copy(freshness = freshness) } }
         observeNetworkStatus()
             .onEach { online -> setState { copy(isOffline = !online) } }
             .launchIn(viewModelScope)
@@ -49,6 +55,7 @@ class ResidentsViewModel @Inject constructor(
         when (intent) {
             is ResidentsIntent.ResidentClicked -> sendEffect(ResidentsEffect.OpenResident(intent.residentId))
             ResidentsIntent.RetryClicked -> refresh()
+            ResidentsIntent.UpdateNowClicked -> viewModelScope.launch { requestSync() }
         }
     }
 

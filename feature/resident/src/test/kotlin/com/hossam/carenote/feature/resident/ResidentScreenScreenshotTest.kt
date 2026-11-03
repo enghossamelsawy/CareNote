@@ -109,6 +109,22 @@ class ResidentScreenScreenshotTest {
         status = status,
     )
 
+    @Test
+    fun `given colleagues' notes haven't arrived, when a resident has none, then it matches the screenshots`() {
+        screenshots("resident_notes_not_arrived") {
+            ResidentScreen(
+                state = ResidentState(
+                    isLoading = false,
+                    residentId = "1",
+                    name = "Anna Becker",
+                    room = "101",
+                    colleagueNotesNotArrived = true,
+                ),
+                onIntent = {},
+            )
+        }
+    }
+
     private fun screenshots(name: String, content: @Composable () -> Unit) {
         for (darkTheme in listOf(false, true)) {
             val theme = if (darkTheme) "dark" else "light"

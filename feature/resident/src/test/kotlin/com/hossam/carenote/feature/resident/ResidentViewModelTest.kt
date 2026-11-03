@@ -3,6 +3,7 @@ package com.hossam.carenote.feature.resident
 import app.cash.turbine.test
 import com.hossam.carenote.core.domain.usecase.AssessVitalsUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveCareNotesUseCase
+import com.hossam.carenote.core.domain.usecase.ObserveFreshnessUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentUseCase
 import com.hossam.carenote.core.domain.usecase.RetryCareNoteSyncUseCase
 import com.hossam.carenote.core.domain.vitals.VitalLevel
@@ -14,10 +15,18 @@ import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.testing.MainDispatcherRule
 import com.hossam.carenote.core.testing.repository.FakeCareNoteRepository
+import com.hossam.carenote.core.testing.repository.FakeCurrentTime
+import com.hossam.carenote.core.testing.repository.FakeNoteFeedRepository
 import com.hossam.carenote.core.testing.repository.FakeResidentRepository
 import com.hossam.carenote.core.testing.repository.FakeSyncScheduler
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -31,6 +40,7 @@ class ResidentViewModelTest {
     private val residentRepository = FakeResidentRepository()
     private val careNoteRepository = FakeCareNoteRepository()
     private val syncScheduler = FakeSyncScheduler()
+    private val noteFeedRepository = FakeNoteFeedRepository()
 
     private val anna = Resident(id = "res-1", firstName = "Anna", lastName = "Becker", room = "101")
 
@@ -199,12 +209,43 @@ class ResidentViewModelTest {
             assertEquals(1, syncScheduler.requestCount)
         }
 
+    @Test
+    fun `given colleagues' notes haven't arrived, when a resident without notes is shown, then it says so`() =
+        runTest {
+            // Given
+            residentRepository.setResidents(listOf(anna))
+
+            // When
+            val viewModel = createViewModel(anna.id).also { show(it) }
+
+            // Then
+            assertTrue(viewModel.state.value.colleagueNotesNotArrived)
+        }
+
+    @Test
+    fun `given a resident without notes, when colleagues' notes arrive, then it is a plain empty list`() = runTest {
+        // Given
+        residentRepository.setResidents(listOf(anna))
+        val viewModel = createViewModel(anna.id).also { show(it) }
+
+        // When
+        noteFeedRepository.caughtUpAt.value = Instant.EPOCH
+
+        // Then
+        assertEquals(emptyList<NoteItem>(), viewModel.state.value.notes)
+        assertFalse(viewModel.state.value.colleagueNotesNotArrived)
+    }
+
+    /** Collects the state like the visible screen would; freshness only updates while it does. */
+    private fun TestScope.show(viewModel: ResidentViewModel): Job = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.state.collect() }
+
     private fun createViewModel(residentId: String) = ResidentViewModel(
         residentId = residentId,
         observeResident = ObserveResidentUseCase(residentRepository),
         observeCareNotes = ObserveCareNotesUseCase(careNoteRepository),
         retryCareNoteSync = RetryCareNoteSyncUseCase(careNoteRepository, syncScheduler),
         assessVitals = AssessVitalsUseCase(VitalsAssessor()),
+        observeFreshness = ObserveFreshnessUseCase(noteFeedRepository, FakeCurrentTime()),
     )
 
     private fun note(

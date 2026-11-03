@@ -119,6 +119,13 @@ fun ResidentScreen(state: ResidentState, onIntent: (ResidentIntent) -> Unit, mod
                 onAction = { onIntent(ResidentIntent.BackClicked) },
             )
 
+            state.notes.isEmpty() && state.colleagueNotesNotArrived -> EmptyState(
+                title = stringResource(R.string.resident_notes_not_arrived_title, state.name),
+                message = stringResource(R.string.resident_notes_not_arrived_message),
+                illustration = { Avatar(name = state.name, colorKey = state.residentId, size = AvatarSize.Large) },
+                modifier = contentModifier,
+            )
+
             state.notes.isEmpty() -> EmptyState(
                 title = stringResource(R.string.resident_no_notes_title, state.name),
                 message = stringResource(R.string.resident_no_notes_message),

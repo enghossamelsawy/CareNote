@@ -20,6 +20,10 @@
     <string name="residents_alert_separator">", "</string>
     <string name="residents_alert_taken">Measured %1$s</string>
     <string name="residents_overdue">No note since %1$s</string>
+    <string name="residents_updated">Updated %1$s</string>
+    <string name="residents_never_updated">Colleagues\' notes haven\'t arrived yet.</string>
+    <string name="residents_out_of_date">Not updated since %1$s. Colleagues\' notes may be missing.</string>
+    <string name="residents_update_now">Update now</string>
     <plurals name="residents_pending">
         <item quantity="one">%d pending</item>
         <item quantity="other">%d pending</item>

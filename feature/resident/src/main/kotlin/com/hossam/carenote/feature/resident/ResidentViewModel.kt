@@ -1,8 +1,10 @@
 package com.hossam.carenote.feature.resident
 
 import androidx.lifecycle.viewModelScope
+import com.hossam.carenote.core.domain.sync.Freshness
 import com.hossam.carenote.core.domain.usecase.AssessVitalsUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveCareNotesUseCase
+import com.hossam.carenote.core.domain.usecase.ObserveFreshnessUseCase
 import com.hossam.carenote.core.domain.usecase.ObserveResidentUseCase
 import com.hossam.carenote.core.domain.usecase.RetryCareNoteSyncUseCase
 import com.hossam.carenote.core.ui.mvi.MviViewModel
@@ -11,7 +13,9 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
@@ -26,6 +30,7 @@ class ResidentViewModel @AssistedInject constructor(
     observeCareNotes: ObserveCareNotesUseCase,
     private val retryCareNoteSync: RetryCareNoteSyncUseCase,
     private val assessVitals: AssessVitalsUseCase,
+    observeFreshness: ObserveFreshnessUseCase,
 ) : MviViewModel<ResidentState, ResidentIntent, ResidentEffect>(ResidentState()) {
     init {
         combine(observeResident(residentId), observeCareNotes(residentId)) { resident, notes ->
@@ -46,8 +51,13 @@ class ResidentViewModel @AssistedInject constructor(
                     },
                 )
             }
-        }.onEach { state -> setState { state } }
+        }.onEach { loaded -> setState { loaded.copy(colleagueNotesNotArrived = colleagueNotesNotArrived) } }
             .launchIn(viewModelScope)
+        // Only while shown: freshness ticks with the clock.
+        observeFreshness()
+            .map { it == Freshness.NeverUpdated }
+            .distinctUntilChanged()
+            .collectWhileShown { notArrived -> setState { copy(colleagueNotesNotArrived = notArrived) } }
     }
 
     override fun onIntent(intent: ResidentIntent) {

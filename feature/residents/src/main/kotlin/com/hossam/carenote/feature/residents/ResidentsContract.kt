@@ -1,5 +1,6 @@
 package com.hossam.carenote.feature.residents
 
+import com.hossam.carenote.core.domain.sync.Freshness
 import com.hossam.carenote.core.domain.vitals.VitalsAlert
 import com.hossam.carenote.core.ui.mvi.UiEffect
 import com.hossam.carenote.core.ui.mvi.UiIntent
@@ -15,6 +16,8 @@ data class ResidentsState(
     val isRefreshing: Boolean = false,
     /** Why the last download didn't work; shown only while there are no residents to show instead. */
     val refreshProblem: RefreshProblem? = null,
+    /** Whether colleagues' notes are here; null until known. Shown above the list. */
+    val freshness: Freshness? = null,
 ) : UiState
 
 enum class RefreshProblem {
@@ -44,6 +47,9 @@ sealed interface ResidentsIntent : UiIntent {
 
     /** Offered when the list is empty, e.g. the first download failed; ignored while a download runs. */
     data object RetryClicked : ResidentsIntent
+
+    /** Offered while colleagues' notes haven't arrived or are out of date: asks for a sync now. */
+    data object UpdateNowClicked : ResidentsIntent
 }
 
 sealed interface ResidentsEffect : UiEffect {

@@ -5,6 +5,7 @@ import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
+import com.hossam.carenote.core.domain.sync.Freshness
 import com.hossam.carenote.core.domain.vitals.VitalLevel
 import com.hossam.carenote.core.domain.vitals.VitalsAlert
 import com.hossam.carenote.core.domain.vitals.VitalsAssessment
@@ -114,6 +115,44 @@ class ResidentsScreenScreenshotTest {
         screenshots("residents_unreachable") {
             ResidentsScreen(
                 state = ResidentsState(isLoading = false, refreshProblem = RefreshProblem.Unavailable),
+                onIntent = {},
+            )
+        }
+    }
+
+    @Test
+    fun `given colleagues' notes arrived recently, when the list is shown, then it matches the screenshots`() {
+        screenshots("residents_updated") {
+            ResidentsScreen(
+                state = ResidentsState(
+                    isLoading = false,
+                    residents = residents,
+                    freshness = Freshness.Updated(at = Instant.parse("2026-11-01T10:42:00Z")),
+                ),
+                onIntent = {},
+            )
+        }
+    }
+
+    @Test
+    fun `given colleagues' notes haven't arrived, when the list is shown, then it matches the screenshots`() {
+        screenshots("residents_never_updated") {
+            ResidentsScreen(
+                state = ResidentsState(isLoading = false, residents = residents, freshness = Freshness.NeverUpdated),
+                onIntent = {},
+            )
+        }
+    }
+
+    @Test
+    fun `given colleagues' notes are out of date, when the list is shown, then it matches the screenshots`() {
+        screenshots("residents_out_of_date") {
+            ResidentsScreen(
+                state = ResidentsState(
+                    isLoading = false,
+                    residents = residents,
+                    freshness = Freshness.OutOfDate(since = Instant.parse("2026-11-01T07:15:00Z")),
+                ),
                 onIntent = {},
             )
         }
