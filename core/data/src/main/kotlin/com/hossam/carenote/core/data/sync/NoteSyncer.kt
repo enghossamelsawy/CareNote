@@ -14,11 +14,14 @@ import java.time.Clock
 import javax.inject.Inject
 
 internal enum class SyncOutcome {
-    /** The queue is empty. */
+    /** Everything was sent, or read. */
     Done,
 
     /** The server can't be reached right now; whatever runs this should try again later. */
     RetryLater,
+
+    /** The server answered with something unusable; trying again won't help until the server changes. */
+    Failed,
 }
 
 /**

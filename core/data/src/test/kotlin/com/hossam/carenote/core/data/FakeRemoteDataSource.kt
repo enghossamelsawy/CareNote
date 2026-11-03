@@ -37,6 +37,12 @@ class FakeRemoteDataSource : RemoteDataSource {
     /** Answer per cursor, null for the first page; a cursor not listed answers an empty last page. */
     val notePages = mutableMapOf<String?, FetchResult<NotePage>>()
 
-    override suspend fun fetchNotes(after: String?): FetchResult<NotePage> = notePages[after]
-        ?: FetchResult.Success(NotePage(notes = emptyList(), cursor = after.orEmpty(), hasMore = false))
+    /** Every cursor notes were fetched after, in order. */
+    val fetchedCursors = mutableListOf<String?>()
+
+    override suspend fun fetchNotes(after: String?): FetchResult<NotePage> {
+        fetchedCursors += after
+        return notePages[after]
+            ?: FetchResult.Success(NotePage(notes = emptyList(), cursor = after.orEmpty(), hasMore = false))
+    }
 }
