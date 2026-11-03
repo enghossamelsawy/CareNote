@@ -3,13 +3,14 @@ package com.hossam.carenote.core.data
 import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.Resident
 import com.hossam.carenote.core.network.FetchResult
+import com.hossam.carenote.core.network.NotePage
 import com.hossam.carenote.core.network.RemoteDataSource
 import com.hossam.carenote.core.network.SendResult
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 import java.util.UUID
 
-/** A server the test scripts: say how each note is answered and what the residents call returns. */
+/** A server the test scripts: say how each note is answered and what the residents and notes calls return. */
 class FakeRemoteDataSource : RemoteDataSource {
     /** Answer per note; notes not listed are accepted. */
     val sendResults = mutableMapOf<UUID, SendResult>()
@@ -32,4 +33,10 @@ class FakeRemoteDataSource : RemoteDataSource {
     }
 
     override suspend fun fetchResidents(): FetchResult<List<Resident>> = residentsResult
+
+    /** Answer per cursor, null for the first page; a cursor not listed answers an empty last page. */
+    val notePages = mutableMapOf<String?, FetchResult<NotePage>>()
+
+    override suspend fun fetchNotes(after: String?): FetchResult<NotePage> = notePages[after]
+        ?: FetchResult.Success(NotePage(notes = emptyList(), cursor = after.orEmpty(), hasMore = false))
 }

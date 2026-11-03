@@ -9,7 +9,19 @@ interface RemoteDataSource {
     suspend fun sendNote(note: CareNote): SendResult
 
     suspend fun fetchResidents(): FetchResult<List<Resident>>
+
+    /**
+     * The notes the server received after [after], in the order it received them, one page at a time: null for
+     * the first page, then the [NotePage.cursor] of the page before. Includes the notes this phone sent itself.
+     */
+    suspend fun fetchNotes(after: String?): FetchResult<NotePage>
 }
+
+/**
+ * One page of notes from the server, all of them [com.hossam.carenote.core.model.SyncStatus.SYNCED].
+ * [cursor] is opaque: it only means "after this page", and is passed back as is to get the next one.
+ */
+data class NotePage(val notes: List<CareNote>, val cursor: String, val hasMore: Boolean)
 
 /** What the sync worker needs to know: done, try again later, or give up on this note. */
 sealed interface SendResult {

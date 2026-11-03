@@ -1,6 +1,7 @@
 package com.hossam.carenote.core.network
 
 import com.hossam.carenote.core.network.model.NetworkCareNote
+import com.hossam.carenote.core.network.model.NetworkNotePage
 import com.hossam.carenote.core.network.model.NetworkResident
 import okhttp3.HttpUrl
 import okhttp3.MediaType.Companion.toMediaType
@@ -12,6 +13,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Query
 
 /**
  * Sent with every note, set to the note's id. Retrying with the same key never stores the note twice:
@@ -28,6 +30,10 @@ internal interface CareNoteApi {
 
     @GET("residents")
     suspend fun residents(): List<NetworkResident>
+
+    /** Retrofit leaves out a null [after], which asks for the first page. */
+    @GET("notes")
+    suspend fun notes(@Query("after") after: String?, @Query("limit") limit: Int): NetworkNotePage
 }
 
 /** Used by the Hilt module and by tests, so both build the API the same way. */
