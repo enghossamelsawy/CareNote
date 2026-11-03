@@ -76,4 +76,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    // Request logging, debug builds only (see DebugNetworkModule).
+    debugImplementation(libs.okhttp.logging.interceptor)
 }

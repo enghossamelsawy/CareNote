@@ -1,12 +1,11 @@
 package com.hossam.carenote.core.network.di
 
-import com.hossam.carenote.core.common.logging.Logger
-import com.hossam.carenote.core.network.BuildConfig
 import com.hossam.carenote.core.network.CareNoteApi
 import com.hossam.carenote.core.network.RemoteDataSource
 import com.hossam.carenote.core.network.RetrofitRemoteDataSource
 import com.hossam.carenote.core.network.careNoteApi
 import dagger.Binds
+import dagger.BindsOptionalOf
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,7 +14,7 @@ import dagger.multibindings.Multibinds
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
+import java.util.Optional
 import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
 import javax.inject.Singleton
@@ -27,6 +26,14 @@ import javax.inject.Singleton
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ExtraInterceptors
+
+/**
+ * The interceptor that logs requests. Only debug builds bind one, so this module never needs to know
+ * the build type. Not part of [ExtraInterceptors]: a set has no order, and logging must come first.
+ */
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class LoggingInterceptor
 
 /** The server's address, ending in "/". Each app flavor provides its own. */
 @Qualifier
@@ -40,6 +47,11 @@ internal abstract class NetworkModule {
     @ExtraInterceptors
     abstract fun extraInterceptors(): Set<Interceptor>
 
+    /** Release builds bind nothing here, so they never log requests. */
+    @BindsOptionalOf
+    @LoggingInterceptor
+    abstract fun loggingInterceptor(): Interceptor
+
     @Binds
     abstract fun bindRemoteDataSource(impl: RetrofitRemoteDataSource): RemoteDataSource
 
@@ -47,22 +59,17 @@ internal abstract class NetworkModule {
         @Provides
         @Singleton
         @JvmSuppressWildcards
-        fun provideOkHttpClient(@ExtraInterceptors extraInterceptors: Set<Interceptor>, logger: Logger): OkHttpClient =
-            OkHttpClient.Builder()
-                .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .apply {
-                    // First, so it also logs what the mock server answers. Debug only, and never bodies:
-                    // they hold transcripts and vitals.
-                    if (BuildConfig.DEBUG) {
-                        addInterceptor(
-                            HttpLoggingInterceptor { message -> logger.d(HTTP_TAG, message) }
-                                .apply { level = HttpLoggingInterceptor.Level.BASIC },
-                        )
-                    }
-                    extraInterceptors.forEach { addInterceptor(it) }
-                }.build()
+        fun provideOkHttpClient(
+            @ExtraInterceptors extraInterceptors: Set<Interceptor>,
+            @LoggingInterceptor logging: Optional<Interceptor>,
+        ): OkHttpClient = OkHttpClient.Builder()
+            .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            // First, so it also logs what the mock server answers.
+            .apply { logging.ifPresent(::addInterceptor) }
+            .apply { extraInterceptors.forEach(::addInterceptor) }
+            .build()
 
         @Provides
         @Singleton
@@ -70,6 +77,5 @@ internal abstract class NetworkModule {
             careNoteApi(baseUrl = baseUrl.toHttpUrl(), client = client)
 
         private const val TIMEOUT_SECONDS = 20L
-        private const val HTTP_TAG = "CareNoteHttp"
     }
 }
