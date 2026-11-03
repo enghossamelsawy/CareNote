@@ -9,6 +9,7 @@ import androidx.room.Upsert
 import com.hossam.carenote.core.database.model.CareNoteEntity
 import com.hossam.carenote.core.database.model.SyncCursorEntity
 import com.hossam.carenote.core.database.model.SyncCursorEntity.Companion.NOTES_FEED
+import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 
 /** Notes pulled from the server, and how far the phone has read the server's notes feed. */
@@ -16,6 +17,10 @@ import java.time.Instant
 interface NoteFeedDao {
     @Query("SELECT * FROM sync_cursors WHERE feed = '$NOTES_FEED'")
     suspend fun notesCursor(): SyncCursorEntity?
+
+    /** See [SyncCursorEntity.caughtUpAt]; null too while there is no cursor yet. */
+    @Query("SELECT caughtUpAt FROM sync_cursors WHERE feed = '$NOTES_FEED'")
+    fun observeNotesCaughtUpAt(): Flow<Instant?>
 
     /**
      * Stores one page of pulled notes and moves the cursor past it, in one transaction: if the app is killed

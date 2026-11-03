@@ -5,11 +5,13 @@ import androidx.work.WorkManager
 import com.hossam.carenote.core.data.network.ConnectivityManagerNetworkMonitor
 import com.hossam.carenote.core.data.repository.OfflineFirstCareNoteRepository
 import com.hossam.carenote.core.data.repository.OfflineFirstResidentRepository
+import com.hossam.carenote.core.data.repository.RoomNoteFeedRepository
 import com.hossam.carenote.core.data.sync.WorkManagerSyncScheduler
 import com.hossam.carenote.core.data.time.TickingCurrentTime
 import com.hossam.carenote.core.domain.repository.CareNoteRepository
 import com.hossam.carenote.core.domain.repository.CurrentTime
 import com.hossam.carenote.core.domain.repository.NetworkMonitor
+import com.hossam.carenote.core.domain.repository.NoteFeedRepository
 import com.hossam.carenote.core.domain.repository.ResidentRepository
 import com.hossam.carenote.core.domain.repository.SyncScheduler
 import com.hossam.carenote.core.domain.vitals.EnglishVitalsVocabulary
@@ -39,6 +41,9 @@ internal abstract class DataModule {
 
     @Binds
     abstract fun bindCurrentTime(impl: TickingCurrentTime): CurrentTime
+
+    @Binds
+    abstract fun bindNoteFeedRepository(impl: RoomNoteFeedRepository): NoteFeedRepository
 
     companion object {
         /** Injected instead of calling Instant.now(), so tests can use a fixed time. */

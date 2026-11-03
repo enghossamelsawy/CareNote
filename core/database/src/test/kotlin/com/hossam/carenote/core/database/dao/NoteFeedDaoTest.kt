@@ -7,6 +7,7 @@ import com.hossam.carenote.core.database.model.SyncCursorEntity
 import com.hossam.carenote.core.database.outboxEntry
 import com.hossam.carenote.core.database.resident
 import com.hossam.carenote.core.model.SyncStatus
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -99,6 +100,22 @@ class NoteFeedDaoTest {
 
         // Then
         assertNull(cursor)
+    }
+
+    @Test
+    fun `given no pull yet, when pages are stored, then the caught-up time appears only after the last`() = runTest {
+        // Given
+        assertNull(dao.observeNotesCaughtUpAt().first())
+
+        // When
+        dao.insertPulled(emptyList(), cursor = "c-1", caughtUpAt = null)
+        val afterFirstPage = dao.observeNotesCaughtUpAt().first()
+        dao.insertPulled(emptyList(), cursor = "c-2", caughtUpAt = caughtUpAt)
+        val afterLastPage = dao.observeNotesCaughtUpAt().first()
+
+        // Then
+        assertNull(afterFirstPage)
+        assertEquals(caughtUpAt, afterLastPage)
     }
 
     private fun pulled(id: String, residentId: String) = careNote(id, residentId, syncStatus = SyncStatus.SYNCED)
