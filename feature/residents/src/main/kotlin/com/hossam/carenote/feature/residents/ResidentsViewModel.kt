@@ -34,9 +34,9 @@ class ResidentsViewModel @Inject constructor(
         ) { summaries, alerts, overdue ->
             summaries.map { it.asItem(alert = alerts[it.resident.id], overdueSince = overdue[it.resident.id]) }
         }
-        residentItems
-            .onEach { items -> setState { copy(isLoading = false, residents = items) } }
-            .launchIn(viewModelScope)
+        // Only while shown: this is the first screen, so its ViewModel lives as long as the app, and the overdue
+        // check ticks every minute.
+        residentItems.collectWhileShown { items -> setState { copy(isLoading = false, residents = items) } }
         observeNetworkStatus()
             .onEach { online -> setState { copy(isOffline = !online) } }
             .launchIn(viewModelScope)

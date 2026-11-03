@@ -20,7 +20,14 @@ import com.hossam.carenote.core.testing.repository.FakeCareNoteRepository
 import com.hossam.carenote.core.testing.repository.FakeCurrentTime
 import com.hossam.carenote.core.testing.repository.FakeNetworkMonitor
 import com.hossam.carenote.core.testing.repository.FakeResidentRepository
+import com.hossam.carenote.core.ui.mvi.MviViewModel
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -29,6 +36,7 @@ import org.junit.Rule
 import org.junit.Test
 import java.time.Instant
 import java.util.UUID
+import kotlin.time.Duration.Companion.seconds
 
 class ResidentsViewModelTest {
     @get:Rule
@@ -262,7 +270,33 @@ class ResidentsViewModelTest {
         assertEquals(null, viewModel.state.value.refreshProblem)
     }
 
-    private fun createViewModel() = ResidentsViewModel(
+    @Test
+    fun `given the list was hidden, when a note syncs meanwhile, then the count updates once it shows again`() =
+        runTest {
+            // Given
+            residentRepository.setResidents(listOf(anna))
+            careNoteRepository.save(note(id = 1, residentId = anna.id))
+            val viewModel = newViewModel()
+            show(viewModel).cancel()
+            advanceTimeBy(MviViewModel.STOP_TIMEOUT + 1.seconds)
+            careNoteRepository.setSyncStatus(UUID(0, 1), SyncStatus.SYNCED)
+            assertEquals(1, viewModel.state.value.residents.single().pendingCount)
+
+            // When
+            show(viewModel)
+
+            // Then
+            assertEquals(0, viewModel.state.value.residents.single().pendingCount)
+        }
+
+    /** A view model whose screen is shown; the residents only update while it is. */
+    private fun TestScope.createViewModel() = newViewModel().also { show(it) }
+
+    /** Collects the state like the visible screen would, until the returned job is cancelled. */
+    private fun TestScope.show(viewModel: ResidentsViewModel): Job =
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.state.collect() }
+
+    private fun newViewModel() = ResidentsViewModel(
         observeResidentsWithPendingCount = ObserveResidentsWithPendingCountUseCase(
             residentRepository = residentRepository,
             careNoteRepository = careNoteRepository,
