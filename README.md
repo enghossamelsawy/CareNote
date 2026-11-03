@@ -110,7 +110,8 @@ sequenceDiagram
   server *refuses* is set aside as "not synced" and the queue moves on. Retry only works on such a note, so
   a double tap or a note that synced meanwhile changes nothing.
 - **One sync at a time.** Unique work (`note-sync`, `APPEND_OR_REPLACE`) only runs with a network and
-  backs off exponentially from 30 seconds. A note saved during a sync is picked up right after it.
+  backs off exponentially from 30 seconds. A note saved during a sync is picked up right after it; one saved
+  while a sync is still waiting for a network adds nothing, since that sync will read the queue anyway.
 
 ## Edits are revisions, not updates
 
