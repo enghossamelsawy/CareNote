@@ -9,6 +9,7 @@ import com.hossam.carenote.core.domain.usecase.ObserveResidentUseCase
 import com.hossam.carenote.core.domain.usecase.ParseVitalsUseCase
 import com.hossam.carenote.core.domain.usecase.SaveCareNoteUseCase
 import com.hossam.carenote.core.domain.usecase.TranscribeSpeechUseCase
+import com.hossam.carenote.core.domain.vitals.EnglishVitalsVocabulary
 import com.hossam.carenote.core.domain.vitals.VitalsParser
 import com.hossam.carenote.core.domain.vitals.VitalsValidator
 import com.hossam.carenote.core.model.CareNote
@@ -993,7 +994,7 @@ class RecordViewModelTest {
         observeResident = ObserveResidentUseCase(residentRepository),
         getCareNote = GetCareNoteUseCase(careNoteRepository),
         transcribeSpeech = TranscribeSpeechUseCase(speechTranscriber),
-        parseVitals = ParseVitalsUseCase(VitalsParser()),
+        parseVitals = ParseVitalsUseCase(VitalsParser(listOf(EnglishVitalsVocabulary))),
         saveCareNote = SaveCareNoteUseCase(
             careNoteRepository = careNoteRepository,
             vitalsValidator = VitalsValidator(),

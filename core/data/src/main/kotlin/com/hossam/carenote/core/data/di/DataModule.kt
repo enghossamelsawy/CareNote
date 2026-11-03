@@ -12,6 +12,8 @@ import com.hossam.carenote.core.domain.repository.CurrentTime
 import com.hossam.carenote.core.domain.repository.NetworkMonitor
 import com.hossam.carenote.core.domain.repository.ResidentRepository
 import com.hossam.carenote.core.domain.repository.SyncScheduler
+import com.hossam.carenote.core.domain.vitals.EnglishVitalsVocabulary
+import com.hossam.carenote.core.domain.vitals.VitalsParser
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -49,5 +51,9 @@ internal abstract class DataModule {
          */
         @Provides
         fun provideWorkManager(@ApplicationContext context: Context): WorkManager = WorkManager.getInstance(context)
+
+        /** The languages dictation is understood in. Adding one means adding its vocabulary here. */
+        @Provides
+        fun provideVitalsParser(): VitalsParser = VitalsParser(listOf(EnglishVitalsVocabulary))
     }
 }

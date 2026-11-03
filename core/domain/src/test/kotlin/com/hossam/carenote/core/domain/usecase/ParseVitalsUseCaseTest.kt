@@ -1,12 +1,13 @@
 package com.hossam.carenote.core.domain.usecase
 
+import com.hossam.carenote.core.domain.vitals.EnglishVitalsVocabulary
 import com.hossam.carenote.core.domain.vitals.VitalsParser
 import com.hossam.carenote.core.model.Vitals
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ParseVitalsUseCaseTest {
-    private val parseVitals = ParseVitalsUseCase(VitalsParser())
+    private val parseVitals = ParseVitalsUseCase(VitalsParser(listOf(EnglishVitalsVocabulary)))
 
     @Test
     fun `given a dictated note, when parsing, then its vitals are returned`() {

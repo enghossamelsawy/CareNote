@@ -1,7 +1,6 @@
 package com.hossam.carenote.core.domain.vitals
 
 import com.hossam.carenote.core.model.Vitals
-import javax.inject.Inject
 
 /**
  * Pulls vital signs out of a dictated transcript, using the keywords of every given vocabulary,
@@ -14,9 +13,6 @@ import javax.inject.Inject
  * gives no pulse rather than 72, since a plausible wrong value is worse than a missing one.
  */
 class VitalsParser(vocabularies: List<VitalsVocabulary>) {
-    @Inject
-    constructor() : this(listOf(EnglishVitalsVocabulary))
-
     private val fillers = vocabularies.flatMap { it.fillerWords }
 
     // Built once per parser; null when no vocabulary has words for that vital.
