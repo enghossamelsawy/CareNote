@@ -1,0 +1,105 @@
+package com.hossam.carenote.core.database.dao
+
+import com.hossam.carenote.core.database.CareNoteDatabase
+import com.hossam.carenote.core.database.careNote
+import com.hossam.carenote.core.database.inMemoryDatabase
+import com.hossam.carenote.core.database.model.SyncCursorEntity
+import com.hossam.carenote.core.database.outboxEntry
+import com.hossam.carenote.core.database.resident
+import com.hossam.carenote.core.model.SyncStatus
+import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import java.time.Instant
+
+@RunWith(RobolectricTestRunner::class)
+class NoteFeedDaoTest {
+    private val caughtUpAt = Instant.ofEpochSecond(1_700_000_000)
+    private lateinit var database: CareNoteDatabase
+    private lateinit var dao: NoteFeedDao
+
+    @Before
+    fun setUp() = runTest {
+        database = inMemoryDatabase()
+        dao = database.noteFeedDao()
+        database.residentDao().upsertAll(listOf(resident("r1"), resident("r2")))
+    }
+
+    @After
+    fun tearDown() {
+        database.close()
+    }
+
+    @Test
+    fun `given a page of new notes, when storing it, then they are synced, not queued, and the cursor moves`() =
+        runTest {
+            // Given
+            val notes = listOf(pulled("a", "r1"), pulled("b", "r2"))
+
+            // When
+            dao.insertPulled(notes, cursor = "c-1", caughtUpAt = caughtUpAt)
+
+            // Then
+            assertEquals(notes, listOf("a", "b").map { database.careNoteDao().getById(it) })
+            assertEquals(emptyList<Any>(), database.outboxDao().oldest(limit = 10))
+            assertEquals(SyncCursorEntity(SyncCursorEntity.NOTES_FEED, "c-1", caughtUpAt), dao.notesCursor())
+        }
+
+    @Test
+    fun `given a note this phone hasn't sent yet, when the server's copy arrives, then the phone's stays`() = runTest {
+        // Given
+        database.careNoteDao().insertAndQueue(careNote("a", "r1"), outboxEntry("a"))
+
+        // When
+        dao.insertPulled(listOf(pulled("a", "r1")), cursor = "c-1", caughtUpAt = caughtUpAt)
+
+        // Then
+        assertEquals(SyncStatus.PENDING, database.careNoteDao().getById("a")?.syncStatus)
+        assertEquals(listOf("a"), database.outboxDao().oldest(limit = 10).map { it.noteId })
+    }
+
+    @Test
+    fun `given a note for an unknown resident, when storing its page, then only it is skipped`() = runTest {
+        // When
+        val skipped = dao.insertPulled(
+            listOf(pulled("a", "r1"), pulled("b", "unknown")),
+            cursor = "c-1",
+            caughtUpAt = caughtUpAt,
+        )
+
+        // Then
+        assertEquals(listOf("b"), skipped)
+        assertEquals("a", database.careNoteDao().getById("a")?.id)
+        assertNull(database.careNoteDao().getById("b"))
+        assertEquals("c-1", dao.notesCursor()?.cursor)
+    }
+
+    @Test
+    fun `given a page that isn't the last, when storing it, then the cursor moves but the caught-up time stays`() =
+        runTest {
+            // Given
+            dao.insertPulled(emptyList(), cursor = "c-1", caughtUpAt = caughtUpAt)
+
+            // When
+            dao.insertPulled(listOf(pulled("a", "r1")), cursor = "c-2", caughtUpAt = null)
+
+            // Then
+            assertEquals(SyncCursorEntity(SyncCursorEntity.NOTES_FEED, "c-2", caughtUpAt), dao.notesCursor())
+        }
+
+    @Test
+    fun `given no pull yet, when reading the cursor, then there is none`() = runTest {
+        // When
+        val cursor = dao.notesCursor()
+
+        // Then
+        assertNull(cursor)
+    }
+
+    private fun pulled(id: String, residentId: String) = careNote(id, residentId, syncStatus = SyncStatus.SYNCED)
+}

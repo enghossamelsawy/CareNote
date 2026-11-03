@@ -7,9 +7,11 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,6 +73,25 @@ class MigrationsTest {
         assertThrows(SQLiteConstraintException::class.java) {
             insertNote(db, id = "other edit", createdAt = 3_000, revisionOf = "original")
         }
+        migrated.close()
+    }
+
+    @Test
+    fun `given notes in a v3 database, when migrating to v4, then they stay and no feed has been read yet`() = runTest {
+        // Given
+        createDatabase(version = 3).use { db ->
+            db.execSQL("INSERT INTO residents (id, firstName, lastName, room) VALUES ('r1', 'Anna', 'Becker', '101')")
+            insertNote(db, id = "a", createdAt = 1_000)
+            db.execSQL("INSERT INTO outbox (noteId, enqueuedAt, attempts) VALUES ('a', 1000, 0)")
+        }
+
+        // When
+        val migrated = openWithMigrations()
+
+        // Then
+        assertEquals("a", migrated.careNoteDao().getById("a")?.id)
+        assertEquals(listOf("a"), migrated.outboxDao().oldest(limit = 10).map { it.noteId })
+        assertNull(migrated.noteFeedDao().notesCursor())
         migrated.close()
     }
 

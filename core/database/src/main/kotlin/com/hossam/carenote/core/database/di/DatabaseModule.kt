@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.hossam.carenote.core.database.CareNoteDatabase
 import com.hossam.carenote.core.database.Migrations
 import com.hossam.carenote.core.database.dao.CareNoteDao
+import com.hossam.carenote.core.database.dao.NoteFeedDao
 import com.hossam.carenote.core.database.dao.OutboxDao
 import com.hossam.carenote.core.database.dao.ResidentDao
 import dagger.Module
@@ -32,4 +33,7 @@ object DatabaseModule {
 
     @Provides
     fun provideOutboxDao(database: CareNoteDatabase): OutboxDao = database.outboxDao()
+
+    @Provides
+    fun provideNoteFeedDao(database: CareNoteDatabase): NoteFeedDao = database.noteFeedDao()
 }

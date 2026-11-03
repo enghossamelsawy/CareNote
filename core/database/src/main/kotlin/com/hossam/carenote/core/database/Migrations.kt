@@ -36,5 +36,18 @@ object Migrations {
         }
     }
 
-    val all: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+    /**
+     * Adds [com.hossam.carenote.core.database.model.SyncCursorEntity], for pulling notes from the server. Only a
+     * new table: notes and the outbox stay as they are, and the first pull starts from the server's beginning.
+     */
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `sync_cursors` (`feed` TEXT NOT NULL, `cursor` TEXT NOT NULL, " +
+                    "`caughtUpAt` INTEGER, PRIMARY KEY(`feed`))",
+            )
+        }
+    }
+
+    val all: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 }
