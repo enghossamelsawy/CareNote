@@ -42,6 +42,7 @@ class MockServerInterceptor internal constructor(
                 path = request.url.pathSegments.filter { it.isNotEmpty() },
                 idempotencyKey = request.header(IDEMPOTENCY_KEY_HEADER),
                 body = request.body?.let { body -> Buffer().also(body::writeTo).readUtf8() },
+                query = request.url.queryParameterNames.associateWith { request.url.queryParameter(it) },
             )
         }
 

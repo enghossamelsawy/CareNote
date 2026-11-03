@@ -48,6 +48,19 @@ class MockServerInterceptorTest {
     }
 
     @Test
+    fun `given notes are requested with a cursor, when sending, then the server receives the query`() {
+        // Given: a cursor the server never gave out is a bad request, so a 400 shows "after" got through
+        val request = get("notes?after=7&limit=100")
+
+        // When
+        val code = client.newCall(request).execute().use { it.code }
+
+        // Then
+        assertEquals(MockServer.BAD_REQUEST, code)
+        assertEquals(MockServer.OK, client.newCall(get("notes?limit=100")).execute().use { it.code })
+    }
+
+    @Test
     fun `given offline is on, when requesting, then it fails like airplane mode`() {
         // Given
         settings.update { copy(offline = true) }
