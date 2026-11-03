@@ -1,6 +1,8 @@
 package com.hossam.carenote.core.network.di
 
 import com.hossam.carenote.core.network.CareNoteApi
+import com.hossam.carenote.core.network.ClientInfo
+import com.hossam.carenote.core.network.DefaultHeadersInterceptor
 import com.hossam.carenote.core.network.RemoteDataSource
 import com.hossam.carenote.core.network.RetrofitRemoteDataSource
 import com.hossam.carenote.core.network.careNoteApi
@@ -29,7 +31,7 @@ annotation class ExtraInterceptors
 
 /**
  * The interceptor that logs requests. Only debug builds bind one, so this module never needs to know
- * the build type. Not part of [ExtraInterceptors]: a set has no order, and logging must come first.
+ * the build type. Not part of [ExtraInterceptors]: a set has no order, and logging must come before them.
  */
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
@@ -60,13 +62,16 @@ internal abstract class NetworkModule {
         @Singleton
         @JvmSuppressWildcards
         fun provideOkHttpClient(
+            clientInfo: ClientInfo,
             @ExtraInterceptors extraInterceptors: Set<Interceptor>,
             @LoggingInterceptor logging: Optional<Interceptor>,
         ): OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            // First, so it also logs what the mock server answers.
+            // First, so the logs and the mock server see each request as the real server would.
+            .addInterceptor(DefaultHeadersInterceptor(clientInfo))
+            // Before the mock server, which answers requests itself, so its answers are logged too.
             .apply { logging.ifPresent(::addInterceptor) }
             .apply { extraInterceptors.forEach(::addInterceptor) }
             .build()
