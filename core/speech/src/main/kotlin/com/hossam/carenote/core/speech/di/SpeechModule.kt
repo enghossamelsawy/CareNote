@@ -3,12 +3,15 @@ package com.hossam.carenote.core.speech.di
 import com.hossam.carenote.core.domain.speech.SpeechTranscriber
 import com.hossam.carenote.core.speech.ActiveSpeechEngine
 import com.hossam.carenote.core.speech.AndroidSpeechRecognizerFactory
+import com.hossam.carenote.core.speech.ConnectivityUnmeteredNetwork
 import com.hossam.carenote.core.speech.DemoSpeechTranscriber
 import com.hossam.carenote.core.speech.MlKitSpeechTranscriber
 import com.hossam.carenote.core.speech.PlatformSpeechTranscriber
 import com.hossam.carenote.core.speech.SelectingSpeechTranscriber
 import com.hossam.carenote.core.speech.SpeechEngine
+import com.hossam.carenote.core.speech.SpeechModel
 import com.hossam.carenote.core.speech.SpeechRecognizerFactory
+import com.hossam.carenote.core.speech.UnmeteredNetwork
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -36,6 +39,13 @@ internal abstract class SpeechModule {
 
     @Binds
     abstract fun bindSpeechRecognizerFactory(impl: AndroidSpeechRecognizerFactory): SpeechRecognizerFactory
+
+    /** The model downloaded at app start; ML Kit's is the only one that needs downloading. */
+    @Binds
+    abstract fun bindSpeechModel(impl: MlKitSpeechTranscriber): SpeechModel
+
+    @Binds
+    abstract fun bindUnmeteredNetwork(impl: ConnectivityUnmeteredNetwork): UnmeteredNetwork
 
     companion object {
         /** Preference order. Adding an engine or changing the order only touches this list. */

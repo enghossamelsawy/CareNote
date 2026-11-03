@@ -167,6 +167,20 @@ class OfflineFirstCareNoteRepositoryTest {
         assertFalse(repository.observeNotes("res-1").first().any { it.id == uuid(3) })
     }
 
+    @Test
+    fun `given an edit refused for another reason, when saving it, then it stays a storage error`() = runTest {
+        // Given: the original has no edit yet, but the edit names a resident the database doesn't know
+        val original = careNote(id = 1)
+        repository.save(original)
+        val edit = careNote(id = 2, residentId = "res-unknown").copy(revisionOf = original.id)
+
+        // When
+        val error = runCatching { repository.save(edit) }.exceptionOrNull()
+
+        // Then
+        assertTrue(error is StorageException)
+    }
+
     private fun uuid(id: Int): UUID = UUID(0, id.toLong())
 
     private fun careNote(id: Int, residentId: String = "res-1", createdAt: Instant = Instant.EPOCH) = CareNote(

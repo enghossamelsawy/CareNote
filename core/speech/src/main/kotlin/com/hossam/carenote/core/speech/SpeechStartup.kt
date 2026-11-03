@@ -11,16 +11,16 @@ import javax.inject.Inject
  * another unmetered connection; until then, recording uses Android's own recognizer.
  */
 class SpeechStartup @Inject internal constructor(
-    private val mlKitSpeechTranscriber: MlKitSpeechTranscriber,
+    private val speechModel: SpeechModel,
     private val unmeteredNetwork: UnmeteredNetwork,
     @ApplicationScope private val applicationScope: CoroutineScope,
 ) {
     fun start() {
         applicationScope.launch {
             // Only listens for Wi-Fi when there is something to download.
-            if (!mlKitSpeechTranscriber.canDownloadModel()) return@launch
+            if (!speechModel.canDownloadModel()) return@launch
             unmeteredNetwork.await()
-            mlKitSpeechTranscriber.downloadModel()
+            speechModel.downloadModel()
         }
     }
 }

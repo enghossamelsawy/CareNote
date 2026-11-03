@@ -33,16 +33,17 @@ import javax.inject.Inject
  * Segments are joined and sent as a growing [TranscriptionEvent.Partial]; the single
  * [TranscriptionEvent.Final] comes when ML Kit completes. Stopping early means cancelling the collection.
  */
-internal class MlKitSpeechTranscriber @Inject constructor(private val logger: Logger) : SpeechEngine {
+internal class MlKitSpeechTranscriber @Inject constructor(private val logger: Logger) :
+    SpeechEngine,
+    SpeechModel {
     override val name = "ML Kit"
 
     override suspend fun isReady(): Boolean = guarded(default = false) { status() == FeatureStatus.AVAILABLE }
 
-    /** True when this phone can have the model but hasn't downloaded it yet. Never throws. */
-    suspend fun canDownloadModel(): Boolean = guarded(default = false) { status() == FeatureStatus.DOWNLOADABLE }
+    override suspend fun canDownloadModel(): Boolean =
+        guarded(default = false) { status() == FeatureStatus.DOWNLOADABLE }
 
-    /** Downloads the model if the device can have it. Slow; call it in the background, not when recording. */
-    suspend fun downloadModel() {
+    override suspend fun downloadModel() {
         guarded(default = Unit) {
             if (status() != FeatureStatus.DOWNLOADABLE) return@guarded
             logger.i(TAG, "Downloading the ML Kit speech model")

@@ -11,11 +11,16 @@ import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 /** A connection that isn't paid by the megabyte, such as Wi-Fi, for downloads too large for mobile data. */
-internal class UnmeteredNetwork @Inject constructor(@ApplicationContext context: Context) {
+internal interface UnmeteredNetwork {
+    /** Returns at once on such a connection, otherwise when the phone joins one. */
+    suspend fun await()
+}
+
+internal class ConnectivityUnmeteredNetwork @Inject constructor(@ApplicationContext context: Context) :
+    UnmeteredNetwork {
     private val connectivityManager = checkNotNull(context.getSystemService(ConnectivityManager::class.java))
 
-    /** Returns at once on such a connection, otherwise when the phone joins one. */
-    suspend fun await() {
+    override suspend fun await() {
         callbackFlow {
             val callback = object : ConnectivityManager.NetworkCallback() {
                 override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
