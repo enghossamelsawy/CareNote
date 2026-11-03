@@ -18,7 +18,7 @@ dependencies {
     // Background sync: WorkManager, with workers created by Hilt.
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
-    "ksp"(libs.androidx.hilt.compiler)
+    ksp(libs.androidx.hilt.compiler)
 
     testImplementation(libs.androidx.room.runtime)
     testImplementation(libs.kotlinx.coroutines.test)
