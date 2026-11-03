@@ -3,6 +3,7 @@ package com.hossam.carenote.core.data.sync
 import com.hossam.carenote.core.data.mapper.asExternalModel
 import com.hossam.carenote.core.database.dao.CareNoteDao
 import com.hossam.carenote.core.database.dao.OutboxDao
+import com.hossam.carenote.core.database.model.OutboxEntity
 import com.hossam.carenote.core.model.SyncStatus
 import com.hossam.carenote.core.network.RemoteDataSource
 import com.hossam.carenote.core.network.SendResult
@@ -45,40 +46,49 @@ internal class NoteSyncer @Inject constructor(
     suspend fun syncPending(): SyncOutcome {
         // Only one sync runs at a time, so a note still marked as syncing is left over from one that never finished.
         careNoteDao.resetSyncing()
-        while (true) {
-            val batch = outboxDao.oldest(limit = BATCH_SIZE)
-            if (batch.isEmpty()) return SyncOutcome.Done
+        var batch = outboxDao.oldest(limit = BATCH_SIZE)
+        while (batch.isNotEmpty()) {
+            sendBatch(batch)?.let { return it }
+            batch = outboxDao.oldest(limit = BATCH_SIZE)
+        }
+        return SyncOutcome.Done
+    }
 
-            for (entry in batch) {
-                val note = careNoteDao.getById(entry.noteId)
-                if (note == null) {
-                    // Can't happen with the foreign key, but a stuck entry must never block the queue.
-                    outboxDao.delete(entry.noteId)
-                    continue
-                }
+    /**
+     * Sends [batch] and takes each sent, refused or missing note off the queue, so the next batch is a new one.
+     * Returns an outcome only when the sync must stop early.
+     */
+    private suspend fun sendBatch(batch: List<OutboxEntity>): SyncOutcome? {
+        for (entry in batch) {
+            val note = careNoteDao.getById(entry.noteId)
+            if (note == null) {
+                // Can't happen with the foreign key, but a stuck entry must never block the queue.
+                outboxDao.delete(entry.noteId)
+                continue
+            }
 
-                careNoteDao.updateSyncStatus(note.id, SyncStatus.SYNCING)
-                val result = try {
-                    remoteDataSource.sendNote(note.asExternalModel())
-                } catch (cancellation: CancellationException) {
-                    // Stopped mid-send, e.g. the network dropped: back to waiting; it's still queued.
-                    withContext(NonCancellable) { careNoteDao.updateSyncStatus(note.id, SyncStatus.PENDING) }
-                    throw cancellation
-                }
-                when (result) {
-                    SendResult.Accepted -> careNoteDao.markSynced(note.id)
+            careNoteDao.updateSyncStatus(note.id, SyncStatus.SYNCING)
+            val result = try {
+                remoteDataSource.sendNote(note.asExternalModel())
+            } catch (cancellation: CancellationException) {
+                // Stopped mid-send, e.g. the network dropped: back to waiting; it's still queued.
+                withContext(NonCancellable) { careNoteDao.updateSyncStatus(note.id, SyncStatus.PENDING) }
+                throw cancellation
+            }
+            when (result) {
+                SendResult.Accepted -> careNoteDao.markSynced(note.id)
 
-                    is SendResult.Rejected -> careNoteDao.markFailed(note.id)
+                is SendResult.Rejected -> careNoteDao.markFailed(note.id)
 
-                    // Later notes would fail the same way, so stop here instead of trying each one.
-                    SendResult.RetryLater -> {
-                        careNoteDao.updateSyncStatus(note.id, SyncStatus.PENDING)
-                        outboxDao.recordAttempt(note.id, at = clock.instant(), error = "Server unreachable")
-                        return SyncOutcome.RetryLater
-                    }
+                // Later notes would fail the same way, so stop here instead of trying each one.
+                SendResult.RetryLater -> {
+                    careNoteDao.updateSyncStatus(note.id, SyncStatus.PENDING)
+                    outboxDao.recordAttempt(note.id, at = clock.instant(), error = "Server unreachable")
+                    return SyncOutcome.RetryLater
                 }
             }
         }
+        return null
     }
 
     private companion object {
