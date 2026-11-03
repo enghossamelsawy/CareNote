@@ -5,6 +5,7 @@ import com.hossam.carenote.core.domain.repository.NoteAlreadyRevisedException
 import com.hossam.carenote.core.domain.repository.StorageException
 import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.SyncStatus
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -20,6 +21,9 @@ class FakeCareNoteRepository : CareNoteRepository {
 
     /** When true, the next [hasRevision] answers false, like a check made just before another edit was saved. */
     var missNextRevision = false
+
+    /** While set and not completed, [getNote] waits on it, like a slow read from the database. */
+    var getNoteGate: CompletableDeferred<Unit>? = null
 
     /** Every note saved so far, in the order they were saved. */
     val savedNotes: List<CareNote>
@@ -39,7 +43,10 @@ class FakeCareNoteRepository : CareNoteRepository {
         list.filter { it.syncStatus != SyncStatus.SYNCED }.groupingBy { it.residentId }.eachCount()
     }
 
-    override suspend fun getNote(noteId: UUID): CareNote? = notes.value.find { it.id == noteId }
+    override suspend fun getNote(noteId: UUID): CareNote? {
+        getNoteGate?.await()
+        return notes.value.find { it.id == noteId }
+    }
 
     override suspend fun hasRevision(noteId: UUID): Boolean {
         if (missNextRevision) {

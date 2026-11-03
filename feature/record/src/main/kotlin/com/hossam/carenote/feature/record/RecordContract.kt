@@ -19,9 +19,18 @@ data class RecordState(
     val editedFrom: EditedNote? = null,
     /** The note to edit is gone or not this resident's: nothing can be recorded or saved, only gone back from. */
     val cannotEdit: Boolean = false,
+    /**
+     * The note to edit is still being read. Nothing can be recorded or typed yet: it would be saved as an edit
+     * and replace the note, which then wouldn't open.
+     */
+    val isLoadingNote: Boolean = false,
 ) : UiState {
     val isEditing: Boolean
         get() = editedFrom != null
+
+    /** Recording or typing is allowed: no note to edit is still loading or failed to open. */
+    val canRecord: Boolean
+        get() = !cannotEdit && !isLoadingNote
 
     /** Whether going back now would throw away something the user dictated or typed. */
     val hasUnsavedNote: Boolean

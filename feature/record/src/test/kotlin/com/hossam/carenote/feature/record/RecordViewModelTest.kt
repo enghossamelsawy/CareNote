@@ -19,6 +19,7 @@ import com.hossam.carenote.core.testing.repository.FakeCareNoteRepository
 import com.hossam.carenote.core.testing.repository.FakeResidentRepository
 import com.hossam.carenote.core.testing.repository.FakeSyncScheduler
 import com.hossam.carenote.core.testing.speech.FakeSpeechTranscriber
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -840,6 +841,54 @@ class RecordViewModelTest {
 
         // Then
         assertEquals(0, speechTranscriber.listenerCount)
+        viewModel.effects.test {
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `given a note that can't be edited, when type instead is tapped, then no form opens`() = runTest {
+        // Given
+        val viewModel = createViewModel(noteId = savedNote.id)
+
+        // When
+        viewModel.onIntent(RecordIntent.TypeInsteadClicked)
+
+        // Then
+        assertEquals(RecordPhase.Idle, viewModel.state.value.phase)
+    }
+
+    @Test
+    fun `given a note still loading, when type instead is tapped, then the note opens once loaded instead`() = runTest {
+        // Given
+        careNoteRepository.save(savedNote)
+        val gate = CompletableDeferred<Unit>()
+        careNoteRepository.getNoteGate = gate
+        val viewModel = createViewModel(noteId = savedNote.id)
+        assertTrue(viewModel.state.value.isLoadingNote)
+
+        // When
+        viewModel.onIntent(RecordIntent.TypeInsteadClicked)
+        gate.complete(Unit)
+
+        // Then
+        val state = viewModel.state.value
+        assertFalse(state.isLoadingNote)
+        assertEquals(RecordPhase.Done, state.phase)
+        assertEquals("Pulse 72", state.transcript)
+    }
+
+    @Test
+    fun `given a note still loading, when record is tapped, then the microphone isn't requested`() = runTest {
+        // Given
+        careNoteRepository.save(savedNote)
+        careNoteRepository.getNoteGate = CompletableDeferred()
+        val viewModel = createViewModel(noteId = savedNote.id)
+
+        // When
+        viewModel.onIntent(RecordIntent.RecordClicked)
+
+        // Then
         viewModel.effects.test {
             expectNoEvents()
         }

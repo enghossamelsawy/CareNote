@@ -66,6 +66,7 @@ class RecordViewModel @AssistedInject constructor(
                 setState { copy(residentName = resident?.let { "${it.firstName} ${it.lastName}" }.orEmpty()) }
             }.launchIn(viewModelScope)
         if (noteId != null) {
+            setState { copy(isLoadingNote = true) }
             viewModelScope.launch { startEditing(getCareNote(noteId)) }
         }
     }
@@ -74,13 +75,17 @@ class RecordViewModel @AssistedInject constructor(
     private fun startEditing(note: CareNote?) {
         if (note == null || note.residentId != residentId) {
             // A dictation here could never be saved as an edit, so recording isn't offered at all.
-            setState { copy(cannotEdit = true) }
+            setState { copy(isLoadingNote = false, cannotEdit = true) }
             return
         }
-        if (currentState.phase != RecordPhase.Idle) return
+        if (currentState.phase != RecordPhase.Idle) {
+            setState { copy(isLoadingNote = false) }
+            return
+        }
         val vitals = note.vitals.asForm()
         setState {
             copy(
+                isLoadingNote = false,
                 phase = RecordPhase.Done,
                 transcript = note.transcript,
                 vitals = vitals,
@@ -128,7 +133,7 @@ class RecordViewModel @AssistedInject constructor(
     /** [append] keeps the note in review and adds the new words to it; otherwise the next recording starts over. */
     private fun requestRecording(append: Boolean) {
         val state = currentState
-        if (awaitingPermission || state.phase == RecordPhase.Recording || state.isSaving || state.cannotEdit) return
+        if (awaitingPermission || state.phase == RecordPhase.Recording || state.isSaving || !state.canRecord) return
         awaitingPermission = true
         appendNext = append
         sendEffect(RecordEffect.RequestMicPermission)
@@ -136,7 +141,7 @@ class RecordViewModel @AssistedInject constructor(
 
     /** The same review form as after dictating, empty; saving, checks and "Record more" all work as usual. */
     private fun typeInstead() {
-        if (currentState.phase != RecordPhase.Idle || currentState.cannotEdit) return
+        if (currentState.phase != RecordPhase.Idle || !currentState.canRecord) return
         setState { copy(phase = RecordPhase.Done, transcript = "", vitals = VitalsForm(), error = null) }
     }
 
@@ -192,7 +197,7 @@ class RecordViewModel @AssistedInject constructor(
 
     /** Only ever one recording: a second start is ignored, and no earlier listener is left holding the microphone. */
     private fun startRecording() {
-        if (currentState.phase == RecordPhase.Recording || currentState.cannotEdit) return
+        if (currentState.phase == RecordPhase.Recording || !currentState.canRecord) return
         recording?.cancel()
         val append = appendNext && currentState.phase == RecordPhase.Done
         keptTranscript = if (append) currentState.transcript else ""
