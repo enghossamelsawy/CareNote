@@ -8,9 +8,12 @@ import com.hossam.carenote.core.network.model.NetworkVitals
 import kotlinx.serialization.builtins.ListSerializer
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 
 class MockServerTest {
-    private val server = MockServer()
+    private val server = MockServer(Clock.fixed(Instant.parse("2026-11-03T10:00:00Z"), ZoneOffset.UTC))
 
     private val note = NetworkCareNote(
         id = "00000000-0000-0000-0000-000000000001",
@@ -140,6 +143,21 @@ class MockServerTest {
 
         // Then
         assertEquals(List(3) { MockServer.BAD_REQUEST }, replies.map { it.code })
+    }
+
+    @Test
+    fun `given a colleague's phone, when it adds a note, then the note is next in the feed, written now`() {
+        // Given
+        post(numberedNote(id = 1))
+
+        // When
+        val added = server.addNoteFromAnotherPhone(residentId = "res-102")
+
+        // Then
+        val page = notesPage(after = "1", limit = "100")
+        assertEquals(listOf(added), page.notes)
+        assertEquals("res-102", added.residentId)
+        assertEquals("2026-11-03T10:00:00Z", added.createdAt)
     }
 
     private fun postNote(idempotencyKey: String?, body: String) =

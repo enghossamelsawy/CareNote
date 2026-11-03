@@ -13,6 +13,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -85,6 +86,15 @@ fun DebugScreen(state: DebugState, onIntent: (DebugIntent) -> Unit, modifier: Mo
                 selected = state.latency,
                 optionLabel = { stringResource(R.string.debug_latency_range, it.millis.first, it.millis.last) },
                 onSelect = { onIntent(DebugIntent.LatencySelected(it)) },
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.debug_other_phone_note)) },
+                supportingContent = { Text(stringResource(R.string.debug_other_phone_note_hint)) },
+                trailingContent = {
+                    TextButton(onClick = { onIntent(DebugIntent.NoteFromAnotherPhoneClicked) }) {
+                        Text(stringResource(R.string.debug_other_phone_note_add))
+                    }
+                },
             )
 
             HorizontalDivider()

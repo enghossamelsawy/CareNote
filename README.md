@@ -35,8 +35,10 @@ whenever there is a connection, so a dead spot in the building never loses a wor
   earlier versions stay readable.
 - **Works offline.** Notes save locally and sync later, with a clear status on each one: waiting, syncing,
   synced or not synced (with retry).
-- **Debug menu** (mock build only): take the server offline, make requests fail or slow them down, and see
-  which speech engine was used.
+- **Colleagues' notes arrive.** Notes written on other phones are pulled from the server and show up in the
+  lists by themselves, so the overdue and attention flags count everyone's notes.
+- **Debug menu** (mock build only): take the server offline, make requests fail or slow them down, add a
+  note "from another phone" to watch it arrive, and see which speech engine was used.
 
 ## Architecture
 
@@ -112,6 +114,26 @@ sequenceDiagram
 - **One sync at a time.** Unique work (`note-sync`, `APPEND_OR_REPLACE`) only runs with a network and
   backs off exponentially from 30 seconds. A note saved during a sync is picked up right after it; one saved
   while a sync is still waiting for a network adds nothing, since that sync will read the queue anyway.
+
+### Pulling other phones' notes
+
+After sending, the same worker reads the server's notes feed, `GET /notes?after=<cursor>`, page by page until
+it is caught up.
+
+- **The cursor is the server's, in the order it received notes**, not a `createdAt` time. A note written
+  offline yesterday reaches the server today; a time-based cursor would already be past it, and phone clocks
+  can be wrong anyway. The phone only stores the cursor and sends it back.
+- **Each page and its cursor are saved in one transaction.** If the app is killed mid-pull, the next one
+  fetches the same page again; a page is never skipped or half-stored.
+- **Pulling only adds.** A note the phone already has, including one it sent itself, is left as it is, so
+  a note waiting to be sent is never touched. Nothing is updated or deleted, which fits notes being
+  append-only.
+- **Residents are refreshed first.** A note for a resident the phone doesn't know can't be stored, and once
+  the cursor is past it, it is gone for this phone; so without fresh residents, nothing is pulled. A note
+  that still names an unknown resident is skipped and its id logged.
+- **Sending comes first,** so the phone's own notes are on the server before it reads; if sending can't
+  reach the server, pulling isn't tried. A pull runs whenever a sync does: at app start, on reconnect and
+  after each save.
 
 ## Edits are revisions, not updates
 
@@ -229,5 +251,9 @@ isn't real.
   resident is overdue: one constant here, where a real home would set it per resident, shorter at night.
 - **A mock flavor instead of a fake backend.** The whole app, including failure cases, runs on any phone
   with no setup, and the debug menu makes "the server is down" a switch.
-- **Next steps** with a real backend: authentication, resolving edits of the same note made on two phones,
-  and more parser languages.
+- **A feed of every resident's notes, not one call per resident.** One cursor and one request per sync,
+  and every resident's notes are on the phone before it goes offline. A large home would narrow the feed by
+  ward, still with one cursor.
+- **Next steps** with a real backend: authentication, resolving edits of the same note made on two phones
+  (today the server keeps both, and the phone that already has an edit drops the other), pulling on a timer
+  while the app is idle, and more parser languages.

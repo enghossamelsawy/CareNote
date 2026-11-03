@@ -4,11 +4,14 @@ import com.hossam.carenote.core.network.careNoteJson
 import com.hossam.carenote.core.network.model.NetworkCareNote
 import com.hossam.carenote.core.network.model.NetworkNotePage
 import com.hossam.carenote.core.network.model.NetworkResident
+import com.hossam.carenote.core.network.model.NetworkVitals
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
+import java.time.Clock
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,7 +21,7 @@ import javax.inject.Singleton
  * rules can be tested directly.
  */
 @Singleton
-class MockServer @Inject constructor() {
+class MockServer @Inject constructor(private val clock: Clock) {
     /** Guards [notesByKey] and [received], which change together. OkHttp calls in from several threads. */
     private val lock = Any()
     private val notesByKey = mutableMapOf<String, NetworkCareNote>()
@@ -54,13 +57,32 @@ class MockServer @Inject constructor() {
             return Reply(BAD_REQUEST)
         }
         if (note.id != idempotencyKey) return Reply(BAD_REQUEST)
-        synchronized(lock) {
-            if (note.id in notesByKey) return Reply(CONFLICT)
-            notesByKey[note.id] = note
-            received += note
-            _storedNotes.value = notesByKey.values.sortedBy { it.createdAt }
-        }
-        return Reply(CREATED)
+        return if (store(note)) Reply(CREATED) else Reply(CONFLICT)
+    }
+
+    /**
+     * Stores a note as if a colleague's phone had sent it, for the debug menu: this phone gets it on its next
+     * pull, like a real colleague's note. Written now, for [residentId] or a random made-up resident.
+     */
+    fun addNoteFromAnotherPhone(residentId: String = residents.random().id): NetworkCareNote {
+        val note = NetworkCareNote(
+            id = UUID.randomUUID().toString(),
+            residentId = residentId,
+            transcript = "Written on another phone. Pulse 76.",
+            vitals = NetworkVitals(pulse = 76),
+            createdAt = clock.instant().toString(),
+        )
+        store(note)
+        return note
+    }
+
+    /** False if a note with this id is already stored. */
+    private fun store(note: NetworkCareNote): Boolean = synchronized(lock) {
+        if (note.id in notesByKey) return false
+        notesByKey[note.id] = note
+        received += note
+        _storedNotes.value = notesByKey.values.sortedBy { it.createdAt }
+        true
     }
 
     /**

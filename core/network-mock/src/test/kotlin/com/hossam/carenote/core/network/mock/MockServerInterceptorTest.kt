@@ -9,10 +9,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.io.IOException
+import java.time.Clock
 import kotlin.random.Random
 
 class MockServerInterceptorTest {
-    private val server = MockServer()
+    private val server = MockServer(Clock.systemUTC())
     private val settings = MockServerSettings().apply { update { copy(latencyMillis = 0L..0L) } }
 
     // A host that doesn't exist: if a request ever left the interceptor, the test would fail.

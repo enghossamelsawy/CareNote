@@ -38,6 +38,9 @@ sealed interface DebugIntent : UiIntent {
 
     data class LatencySelected(val latency: Latency) : DebugIntent
 
+    /** Puts a colleague's note on the server and syncs, to show other phones' notes arriving. */
+    data object NoteFromAnotherPhoneClicked : DebugIntent
+
     data object BackClicked : DebugIntent
 }
 
