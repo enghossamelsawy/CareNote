@@ -8,7 +8,6 @@ import com.hossam.carenote.core.domain.vitals.VitalsProblem
 import com.hossam.carenote.core.domain.vitals.VitalsValidator
 import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.model.Vitals
-import kotlinx.coroutines.CancellationException
 import java.time.Clock
 import java.util.UUID
 import javax.inject.Inject
@@ -75,23 +74,9 @@ class SaveCareNoteUseCase @Inject constructor(
             revisionOf = revisionOf,
         )
         careNoteRepository.save(note)
-        requestSync()
+        // Sent as soon as the device is online; saving itself never waits for the network.
+        syncScheduler.requestSync()
         return SaveResult.Saved(note.id)
-    }
-
-    /**
-     * Sent as soon as the device is online; saving itself never waits for the network. The note is already
-     * stored, so a scheduling error must not report the save as failed, which would invite a duplicate:
-     * the next app start or network change asks for a sync again and sends it then.
-     */
-    private suspend fun requestSync() {
-        try {
-            syncScheduler.requestSync()
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Exception) {
-            // Picked up by the next sync request; see the KDoc.
-        }
     }
 
     private suspend fun canRevise(noteId: UUID, residentId: String): Boolean {

@@ -18,6 +18,7 @@ import org.robolectric.RobolectricTestRunner
 /** Syncs need a network, which the test WorkManager never reports, so every requested sync stays waiting. */
 @RunWith(RobolectricTestRunner::class)
 class WorkManagerSyncSchedulerTest {
+    private val logger = RecordingLogger()
     private lateinit var workManager: WorkManager
     private lateinit var scheduler: WorkManagerSyncScheduler
 
@@ -27,7 +28,7 @@ class WorkManagerSyncSchedulerTest {
         val configuration = Configuration.Builder().setExecutor(SynchronousExecutor()).build()
         WorkManagerTestInitHelper.initializeTestWorkManager(context, configuration)
         workManager = WorkManager.getInstance(context)
-        scheduler = WorkManagerSyncScheduler { workManager }
+        scheduler = WorkManagerSyncScheduler(workManager = { workManager }, logger = logger)
     }
 
     @Test
@@ -50,6 +51,18 @@ class WorkManagerSyncSchedulerTest {
 
         // Then
         assertEquals(listOf(WorkInfo.State.ENQUEUED), syncStates())
+    }
+
+    @Test
+    fun `given WorkManager fails, when a sync is requested, then the error is logged instead of thrown`() = runTest {
+        // Given
+        val failing = WorkManagerSyncScheduler(workManager = { error("WorkManager isn't ready") }, logger = logger)
+
+        // When
+        failing.requestSync()
+
+        // Then
+        assertEquals(listOf("Couldn't request a sync"), logger.errors)
     }
 
     private suspend fun syncStates(): List<WorkInfo.State> =

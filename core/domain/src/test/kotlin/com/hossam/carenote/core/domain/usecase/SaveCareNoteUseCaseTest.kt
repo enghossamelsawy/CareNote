@@ -99,19 +99,6 @@ class SaveCareNoteUseCaseTest {
     }
 
     @Test
-    fun `given scheduling the sync fails, when saving, then the stored note still counts as saved`() = runTest {
-        // Given
-        syncScheduler.failRequests = true
-
-        // When
-        val result = saveCareNote(residentId = "res-1", transcript = "Pulse 72", vitals = Vitals(pulse = 72))
-
-        // Then
-        val saved = careNoteRepository.savedNotes.single()
-        assertEquals(SaveResult.Saved(saved.id), result)
-    }
-
-    @Test
     fun `given the current version of a note, when saving an edit, then a new note points at it`() = runTest {
         // Given
         careNoteRepository.save(original)

@@ -8,8 +8,10 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.await
+import com.hossam.carenote.core.common.logging.Logger
 import com.hossam.carenote.core.domain.repository.SyncScheduler
 import dagger.Lazy
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import java.time.Duration
 import javax.inject.Inject
@@ -22,12 +24,26 @@ import javax.inject.Inject
  * skipped: that sync reads the outbox when it starts, so it already covers the new note. Without that, every
  * note saved offline would add one more sync to the chain.
  *
+ * Errors from WorkManager are logged, not thrown, as [SyncScheduler] promises.
+ *
  * [workManager] is lazy: creating WorkManager reads the app's configuration, which needs Hilt's worker
  * factory, and that isn't injected yet while the Application itself is being injected.
  */
-internal class WorkManagerSyncScheduler @Inject constructor(private val workManager: Lazy<WorkManager>) :
-    SyncScheduler {
+internal class WorkManagerSyncScheduler @Inject constructor(
+    private val workManager: Lazy<WorkManager>,
+    private val logger: Logger,
+) : SyncScheduler {
     override suspend fun requestSync() {
+        try {
+            enqueueSync()
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            logger.e(TAG, "Couldn't request a sync", error)
+        }
+    }
+
+    private suspend fun enqueueSync() {
         val syncs = workManager.get().getWorkInfosForUniqueWorkFlow(WORK_NAME).first()
         if (syncs.any { it.state in WAITING }) return
         val request = OneTimeWorkRequestBuilder<SyncWorker>()
@@ -39,6 +55,7 @@ internal class WorkManagerSyncScheduler @Inject constructor(private val workMana
 
     companion object {
         const val WORK_NAME = "note-sync"
+        private const val TAG = "SyncScheduler"
         private val INITIAL_BACKOFF: Duration = Duration.ofSeconds(30)
 
         /** Not started yet: waiting for a network or a backoff (enqueued), or for the sync before it (blocked). */
