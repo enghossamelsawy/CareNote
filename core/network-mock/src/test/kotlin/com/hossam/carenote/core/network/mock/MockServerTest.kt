@@ -7,13 +7,16 @@ import com.hossam.carenote.core.network.model.NetworkResident
 import com.hossam.carenote.core.network.model.NetworkVitals
 import kotlinx.serialization.builtins.ListSerializer
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 
 class MockServerTest {
-    private val server = MockServer(Clock.fixed(Instant.parse("2026-11-03T10:00:00Z"), ZoneOffset.UTC))
+    private val clock = Clock.fixed(Instant.parse("2026-11-03T10:00:00Z"), ZoneOffset.UTC)
+    private val server = MockServer(clock)
 
     private val note = NetworkCareNote(
         id = "00000000-0000-0000-0000-000000000001",
@@ -93,7 +96,8 @@ class MockServerTest {
         val page = notesPage(after = null, limit = "100")
 
         // Then
-        assertEquals(NetworkNotePage(notes = emptyList(), cursor = "0", hasMore = false), page)
+        assertEquals(emptyList<NetworkCareNote>(), page.notes)
+        assertFalse(page.hasMore)
     }
 
     @Test
@@ -107,8 +111,10 @@ class MockServerTest {
         val second = notesPage(after = first.cursor, limit = "2")
 
         // Then
-        assertEquals(NetworkNotePage(notes = notes.take(2), cursor = "2", hasMore = true), first)
-        assertEquals(NetworkNotePage(notes = notes.drop(2), cursor = "3", hasMore = false), second)
+        assertEquals(notes.take(2), first.notes)
+        assertTrue(first.hasMore)
+        assertEquals(notes.drop(2), second.notes)
+        assertFalse(second.hasMore)
     }
 
     @Test
@@ -129,27 +135,47 @@ class MockServerTest {
 
     @Test
     fun `given a cursor the server could never give out, when notes are requested, then it is a bad request`() {
+        // Given
+        val pastTheEnd = notesPage(after = null, limit = "100").cursor.substringBefore(':') + ":5"
+
         // When
-        val replies = listOf("abc", "-1").map { getNotes(query = mapOf("after" to it, "limit" to "100")) }
+        val replies = listOf("abc", "-1", pastTheEnd).map { getNotes(query = mapOf("after" to it, "limit" to "100")) }
 
         // Then
-        assertEquals(List(2) { MockServer.BAD_REQUEST }, replies.map { it.code })
+        assertEquals(List(3) { MockServer.BAD_REQUEST }, replies.map { it.code })
     }
 
     @Test
-    fun `given a cursor from before a restart, when notes are requested, then it moves back to the end`() {
-        // Given: the phone kept its cursor, but this server forgot its notes and has received one since
-        post(numberedNote(id = 1))
+    fun `given a cursor from an earlier run, when notes are requested, then they start over`() {
+        // Given: the phone kept its cursor, but this run's server forgot its notes and received new ones since
+        val earlierRun = MockServer(clock)
+        postTo(earlierRun, numberedNote(id = 1))
+        val cursor = notesPageFrom(earlierRun).cursor
+        val notes = (2..4).map { numberedNote(id = it) }
+        notes.forEach { post(it) }
+
+        // When
+        val page = notesPage(after = cursor, limit = "100")
+
+        // Then
+        assertEquals(notes, page.notes)
+    }
+
+    @Test
+    fun `given a cursor from before they had a run id, when notes are requested, then they start over`() {
+        // Given
+        val note = numberedNote(id = 1)
+        post(note)
 
         // When
         val page = notesPage(after = "5", limit = "100")
 
         // Then
-        assertEquals(NetworkNotePage(notes = emptyList(), cursor = "1", hasMore = false), page)
+        assertEquals(listOf(note), page.notes)
     }
 
     @Test
-    fun `given a cursor moved back after a restart, when a note arrives, then the next page has it`() {
+    fun `given a cursor that started over, when a note arrives, then the next page has only it`() {
         // Given
         val cursor = notesPage(after = "5", limit = "100").cursor
         val note = numberedNote(id = 1)
@@ -175,12 +201,13 @@ class MockServerTest {
     fun `given a colleague's phone, when it adds a note, then the note is next in the feed, written now`() {
         // Given
         post(numberedNote(id = 1))
+        val cursor = notesPage(after = null, limit = "100").cursor
 
         // When
         val added = server.addNoteFromAnotherPhone(residentId = "res-102")
 
         // Then
-        val page = notesPage(after = "1", limit = "100")
+        val page = notesPage(after = cursor, limit = "100")
         assertEquals(listOf(added), page.notes)
         assertEquals("res-102", added.residentId)
         assertEquals("2026-11-03T10:00:00Z", added.createdAt)
@@ -191,6 +218,24 @@ class MockServerTest {
 
     private fun post(note: NetworkCareNote) =
         postNote(idempotencyKey = note.id, body = careNoteJson.encodeToString(NetworkCareNote.serializer(), note))
+
+    private fun postTo(target: MockServer, note: NetworkCareNote) = target.handle(
+        method = "POST",
+        path = listOf("notes"),
+        idempotencyKey = note.id,
+        body = careNoteJson.encodeToString(NetworkCareNote.serializer(), note),
+    )
+
+    private fun notesPageFrom(target: MockServer): NetworkNotePage {
+        val reply = target.handle(
+            method = "GET",
+            path = listOf("notes"),
+            idempotencyKey = null,
+            body = null,
+            query = mapOf("limit" to "100"),
+        )
+        return careNoteJson.decodeFromString(NetworkNotePage.serializer(), reply.body)
+    }
 
     private fun getNotes(query: Map<String, String?>) =
         server.handle(method = "GET", path = listOf("notes"), idempotencyKey = null, body = null, query = query)

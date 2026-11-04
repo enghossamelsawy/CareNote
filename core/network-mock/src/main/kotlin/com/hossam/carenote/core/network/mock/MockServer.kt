@@ -28,6 +28,9 @@ class MockServer @Inject constructor(private val clock: Clock) {
 
     /** In the order they arrived. A note's position here is its place in the `GET notes` feed. */
     private val received = mutableListOf<NetworkCareNote>()
+
+    /** New each time the app starts, which is when this server's notes are gone. Marks the cursors it gives out. */
+    private val runId = UUID.randomUUID().toString()
     private val _storedNotes = MutableStateFlow<List<NetworkCareNote>>(emptyList())
 
     /** Every note stored so far, oldest first, for the debug menu. */
@@ -86,27 +89,34 @@ class MockServer @Inject constructor(private val clock: Clock) {
     }
 
     /**
-     * At most [limit] notes received after [after]; without [after], from the first one. The cursor here is how
-     * many notes were received up to the page's end, but the app never reads it, it only sends it back.
-     * A cursor this server could never give out, or a missing or too large limit, is a bad request.
-     *
-     * A cursor past the last note comes from before a restart: this server forgets its notes when the app stops,
-     * but the phone keeps its cursor. It gets an empty last page, with the cursor moved back to the current end.
+     * At most [limit] notes received after [after]; without [after], from the first one. The cursor here is this
+     * run's id and how many notes were received up to the page's end, but the app never reads it, it only sends
+     * it back. A cursor this server could never give out, or a missing or too large limit, is a bad request.
      */
     private fun notesPage(after: String?, limit: String?): Reply {
         val pageSize = limit?.toIntOrNull()?.takeIf { it in 1..MAX_PAGE_SIZE } ?: return Reply(BAD_REQUEST)
-        val requestedStart = if (after == null) 0 else after.toIntOrNull() ?: return Reply(BAD_REQUEST)
-        if (requestedStart < 0) return Reply(BAD_REQUEST)
         val page = synchronized(lock) {
-            val start = minOf(requestedStart, received.size)
+            val start = startOf(after) ?: return Reply(BAD_REQUEST)
             val end = minOf(start + pageSize, received.size)
             NetworkNotePage(
                 notes = received.subList(start, end).toList(),
-                cursor = end.toString(),
+                cursor = "$runId:$end",
                 hasMore = end < received.size,
             )
         }
         return Reply(OK, careNoteJson.encodeToString(NetworkNotePage.serializer(), page))
+    }
+
+    /**
+     * Where [after] continues the feed, or null if it can't be a cursor. This server forgets its notes when the app
+     * stops but the phone keeps its cursor, so one from an earlier run starts over: positions in it mean nothing now.
+     * Sending a note the phone already has is safe, since pulling skips those.
+     */
+    private fun startOf(after: String?): Int? = when {
+        after == null -> 0
+        after.startsWith("$runId:") -> after.substringAfter(':').toIntOrNull()?.takeIf { it in 0..received.size }
+        EARLIER_RUN_CURSOR.matches(after) -> 0
+        else -> null
     }
 
     private val residentsJson = careNoteJson.encodeToString(ListSerializer(NetworkResident.serializer()), residents)
@@ -120,6 +130,9 @@ class MockServer @Inject constructor(private val clock: Clock) {
 
         /** The most notes one page may ask for; the app asks for 100. */
         const val MAX_PAGE_SIZE = 500
+
+        /** A run's id and a position, or only a position, as cursors were before they had the id. */
+        val EARLIER_RUN_CURSOR = Regex("""(?:[0-9a-f-]+:)?\d+""")
 
         /** Made-up people; the app has never seen real resident data. */
         val residents = listOf(
