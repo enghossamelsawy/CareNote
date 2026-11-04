@@ -19,10 +19,13 @@ import javax.inject.Inject
 /**
  * One sync at a time, under a unique name, and at most one more waiting behind it.
  *
- * A request while a sync runs is appended after it, so a note saved during a sync is never left waiting for
- * the next trigger. A request while a sync is still waiting to start, such as offline or in backoff, is
- * skipped: that sync reads the outbox when it starts, so it already covers the new note. Without that, every
- * note saved offline would add one more sync to the chain.
+ * - A request while a sync runs is appended after it, so a note saved during a sync is never left waiting
+ *   for the next trigger.
+ * - A request while a sync waits for a network, or behind the running one, is skipped: that sync reads the
+ *   outbox when it starts, so it already covers the new note. Without that, every note saved offline would
+ *   add one more sync to the chain.
+ * - A request while a sync waits out its backoff replaces it. The backoff doubles up to hours, and "Update
+ *   now", Retry or a reconnect mean try now; the new sync still waits for a network.
  *
  * Errors from WorkManager are logged, not thrown, as [SyncScheduler] promises.
  *
@@ -45,12 +48,19 @@ internal class WorkManagerSyncScheduler @Inject constructor(
 
     private suspend fun enqueueSync() {
         val syncs = workManager.get().getWorkInfosForUniqueWorkFlow(WORK_NAME).first()
-        if (syncs.any { it.state in WAITING }) return
+        val waiting = syncs.filter { it.state in WAITING }
+        val policy = when {
+            waiting.isEmpty() -> ExistingWorkPolicy.APPEND_OR_REPLACE
+            // A waiting sync that has run before is in backoff; it's replaced only while no sync is running.
+            waiting.any { it.runAttemptCount > 0 } && syncs.none { it.state == WorkInfo.State.RUNNING } ->
+                ExistingWorkPolicy.REPLACE
+            else -> return
+        }
         val request = OneTimeWorkRequestBuilder<SyncWorker>()
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, INITIAL_BACKOFF)
             .build()
-        workManager.get().enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.APPEND_OR_REPLACE, request).await()
+        workManager.get().enqueueUniqueWork(WORK_NAME, policy, request).await()
     }
 
     companion object {
