@@ -237,7 +237,8 @@ class ResidentViewModelTest {
     }
 
     /** Collects the state like the visible screen would; freshness only updates while it does. */
-    private fun TestScope.show(viewModel: ResidentViewModel): Job = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.state.collect() }
+    private fun TestScope.show(viewModel: ResidentViewModel): Job =
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.state.collect() }
 
     private fun createViewModel(residentId: String) = ResidentViewModel(
         residentId = residentId,
