@@ -29,9 +29,7 @@
     <string name="record_vitals_title">Vitals</string>
     <string name="record_vital_bp_title">Blood pressure (mmHg)</string>
     <string name="record_vital_systolic">Upper</string>
-    <string name="record_vital_systolic_description">Blood pressure, upper</string>
     <string name="record_vital_diastolic">Lower</string>
-    <string name="record_vital_diastolic_description">Blood pressure, lower</string>
     <string name="record_vital_pulse">Pulse</string>
     <string name="record_vital_temperature">Temperature</string>
     <string name="record_vital_oxygen_saturation">SpO₂</string>

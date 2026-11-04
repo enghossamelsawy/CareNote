@@ -21,8 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
@@ -68,7 +66,6 @@ internal fun ReviewForm(
                 form = state.vitals,
                 enabled = !state.isSaving,
                 label = R.string.record_vital_systolic,
-                description = R.string.record_vital_systolic_description,
                 onIntent = onIntent,
                 modifier = Modifier.weight(1f),
             )
@@ -77,7 +74,6 @@ internal fun ReviewForm(
                 form = state.vitals,
                 enabled = !state.isSaving,
                 label = R.string.record_vital_diastolic,
-                description = R.string.record_vital_diastolic_description,
                 onIntent = onIntent,
                 modifier = Modifier.weight(1f),
             )
@@ -163,8 +159,7 @@ internal fun ReviewActions(isSaving: Boolean, onIntent: (RecordIntent) -> Unit, 
 
 /**
  * "Next" on the keyboard moves to the following field; the last one uses [ImeAction.Done]. The [unit] is a trailing
- * icon because Material hides a suffix on an empty field. [description] is for a screen reader, when [label] only
- * makes sense next to a heading.
+ * icon because Material hides a suffix on an empty field.
  */
 @Composable
 private fun VitalTextField(
@@ -175,19 +170,13 @@ private fun VitalTextField(
     onIntent: (RecordIntent) -> Unit,
     modifier: Modifier = Modifier,
     @StringRes unit: Int? = null,
-    @StringRes description: Int? = null,
     imeAction: ImeAction = ImeAction.Next,
 ) {
     val error = form.errors[field]
-    val descriptionText = description?.let { stringResource(it) }
     OutlinedTextField(
         value = form[field],
         onValueChange = { onIntent(RecordIntent.VitalChanged(field, it)) },
-        modifier = if (descriptionText == null) {
-            modifier
-        } else {
-            modifier.semantics { contentDescription = descriptionText }
-        },
+        modifier = modifier,
         enabled = enabled,
         label = { Text(stringResource(label)) },
         trailingIcon = unit?.let {
