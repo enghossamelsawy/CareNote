@@ -23,6 +23,8 @@ data class Dimens(
     val accentStrip: Dp = 4.dp,
     /** A small status dot, such as "this value is normal". */
     val indicatorDot: Dp = 8.dp,
+    /** With less free height than this, a screen's buttons scroll with its content instead of staying pinned. */
+    val pinnedButtonsMinHeight: Dp = 360.dp,
     val elevationLow: Dp = 1.dp,
     val elevationMid: Dp = 3.dp,
 )

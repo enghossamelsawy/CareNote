@@ -28,9 +28,17 @@ import androidx.compose.ui.text.input.KeyboardType
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
 import com.hossam.carenote.core.designsystem.theme.CareNoteTheme
 
-/** The finished note: the transcript and every vital can still be corrected before saving. */
+/**
+ * The finished note: the transcript and every vital can still be corrected before saving.
+ * [footer] scrolls with the form, at its end.
+ */
 @Composable
-internal fun ReviewForm(state: RecordState, onIntent: (RecordIntent) -> Unit, modifier: Modifier = Modifier) {
+internal fun ReviewForm(
+    state: RecordState,
+    onIntent: (RecordIntent) -> Unit,
+    modifier: Modifier = Modifier,
+    footer: @Composable () -> Unit = {},
+) {
     Column(
         modifier = modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.sm),
@@ -102,6 +110,7 @@ internal fun ReviewForm(state: RecordState, onIntent: (RecordIntent) -> Unit, mo
             modifier = Modifier.fillMaxWidth(),
             imeAction = ImeAction.Done,
         )
+        footer()
     }
 }
 

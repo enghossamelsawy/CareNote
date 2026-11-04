@@ -11,9 +11,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -142,7 +145,6 @@ fun RecordRoute(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordScreen(state: RecordState, onIntent: (RecordIntent) -> Unit, modifier: Modifier = Modifier) {
-    val isRecording = state.phase == RecordPhase.Recording
     if (state.showDiscardDialog) {
         DiscardNoteDialog(onIntent = onIntent)
     }
@@ -197,41 +199,75 @@ fun RecordScreen(state: RecordState, onIntent: (RecordIntent) -> Unit, modifier:
             }
             return@Scaffold
         }
-        Column(
-            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(CareNoteTheme.spacing.lg),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.md),
+        // Edge-to-edge, the keyboard only covers the screen; this shrinks it, so the form can scroll.
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
+                .imePadding(),
         ) {
-            if (state.phase == RecordPhase.Done) {
-                ReviewForm(state = state, onIntent = onIntent, modifier = Modifier.weight(1f).fillMaxWidth())
-            } else {
-                Transcript(state = state, modifier = Modifier.weight(1f).fillMaxWidth())
-            }
+            RecordContent(
+                state = state,
+                onIntent = onIntent,
+                buttonsScroll = maxHeight < CareNoteTheme.dimens.pinnedButtonsMinHeight,
+                modifier = Modifier.fillMaxSize().padding(CareNoteTheme.spacing.lg),
+            )
+        }
+    }
+}
 
-            PermissionCard(permission = state.permission, onIntent = onIntent)
+/**
+ * The transcript or form, and what can be done with it. When [buttonsScroll], the review buttons scroll with the
+ * form, because pinned they would leave it no room, such as in landscape with the keyboard open.
+ */
+@Composable
+private fun RecordContent(
+    state: RecordState,
+    onIntent: (RecordIntent) -> Unit,
+    buttonsScroll: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val isRecording = state.phase == RecordPhase.Recording
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.md),
+    ) {
+        if (state.phase == RecordPhase.Done) {
+            ReviewForm(
+                state = state,
+                onIntent = onIntent,
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                footer = { if (buttonsScroll) ReviewActions(isSaving = state.isSaving, onIntent = onIntent) },
+            )
+        } else {
+            Transcript(state = state, modifier = Modifier.weight(1f).fillMaxWidth())
+        }
 
-            state.error?.let { error ->
-                Text(
-                    text = stringResource(error.message()),
-                    style = CareNoteTheme.typography.bodyMedium,
-                    color = CareNoteTheme.colors.error,
-                )
-            }
+        PermissionCard(permission = state.permission, onIntent = onIntent)
 
-            if (state.phase == RecordPhase.Done) {
-                ReviewActions(isSaving = state.isSaving, onIntent = onIntent)
-            } else {
-                val description = if (isRecording) R.string.record_stop else R.string.record_start
-                RecordButton(
-                    isRecording = isRecording,
-                    onClick = { onIntent(if (isRecording) RecordIntent.StopClicked else RecordIntent.RecordClicked) },
-                    contentDescription = stringResource(description),
-                )
-                // Always there before recording, so a refused microphone or a phone without speech is no dead end.
-                if (state.phase == RecordPhase.Idle) {
-                    TextButton(onClick = { onIntent(RecordIntent.TypeInsteadClicked) }) {
-                        Text(stringResource(R.string.record_type_instead))
-                    }
+        state.error?.let { error ->
+            Text(
+                text = stringResource(error.message()),
+                style = CareNoteTheme.typography.bodyMedium,
+                color = CareNoteTheme.colors.error,
+            )
+        }
+
+        if (state.phase == RecordPhase.Done) {
+            if (!buttonsScroll) ReviewActions(isSaving = state.isSaving, onIntent = onIntent)
+        } else {
+            val description = if (isRecording) R.string.record_stop else R.string.record_start
+            RecordButton(
+                isRecording = isRecording,
+                onClick = { onIntent(if (isRecording) RecordIntent.StopClicked else RecordIntent.RecordClicked) },
+                contentDescription = stringResource(description),
+            )
+            // Always there before recording, so a refused microphone or a phone without speech is no dead end.
+            if (state.phase == RecordPhase.Idle) {
+                TextButton(onClick = { onIntent(RecordIntent.TypeInsteadClicked) }) {
+                    Text(stringResource(R.string.record_type_instead))
                 }
             }
         }
