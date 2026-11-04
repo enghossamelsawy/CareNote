@@ -32,22 +32,30 @@ interface NoteFeedDao {
      *
      * Known gap: another phone's edit of a version this phone has already edited is dropped too, since a
      * version can have only one edit. Two phones editing the same note needs the server to refuse the second.
+     * Those ids are returned, so the gap can be traced; an edit of a dropped edit then has no original here.
      *
      * @param caughtUpAt set when this was the feed's last page; null keeps the previous time.
-     * @return the ids of the notes skipped for an unknown resident.
      */
     @Transaction
-    suspend fun insertPulled(notes: List<CareNoteEntity>, cursor: String, caughtUpAt: Instant?): List<String> {
+    suspend fun insertPulled(notes: List<CareNoteEntity>, cursor: String, caughtUpAt: Instant?): PulledPage {
         val knownResidents = knownResidentIds(notes.map { it.residentId }.distinct()).toSet()
         val (known, unknown) = notes.partition { it.residentId in knownResidents }
         insertIgnoringExisting(known)
+        // Unknown residents are filtered out above, so a note still missing was refused by the one-edit index.
+        val stored = storedNoteIds(known.map { it.id }).toSet()
         val previous = notesCursor()
         upsertCursor(SyncCursorEntity(NOTES_FEED, cursor, caughtUpAt ?: previous?.caughtUpAt))
-        return unknown.map { it.id }
+        return PulledPage(
+            unknownResident = unknown.map { it.id },
+            droppedEdits = known.map { it.id }.filterNot { it in stored },
+        )
     }
 
     @Query("SELECT id FROM residents WHERE id IN (:ids)")
     suspend fun knownResidentIds(ids: List<String>): List<String>
+
+    @Query("SELECT id FROM care_notes WHERE id IN (:ids)")
+    suspend fun storedNoteIds(ids: List<String>): List<String>
 
     /**
      * Ignores notes whose id is already stored. Their [CareNoteEntity.saveOrder] stays 0: it only orders the
@@ -59,3 +67,6 @@ interface NoteFeedDao {
     @Upsert
     suspend fun upsertCursor(cursor: SyncCursorEntity)
 }
+
+/** The ids of the pulled notes that weren't stored, by reason; see [NoteFeedDao.insertPulled]. */
+data class PulledPage(val unknownResident: List<String>, val droppedEdits: List<String>)

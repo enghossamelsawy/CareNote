@@ -145,6 +145,23 @@ class NotePullerTest {
         assertEquals(listOf("Skipped notes for unknown residents: [${UUID(0, 2)}]"), logger.warnings)
     }
 
+    @Test
+    fun `given an edit of a version already edited here, when pulling, then it is dropped and its id logged`() =
+        runTest {
+            // Given
+            val edit = note(id = 2).copy(revisionOf = UUID(0, 1))
+            val otherEdit = note(id = 3).copy(revisionOf = UUID(0, 1))
+            remoteDataSource.notePages[null] = page(listOf(note(id = 1), edit, otherEdit), "c-1", hasMore = false)
+
+            // When
+            val outcome = puller.pull()
+
+            // Then
+            assertEquals(SyncOutcome.Done, outcome)
+            assertNull(storedNote(3))
+            assertEquals(listOf("Dropped edits of versions already edited here: [${UUID(0, 3)}]"), logger.warnings)
+        }
+
     private fun page(notes: List<CareNote>, cursor: String, hasMore: Boolean) =
         FetchResult.Success(NotePage(notes = notes, cursor = cursor, hasMore = hasMore))
 

@@ -41,13 +41,18 @@ internal class NotePuller @Inject constructor(
             }
             // A server that says "more" without moving on would keep this loop going forever.
             if (page.hasMore && page.cursor == after) return SyncOutcome.Failed
-            val skipped = noteFeedDao.insertPulled(
+            val pulled = noteFeedDao.insertPulled(
                 notes = page.notes.map { it.asEntity() },
                 cursor = page.cursor,
                 caughtUpAt = if (page.hasMore) null else clock.instant(),
             )
             // Ids only: a note's text is health data.
-            if (skipped.isNotEmpty()) logger.w(TAG, "Skipped notes for unknown residents: $skipped")
+            if (pulled.unknownResident.isNotEmpty()) {
+                logger.w(TAG, "Skipped notes for unknown residents: ${pulled.unknownResident}")
+            }
+            if (pulled.droppedEdits.isNotEmpty()) {
+                logger.w(TAG, "Dropped edits of versions already edited here: ${pulled.droppedEdits}")
+            }
             after = page.cursor
         } while (page.hasMore)
         return SyncOutcome.Done
