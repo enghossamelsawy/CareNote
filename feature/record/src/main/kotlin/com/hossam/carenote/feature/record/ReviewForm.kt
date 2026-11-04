@@ -21,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.hossam.carenote.core.designsystem.icon.CareNoteIcons
@@ -47,13 +49,18 @@ internal fun ReviewForm(state: RecordState, onIntent: (RecordIntent) -> Unit, mo
             style = CareNoteTheme.typography.titleMedium,
         )
 
+        Text(
+            text = stringResource(R.string.record_vital_bp_title),
+            style = CareNoteTheme.typography.labelMedium,
+            color = CareNoteTheme.colors.onSurfaceVariant,
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(CareNoteTheme.spacing.sm)) {
             VitalTextField(
                 field = VitalField.Systolic,
                 form = state.vitals,
                 enabled = !state.isSaving,
                 label = R.string.record_vital_systolic,
-                unit = R.string.record_unit_mmhg,
+                description = R.string.record_vital_systolic_description,
                 onIntent = onIntent,
                 modifier = Modifier.weight(1f),
             )
@@ -62,7 +69,7 @@ internal fun ReviewForm(state: RecordState, onIntent: (RecordIntent) -> Unit, mo
                 form = state.vitals,
                 enabled = !state.isSaving,
                 label = R.string.record_vital_diastolic,
-                unit = R.string.record_unit_mmhg,
+                description = R.string.record_vital_diastolic_description,
                 onIntent = onIntent,
                 modifier = Modifier.weight(1f),
             )
@@ -145,26 +152,38 @@ internal fun ReviewActions(isSaving: Boolean, onIntent: (RecordIntent) -> Unit, 
     }
 }
 
-/** "Next" on the keyboard moves to the following field; the last one uses [ImeAction.Done]. */
+/**
+ * "Next" on the keyboard moves to the following field; the last one uses [ImeAction.Done]. The [unit] is a trailing
+ * icon because Material hides a suffix on an empty field. [description] is for a screen reader, when [label] only
+ * makes sense next to a heading.
+ */
 @Composable
 private fun VitalTextField(
     field: VitalField,
     form: VitalsForm,
     enabled: Boolean,
     @StringRes label: Int,
-    @StringRes unit: Int,
     onIntent: (RecordIntent) -> Unit,
     modifier: Modifier = Modifier,
+    @StringRes unit: Int? = null,
+    @StringRes description: Int? = null,
     imeAction: ImeAction = ImeAction.Next,
 ) {
     val error = form.errors[field]
+    val descriptionText = description?.let { stringResource(it) }
     OutlinedTextField(
         value = form[field],
         onValueChange = { onIntent(RecordIntent.VitalChanged(field, it)) },
-        modifier = modifier,
+        modifier = if (descriptionText == null) {
+            modifier
+        } else {
+            modifier.semantics { contentDescription = descriptionText }
+        },
         enabled = enabled,
         label = { Text(stringResource(label)) },
-        suffix = { Text(stringResource(unit)) },
+        trailingIcon = unit?.let {
+            { Text(stringResource(it), modifier = Modifier.padding(end = CareNoteTheme.spacing.md)) }
+        },
         supportingText = error?.let { { Text(errorMessage(it)) } },
         isError = error != null,
         keyboardOptions = KeyboardOptions(
