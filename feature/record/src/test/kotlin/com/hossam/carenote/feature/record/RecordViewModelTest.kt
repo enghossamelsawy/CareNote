@@ -848,6 +848,25 @@ class RecordViewModelTest {
     }
 
     @Test
+    fun `given a restored draft, when the edited note can't be read, then the draft stays`() = runTest {
+        // Given
+        careNoteRepository.save(savedNote)
+        val viewModel = createViewModel(noteId = savedNote.id)
+        viewModel.onIntent(RecordIntent.VitalChanged(VitalField.Pulse, "76"))
+        careNoteRepository.failGetNote = true
+
+        // When
+        val restored = createViewModel(noteId = savedNote.id)
+
+        // Then
+        val state = restored.state.value
+        assertFalse(state.isLoadingNote)
+        assertEquals(null, state.cannotEdit)
+        assertEquals(RecordPhase.Done, state.phase)
+        assertEquals("76", state.vitals[VitalField.Pulse])
+    }
+
+    @Test
     fun `given a note that can't be edited, when record is tapped, then no recording starts`() = runTest {
         // Given
         val viewModel = createViewModel(noteId = savedNote.id)

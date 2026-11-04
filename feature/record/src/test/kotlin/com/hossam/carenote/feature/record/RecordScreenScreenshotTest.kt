@@ -70,6 +70,15 @@ class RecordScreenScreenshotTest {
     }
 
     @Test
+    @Config(qualifiers = "+land")
+    fun `given a short screen, when reviewing, then the buttons leave the form its room`() {
+        // Pinned buttons would show at the bottom; here they scroll with the form, below what's visible.
+        screenshots("record_review_short") {
+            RecordScreen(state = review, onIntent = {})
+        }
+    }
+
+    @Test
     fun `given an implausible pulse, when reviewing, then the field error matches the screenshots`() {
         screenshots("record_review_error") {
             RecordScreen(
