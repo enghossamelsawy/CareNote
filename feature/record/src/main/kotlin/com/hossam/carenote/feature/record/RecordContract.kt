@@ -17,8 +17,8 @@ data class RecordState(
     val showDiscardDialog: Boolean = false,
     /** The note as it was when editing started; null when writing a new note. */
     val editedFrom: EditedNote? = null,
-    /** The note to edit is gone or not this resident's: nothing can be recorded or saved, only gone back from. */
-    val cannotEdit: Boolean = false,
+    /** Why the note to edit didn't open; while set, nothing can be recorded or saved, only gone back from. */
+    val cannotEdit: CannotEdit? = null,
     /**
      * The note to edit is still being read. Nothing can be recorded or typed yet: it would be saved as an edit
      * and replace the note, which then wouldn't open.
@@ -30,7 +30,7 @@ data class RecordState(
 
     /** Recording or typing is allowed: no note to edit is still loading or failed to open. */
     val canRecord: Boolean
-        get() = !cannotEdit && !isLoadingNote
+        get() = cannotEdit == null && !isLoadingNote
 
     /** Whether going back now would throw away something the user dictated or typed. */
     val hasUnsavedNote: Boolean
@@ -47,6 +47,14 @@ data class RecordState(
 
 /** What an edited note held when it was opened. */
 data class EditedNote(val transcript: String, val vitals: VitalsForm)
+
+enum class CannotEdit {
+    /** Gone, or not this resident's. */
+    NotFound,
+
+    /** The phone's storage couldn't be read; opening it again may work. */
+    Unreadable,
+}
 
 enum class RecordPhase {
     Idle,

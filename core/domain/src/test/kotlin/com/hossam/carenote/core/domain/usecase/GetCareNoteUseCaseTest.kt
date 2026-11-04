@@ -5,7 +5,6 @@ import com.hossam.carenote.core.model.Vitals
 import com.hossam.carenote.core.testing.repository.FakeCareNoteRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 import java.time.Instant
 import java.util.UUID
@@ -30,7 +29,7 @@ class GetCareNoteUseCaseTest {
         val result = getCareNote(note.id)
 
         // Then
-        assertEquals(note, result)
+        assertEquals(GetNoteResult.Found(note), result)
     }
 
     @Test
@@ -39,6 +38,18 @@ class GetCareNoteUseCaseTest {
         val result = getCareNote(UUID(0, 1))
 
         // Then
-        assertNull(result)
+        assertEquals(GetNoteResult.NotFound, result)
+    }
+
+    @Test
+    fun `given storage can't be read, when getting a note, then it says so instead of throwing`() = runTest {
+        // Given
+        careNoteRepository.failGetNote = true
+
+        // When
+        val result = getCareNote(UUID(0, 1))
+
+        // Then
+        assertEquals(GetNoteResult.Failed, result)
     }
 }

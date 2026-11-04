@@ -172,10 +172,15 @@ fun RecordScreen(state: RecordState, onIntent: (RecordIntent) -> Unit, modifier:
             )
         },
     ) { innerPadding ->
-        if (state.cannotEdit) {
+        state.cannotEdit?.let { problem ->
+            val unreadable = problem == CannotEdit.Unreadable
             EmptyState(
-                title = stringResource(R.string.record_cannot_edit_title),
-                message = stringResource(R.string.record_cannot_edit_message),
+                title = stringResource(
+                    if (unreadable) R.string.record_unreadable_title else R.string.record_cannot_edit_title,
+                ),
+                message = stringResource(
+                    if (unreadable) R.string.record_unreadable_message else R.string.record_cannot_edit_message,
+                ),
                 illustration = { EmptyStateIcon(CareNoteIcons.Notes) },
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
                 actionLabel = stringResource(R.string.record_cannot_edit_action),

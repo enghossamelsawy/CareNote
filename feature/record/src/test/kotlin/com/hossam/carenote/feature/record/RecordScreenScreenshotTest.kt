@@ -94,6 +94,16 @@ class RecordScreenScreenshotTest {
         }
     }
 
+    @Test
+    fun `given the note to edit couldn't be read, when the screen shows, then the message matches the screenshots`() {
+        screenshots("record_note_unreadable") {
+            RecordScreen(
+                state = RecordState(residentName = "Anna Becker", cannotEdit = CannotEdit.Unreadable),
+                onIntent = {},
+            )
+        }
+    }
+
     private fun screenshots(name: String, content: @Composable () -> Unit) {
         for (darkTheme in listOf(false, true)) {
             val theme = if (darkTheme) "dark" else "light"

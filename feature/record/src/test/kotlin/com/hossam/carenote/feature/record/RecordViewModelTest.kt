@@ -828,7 +828,23 @@ class RecordViewModelTest {
 
         // Then
         assertEquals(RecordPhase.Idle, viewModel.state.value.phase)
-        assertTrue(viewModel.state.value.cannotEdit)
+        assertEquals(CannotEdit.NotFound, viewModel.state.value.cannotEdit)
+    }
+
+    @Test
+    fun `given storage can't be read, when editing a note, then loading ends and it says so`() = runTest {
+        // Given
+        careNoteRepository.save(savedNote)
+        careNoteRepository.failGetNote = true
+
+        // When
+        val viewModel = createViewModel(noteId = savedNote.id)
+
+        // Then
+        val state = viewModel.state.value
+        assertFalse(state.isLoadingNote)
+        assertEquals(CannotEdit.Unreadable, state.cannotEdit)
+        assertFalse(state.canRecord)
     }
 
     @Test

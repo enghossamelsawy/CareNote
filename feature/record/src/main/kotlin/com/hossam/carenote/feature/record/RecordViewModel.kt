@@ -5,12 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.hossam.carenote.core.domain.speech.TranscriptionError
 import com.hossam.carenote.core.domain.speech.TranscriptionEvent
 import com.hossam.carenote.core.domain.usecase.GetCareNoteUseCase
+import com.hossam.carenote.core.domain.usecase.GetNoteResult
 import com.hossam.carenote.core.domain.usecase.ObserveResidentUseCase
 import com.hossam.carenote.core.domain.usecase.ParseVitalsUseCase
 import com.hossam.carenote.core.domain.usecase.SaveCareNoteUseCase
 import com.hossam.carenote.core.domain.usecase.SaveResult
 import com.hossam.carenote.core.domain.usecase.TranscribeSpeechUseCase
-import com.hossam.carenote.core.model.CareNote
 import com.hossam.carenote.core.ui.mvi.MviViewModel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -72,10 +72,20 @@ class RecordViewModel @AssistedInject constructor(
     }
 
     /** Opens the note in review, unless it's already open (restored or being recorded) or isn't this resident's. */
-    private fun startEditing(note: CareNote?) {
-        if (note == null || note.residentId != residentId) {
+    private fun startEditing(result: GetNoteResult) {
+        val note = when (result) {
+            is GetNoteResult.Found -> result.note.takeIf { it.residentId == residentId }
+            GetNoteResult.NotFound -> null
+            GetNoteResult.Failed -> {
+                // A restored draft stays: saving reads the note again and says so if storage still fails.
+                val restored = currentState.phase != RecordPhase.Idle
+                setState { copy(isLoadingNote = false, cannotEdit = CannotEdit.Unreadable.takeUnless { restored }) }
+                return
+            }
+        }
+        if (note == null) {
             // A dictation here could never be saved as an edit, so recording isn't offered at all.
-            setState { copy(isLoadingNote = false, cannotEdit = true) }
+            setState { copy(isLoadingNote = false, cannotEdit = CannotEdit.NotFound) }
             return
         }
         if (currentState.phase != RecordPhase.Idle) {
@@ -296,7 +306,7 @@ class RecordViewModel @AssistedInject constructor(
 
     private fun save() {
         val state = currentState
-        if (state.phase != RecordPhase.Done || state.isSaving || state.cannotEdit) return
+        if (state.phase != RecordPhase.Done || state.isSaving || state.cannotEdit != null) return
 
         val unreadable = state.vitals.unreadableFields()
         if (unreadable.isNotEmpty()) {

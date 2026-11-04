@@ -22,6 +22,9 @@ class FakeCareNoteRepository : CareNoteRepository {
     /** When true, the next [hasRevision] answers false, like a check made just before another edit was saved. */
     var missNextRevision = false
 
+    /** When true, [getNote] fails like an unreadable database would. */
+    var failGetNote = false
+
     /** While set and not completed, [getNote] waits on it, like a slow read from the database. */
     var getNoteGate: CompletableDeferred<Unit>? = null
 
@@ -45,6 +48,7 @@ class FakeCareNoteRepository : CareNoteRepository {
 
     override suspend fun getNote(noteId: UUID): CareNote? {
         getNoteGate?.await()
+        if (failGetNote) throw StorageException(IllegalStateException("Database unreadable"))
         return notes.value.find { it.id == noteId }
     }
 

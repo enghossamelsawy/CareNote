@@ -16,7 +16,7 @@ internal class RecordDraft(private val handle: SavedStateHandle) {
             // The draft from before Save stays: it's cleared once the note is stored, and the state
             // stays "saving" after that, so writing it again here would bring a saved note back.
             state.isSaving -> Unit
-            state.phase == RecordPhase.Idle || state.cannotEdit -> clear()
+            state.phase == RecordPhase.Idle || state.cannotEdit != null -> clear()
             else -> {
                 handle[TRANSCRIPT] = state.transcript
                 handle.setForm(VITALS, state.vitals)
