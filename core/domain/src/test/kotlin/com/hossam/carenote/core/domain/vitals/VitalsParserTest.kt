@@ -107,6 +107,18 @@ class VitalsParserTest {
     }
 
     @Test
+    fun `given a sentence ending in a keyword, when the next starts with a number, then it is read as the value`() {
+        // Given: an accepted cost of reading across pauses, see VitalsParser; the carer reviews it before saving
+        val parser = VitalsParser(listOf(EnglishVitalsVocabulary))
+
+        // When
+        val vitals = parser.parse("Checked pulse. 30 minutes later she slept")
+
+        // Then
+        assertEquals(Vitals(pulse = 30), vitals)
+    }
+
+    @Test
     fun `given a keyword followed by another vital, when parsing, then its value stays with the other vital`() {
         // Given
         val parser = VitalsParser(listOf(EnglishVitalsVocabulary))

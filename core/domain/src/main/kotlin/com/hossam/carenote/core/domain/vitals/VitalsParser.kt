@@ -13,7 +13,8 @@ import com.hossam.carenote.core.model.Vitals
  * gives no pulse rather than 72, since a plausible wrong value is worse than a missing one.
  *
  * Speech recognizers add periods and commas where the speaker pauses, so "Pulse. Is 72." and "120. Over 80." count
- * too. The carer reviews every value before saving.
+ * too. The cost: "Checked pulse. 30 minutes later" gives pulse 30, which looks just like a pause. That's accepted
+ * because the carer reviews every value before saving.
  */
 class VitalsParser(vocabularies: List<VitalsVocabulary>) {
     private val fillers = vocabularies.flatMap { it.fillerWords }
