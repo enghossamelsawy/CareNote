@@ -3,7 +3,8 @@
 # Keeping the names keeps this chain of classes in one package.
 -keep,allowshrinking,allowoptimization class kotlin.text.StringsKt__*
 
-# Release builds log nothing: this removes log calls from the code R8 processes.
+# Removes log calls from the code R8 processes, which is only the packages in packageScope.
+# Libraries outside it, such as Google Play services and OkHttp, can still log in release builds.
 -assumenosideeffects class android.util.Log {
     public static int v(...);
     public static int d(...);
