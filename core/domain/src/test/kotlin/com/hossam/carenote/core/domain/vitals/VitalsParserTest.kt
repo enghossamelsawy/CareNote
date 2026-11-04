@@ -80,6 +80,44 @@ class VitalsParserTest {
         assertEquals(Vitals.EMPTY, vitals)
     }
 
+    @Test
+    fun `given pauses transcribed as punctuation, when parsing, then the values are still found`() {
+        // Given
+        val parser = VitalsParser(listOf(EnglishVitalsVocabulary))
+
+        // When
+        val vitals = parser.parse("Blood pressure is 120. Over 80. Pulse. 72. Temperature, is 36.8.")
+
+        // Then
+        assertEquals(Vitals(systolic = 120, diastolic = 80, pulse = 72, temperatureCelsius = 36.8), vitals)
+    }
+
+    @Test
+    fun `given a garbled dictation, when parsing, then only the clear value is found`() {
+        // Given
+        val parser = VitalsParser(listOf(EnglishVitalsVocabulary))
+
+        // When
+        val vitals = parser.parse(
+            "Temperature.  Is 37.  Uh, blood pressure is.  Do any over?  Blood pressure is to 12.  120.  Over.",
+        )
+
+        // Then
+        assertEquals(Vitals(temperatureCelsius = 37.0), vitals)
+    }
+
+    @Test
+    fun `given a keyword followed by another vital, when parsing, then its value stays with the other vital`() {
+        // Given
+        val parser = VitalsParser(listOf(EnglishVitalsVocabulary))
+
+        // When
+        val vitals = parser.parse("Pulse. Temperature 37")
+
+        // Then
+        assertEquals(Vitals(temperatureCelsius = 37.0), vitals)
+    }
+
     private data class FakeVocabulary(
         override val bloodPressureKeywords: List<String> = emptyList(),
         override val bloodPressureSeparators: List<String> = emptyList(),

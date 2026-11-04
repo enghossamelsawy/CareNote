@@ -7,10 +7,13 @@ import com.hossam.carenote.core.model.Vitals
  * so mixed-language dictation works too. Values that aren't mentioned stay null, and nothing is
  * range-checked here: "pulse 300" gives 300.
  *
- * Each value must follow its keyword, with at most a colon or a couple of filler words in between
+ * Each value must follow its keyword, with at most a punctuation mark or a couple of filler words in between
  * ("pulse 72", "pulse: 72", "pulse is 72"); the parser never guesses which number belongs to which
  * vital. If a value is mentioned twice, the first one wins. A number counts only as a whole: "pulse 72.5"
  * gives no pulse rather than 72, since a plausible wrong value is worse than a missing one.
+ *
+ * Speech recognizers add periods and commas where the speaker pauses, so "Pulse. Is 72." and "120. Over 80." count
+ * too. The carer reviews every value before saving.
  */
 class VitalsParser(vocabularies: List<VitalsVocabulary>) {
     private val fillers = vocabularies.flatMap { it.fillerWords }
@@ -22,7 +25,7 @@ class VitalsParser(vocabularies: List<VitalsVocabulary>) {
             pattern(
                 keywords = vocabularies.flatMap { it.bloodPressureKeywords },
                 fillers = fillers,
-                value = """($INTEGER)\s*(?:${alternatives(separators)})\s*($INTEGER)""",
+                value = """($INTEGER)$PAUSE\s*(?:${alternatives(separators)})$PAUSE\s*($INTEGER)""",
             )
         }
     private val pulse = pattern(vocabularies.flatMap { it.pulseKeywords }, fillers, "($INTEGER)")
@@ -56,19 +59,23 @@ class VitalsParser(vocabularies: List<VitalsVocabulary>) {
         /** At most this many filler words between a keyword and its value: "temperature was about 36.8". */
         const val MAX_FILLERS = 2
 
+        /** What a speech recognizer may add where the speaker pauses. */
+        const val PAUSE = """[.,]?"""
+
         /**
-         * Keyword as a whole word (no letter right before or after it), an optional colon, up to
-         * [MAX_FILLERS] filler words, then the value. Returns null when there are no keywords.
+         * Keyword as a whole word (no letter right before or after it), an optional colon or [PAUSE], up to
+         * [MAX_FILLERS] filler words, each with an optional [PAUSE], then the value. Returns null when there are
+         * no keywords.
          */
         fun pattern(keywords: List<String>, fillers: List<String>, value: String): Regex? {
             if (keywords.isEmpty()) return null
             val skippedFillers = if (fillers.isEmpty()) {
                 ""
             } else {
-                """(?:(?:${alternatives(fillers)})(?!\p{L})\s*){0,$MAX_FILLERS}"""
+                """(?:(?:${alternatives(fillers)})(?!\p{L})$PAUSE\s*){0,$MAX_FILLERS}"""
             }
             return Regex(
-                """(?<!\p{L})(?:${alternatives(keywords)})(?!\p{L})\s*:?\s*$skippedFillers$value""",
+                """(?<!\p{L})(?:${alternatives(keywords)})(?!\p{L})\s*[:.,]?\s*$skippedFillers$value""",
                 RegexOption.IGNORE_CASE,
             )
         }

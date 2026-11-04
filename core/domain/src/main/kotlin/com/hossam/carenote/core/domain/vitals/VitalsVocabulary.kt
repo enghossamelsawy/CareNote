@@ -4,7 +4,7 @@ package com.hossam.carenote.core.domain.vitals
  * The words one language uses for vital signs. [VitalsParser] builds its patterns from these,
  * so supporting a new language means adding a vocabulary, not changing the parser.
  *
- * Every pattern is "keyword, optional colon, up to two filler words, number". Keywords and filler words
+ * Every pattern is "keyword, optional punctuation, up to two filler words, number". Keywords and filler words
  * match whole words, ignoring case.
  */
 interface VitalsVocabulary {
