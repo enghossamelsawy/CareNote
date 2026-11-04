@@ -50,8 +50,8 @@ class MockServerInterceptorTest {
 
     @Test
     fun `given notes are requested with a cursor, when sending, then the server receives the query`() {
-        // Given: a cursor the server never gave out is a bad request, so a 400 shows "after" got through
-        val request = get("notes?after=7&limit=100")
+        // Given: a cursor the server could never give out is a bad request, so a 400 shows "after" got through
+        val request = get("notes?after=abc&limit=100")
 
         // When
         val code = client.newCall(request).execute().use { it.code }

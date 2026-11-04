@@ -128,12 +128,38 @@ class MockServerTest {
     }
 
     @Test
-    fun `given a cursor the server never gave out, when notes are requested, then it is a bad request`() {
+    fun `given a cursor the server could never give out, when notes are requested, then it is a bad request`() {
         // When
-        val replies = listOf("abc", "-1", "5").map { getNotes(query = mapOf("after" to it, "limit" to "100")) }
+        val replies = listOf("abc", "-1").map { getNotes(query = mapOf("after" to it, "limit" to "100")) }
 
         // Then
-        assertEquals(List(3) { MockServer.BAD_REQUEST }, replies.map { it.code })
+        assertEquals(List(2) { MockServer.BAD_REQUEST }, replies.map { it.code })
+    }
+
+    @Test
+    fun `given a cursor from before a restart, when notes are requested, then it moves back to the end`() {
+        // Given: the phone kept its cursor, but this server forgot its notes and has received one since
+        post(numberedNote(id = 1))
+
+        // When
+        val page = notesPage(after = "5", limit = "100")
+
+        // Then
+        assertEquals(NetworkNotePage(notes = emptyList(), cursor = "1", hasMore = false), page)
+    }
+
+    @Test
+    fun `given a cursor moved back after a restart, when a note arrives, then the next page has it`() {
+        // Given
+        val cursor = notesPage(after = "5", limit = "100").cursor
+        val note = numberedNote(id = 1)
+        post(note)
+
+        // When
+        val page = notesPage(after = cursor, limit = "100")
+
+        // Then
+        assertEquals(listOf(note), page.notes)
     }
 
     @Test

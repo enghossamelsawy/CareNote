@@ -88,13 +88,17 @@ class MockServer @Inject constructor(private val clock: Clock) {
     /**
      * At most [limit] notes received after [after]; without [after], from the first one. The cursor here is how
      * many notes were received up to the page's end, but the app never reads it, it only sends it back.
-     * A cursor this server never gave out, or a missing or too large limit, is a bad request.
+     * A cursor this server could never give out, or a missing or too large limit, is a bad request.
+     *
+     * A cursor past the last note comes from before a restart: this server forgets its notes when the app stops,
+     * but the phone keeps its cursor. It gets an empty last page, with the cursor moved back to the current end.
      */
     private fun notesPage(after: String?, limit: String?): Reply {
         val pageSize = limit?.toIntOrNull()?.takeIf { it in 1..MAX_PAGE_SIZE } ?: return Reply(BAD_REQUEST)
-        val start = if (after == null) 0 else after.toIntOrNull() ?: return Reply(BAD_REQUEST)
+        val requestedStart = if (after == null) 0 else after.toIntOrNull() ?: return Reply(BAD_REQUEST)
+        if (requestedStart < 0) return Reply(BAD_REQUEST)
         val page = synchronized(lock) {
-            if (start !in 0..received.size) return Reply(BAD_REQUEST)
+            val start = minOf(requestedStart, received.size)
             val end = minOf(start + pageSize, received.size)
             NetworkNotePage(
                 notes = received.subList(start, end).toList(),
