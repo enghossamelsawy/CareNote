@@ -210,17 +210,16 @@ class ResidentViewModelTest {
         }
 
     @Test
-    fun `given colleagues' notes haven't arrived, when a resident without notes is shown, then it says so`() =
-        runTest {
-            // Given
-            residentRepository.setResidents(listOf(anna))
+    fun `given colleagues' notes haven't arrived, when a resident without notes is shown, then it says so`() = runTest {
+        // Given
+        residentRepository.setResidents(listOf(anna))
 
-            // When
-            val viewModel = createViewModel(anna.id).also { show(it) }
+        // When
+        val viewModel = createViewModel(anna.id).also { show(it) }
 
-            // Then
-            assertTrue(viewModel.state.value.colleagueNotesNotArrived)
-        }
+        // Then
+        assertTrue(viewModel.state.value.colleagueNotesNotArrived)
+    }
 
     @Test
     fun `given a resident without notes, when colleagues' notes arrive, then it is a plain empty list`() = runTest {
